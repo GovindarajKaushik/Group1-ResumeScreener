@@ -135,3 +135,58 @@ def collect_job_description() -> JobDescription:
         "education_requirement": education_requirement,
         "preferred_qualifications": preferred_qualifications,
     }
+
+def collect_screening_preferences() -> ScreeningPreferences:
+
+    while True:
+
+        print()
+        print("=" * 50)
+        print("SCREENING PREFERENCES")
+        print("=" * 50)
+
+        skill_weight = get_percentage(
+            "Skill weight (%): "
+        )
+
+        experience_weight = get_percentage(
+            "Experience weight (%): "
+        )
+
+        education_weight = get_percentage(
+            "Education weight (%): "
+        )
+
+        minimum_score = get_percentage(
+            "Minimum qualifying score (%): "
+        )
+
+        total_weight = (
+            skill_weight
+            + education_weight
+            + education_weight
+        )
+
+        if abs(total_weight - 100.0) > 0.01:
+            print()
+            print(
+                "Error: Skill, experience and education"
+                "weights must total 100%."
+            )
+
+            print(
+                f"Current total: {total_weight:.2f}%"
+            )
+
+            print("Please enter the weights again.")
+
+            continue
+
+        return {
+            "skill_weight": skill_weight,
+            "experience_weight": experience_weight,
+            "education_weight": education_weight,
+            "minimum_score": minimum_score,
+        }
+
+def validate_resume_file(filepath: Path) ->tuple[bool, str]:
