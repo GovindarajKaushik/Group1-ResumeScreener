@@ -29,7 +29,7 @@ def collect_resume_batch(folder):
 
 def collect_job_description():
     title = input("Job Title: ")
-    skills_input = input("Required Skills (comma-separated): ")
+    skills_input = input("Required skills (comma-separated): ")
     skills = []
     for skill in skills_input.split(","):
         skills.append(skill.strip())
@@ -42,7 +42,22 @@ def collect_job_description():
         except ValueError:
             print("Invalid input. Please enter a number.")
 
-    return title, skills, min_experience
+    education = input("Education requirements: ")
+
+    preferred_input = input("Preferred skills (comma-separated): ")
+    preferred = []
+    for item in preferred_input.split(","):
+        preferred.append(item.strip())
+
+    job_description = {
+        "title": title,
+        "skills": skills,
+        "min_experience": min_experience,
+        "education": education,
+        "preferred": preferred
+    }
+
+    return job_description  
 
 if __name__ == "__main__":
     folder = get_valid_folder("Folder containing resumes: ")
@@ -50,7 +65,5 @@ if __name__ == "__main__":
     for f in files:
         print(f)
 
-    title, skills, min_experience = collect_job_description()
-    print(title)
-    print(skills)
-    print(min_experience)
+    job_description = collect_job_description()
+    print(job_description)
