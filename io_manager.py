@@ -81,14 +81,28 @@ def collect_screening_preferences():
 
     return preferences  
 
+def display_result(candidates):
+    sorted_candidates = sorted(candidates, key=lambda c: c["final_score"], reverse=True)
+    for c in sorted_candidates:
+        print(c["file_name"], c["final_score"])
+
 if __name__ == "__main__":
     folder = get_valid_folder("Folder containing resumes: ")
     files = collect_resume_batch(folder)
     for f in files:
         print(f)
 
-    """job_description = collect_job_description()
-    print(job_description)"""
+    """
+    job_description = collect_job_description()
+    print(job_description)
 
     preferences = collect_screening_preferences()
     print(preferences)
+    """
+
+    fake_cadidates = [
+        {"file_name": "resume1.pdf", "final_score": 75.0},
+        {"file_name": "resume2.docx", "final_score": 92.5},
+        {"file_name": "resume3.pdf", "final_score": 85.0},
+    ]
+    display_result(fake_cadidates)
