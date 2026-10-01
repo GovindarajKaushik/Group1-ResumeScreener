@@ -59,11 +59,36 @@ def collect_job_description():
 
     return job_description  
 
+def collect_screening_preferences():
+    while True:
+        min_score_input = input("Minimum score for screening (0-100, press Enter for default 60): ")
+        if min_score_input.strip() == "":
+            min_score = 60.0
+            break
+        else:
+            try:
+                min_score = float(min_score_input)
+                if 0 <= min_score <= 100:
+                    break
+                else:
+                    print("Invalid input. Score must be between 0 and 100.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+
+    preferences = {
+        "min_qualifying_score": min_score
+    }
+
+    return preferences  
+
 if __name__ == "__main__":
     folder = get_valid_folder("Folder containing resumes: ")
     files = collect_resume_batch(folder)
     for f in files:
         print(f)
 
-    job_description = collect_job_description()
-    print(job_description)
+    """job_description = collect_job_description()
+    print(job_description)"""
+
+    preferences = collect_screening_preferences()
+    print(preferences)
