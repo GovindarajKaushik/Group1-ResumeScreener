@@ -7,6 +7,26 @@ from docx import Document
 
 valid_resume_extensions = ('.pdf', '.docx')
 
+class JobDescription(TypedDict):
+    title: str
+    required_skills: List[str]
+    min_experience: float
+    education: str
+    preferred: List[str]
+
+class ScreeningPreferences(TypedDict):
+    min_qualifying_score: float
+
+class ResumeData(TypedDict):
+    file_name: str
+    file_path: str
+    raw_text: str
+
+class AIManagerInput(TypedDict):
+    resume: ResumeData
+    job_description: JobDescription
+    screening_preferences: ScreeningPreferences
+
 #Check for valid folder path and return it. If invalid, prompt user to re-enter.
 def get_valid_folder(prompt_text):
     while True:
