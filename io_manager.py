@@ -51,7 +51,7 @@ def collect_job_description():
 
     job_description = {
         "title": title,
-        "skills": skills,
+        "required_skills": skills,
         "min_experience": min_experience,
         "education": education,
         "preferred": preferred
@@ -96,19 +96,42 @@ def display_candidate_detail(candidate):
     print(f"Evidence: {ai_result['evidence']}")
     print(f"Confidence: {ai_result['confidence']}")
 
-if __name__ == "__main__":
-    folder = get_valid_folder("Folder containing resumes: ")
-    files = collect_resume_batch(folder)
-    for f in files:
-        print(f)
+def main_menu():
+    while True:
+        print("\n1. Screen new batch of resumes")
+        print("2. Exit program")
+        choice = input("Choose an option (1 or 2): ")
 
+        if choice == "1":
+            folder = get_valid_folder("Folder containing resumes: ")
+            files = collect_resume_batch(folder)
+
+            job_description = collect_job_description()
+            preferences = collect_screening_preferences()
+
+            print("\n--- Collected so far ---\n")
+            print(f"{len(files)} resume(s) ready to screen.")
+            print(job_description)
+            print(preferences)
+
+        elif choice == "2":
+            print("Exiting program....")
+            break
+
+        else:
+            print("\nInvalid choice. Please enter 1 or 2.")
+
+if __name__ == "__main__":
+    print("\nWELCOME TO THE RESUME SCREENING TOOL")
+    main_menu()
+
+    """test code for testing purposes"""
     """
     job_description = collect_job_description()
     print(job_description)
 
     preferences = collect_screening_preferences()
     print(preferences)
-    """
 
     fake_candidates = {
         "file_name": "resume1.pdf",
@@ -121,3 +144,4 @@ if __name__ == "__main__":
         }
     }
     display_candidate_detail(fake_candidates)
+    """
