@@ -86,6 +86,16 @@ def display_result(candidates):
     for c in sorted_candidates:
         print(c["file_name"], c["final_score"])
 
+def display_candidate_detail(candidate):
+    print(f"File: {candidate['file_name']}")
+    print(f"Score: {candidate['final_score']}")
+
+    ai_result = candidate["ai_result"]
+    print(f"Skills present: {ai_result['skills_present']}")
+    print(f"Skills missing: {ai_result['skills_missing']}")
+    print(f"Evidence: {ai_result['evidence']}")
+    print(f"Confidence: {ai_result['confidence']}")
+
 if __name__ == "__main__":
     folder = get_valid_folder("Folder containing resumes: ")
     files = collect_resume_batch(folder)
@@ -100,9 +110,14 @@ if __name__ == "__main__":
     print(preferences)
     """
 
-    fake_cadidates = [
-        {"file_name": "resume1.pdf", "final_score": 75.0},
-        {"file_name": "resume2.docx", "final_score": 92.5},
-        {"file_name": "resume3.pdf", "final_score": 85.0},
-    ]
-    display_result(fake_cadidates)
+    fake_candidates = {
+        "file_name": "resume1.pdf",
+        "final_score": 85.0,
+        "ai_result": {
+            "skills_present": ["Python", "SQL"],
+            "skills_missing": ["AWS"],
+            "evidence": "3 years Python experience at Company X",
+            "confidence": "high",
+        }
+    }
+    display_candidate_detail(fake_candidates)
