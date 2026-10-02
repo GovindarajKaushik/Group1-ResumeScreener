@@ -1,4 +1,9 @@
 import os
+import re 
+from typing import TypedDict, List, Dict, Any
+
+from pypdf import PdfReader
+from docx import Document
 
 valid_resume_extensions = ('.pdf', '.docx')
 
@@ -27,6 +32,75 @@ def collect_resume_batch(folder):
 
     print(f"Found {len(valid_files)} valid resume(s).")
     return valid_files
+
+def clean_resume_text(text):
+
+    if not text:
+        return ""
+
+    text = text.replace("\r\n", "\n")
+    text = text.replace("\r", "\n")
+
+    lines = []
+
+    for line in text.split("\n"):
+        line = line.strip()
+
+        if line:
+            lines.append(line)
+
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
+
+def extract_pdf_text(file_path):
+
+    text_parts = []
+
+    try:
+        reader = PdfReader(file_path)
+
+        for page in reader.pages:
+            page_text = page.extract_text()
+
+            if page_text:
+                text_parts.append(page_text)
+
+    except Exception as e:
+        print(f"Error reading PDF '{file_path}': {e}")
+        return ""
+
+    return "\n".join(text_parts)
+
+def extract_docx_text(file_path):
+
+    text_parts = []
+
+    try:
+        document = Document(file_path)
+
+        for paragraph in document.paragraphs:
+            if paragraph.text.strip():
+                text_parts.append(paragraph.text)
+
+        for table in document.tables:
+            for row in table.rows:
+                row_text = []
+
+                for cell in row.cells:
+                    if cell.text.strip():
+                        row_text.append(cell.text.strip())
+
+                if row_text:
+                    text_parts.append(" | ".join(row_text))
+
+    except Exception as e:
+        print(f"Error reading DOCX '{file_path}': {e}")
+        return ""
+
+    return "\n".join(text_parts)
+
 
 #Collect job description details from user input.
 def collect_job_description():
