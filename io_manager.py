@@ -2,6 +2,7 @@ import os
 
 valid_resume_extensions = ('.pdf', '.docx')
 
+#Check for valid folder path and return it. If invalid, prompt user to re-enter.
 def get_valid_folder(prompt_text):
     while True:
         path = input(prompt_text)
@@ -10,6 +11,7 @@ def get_valid_folder(prompt_text):
         else:
             print("Invalid folder path. Please try again.")
 
+#Collect all valid resume files from the specified folder.
 def collect_resume_batch(folder):
     all_files = []
     for f in os.listdir(folder):
@@ -26,7 +28,7 @@ def collect_resume_batch(folder):
     print(f"Found {len(valid_files)} valid resume(s).")
     return valid_files
 
-
+#Collect job description details from user input.
 def collect_job_description():
     title = input("Job Title: ")
     skills_input = input("Required skills (comma-separated): ")
@@ -59,6 +61,7 @@ def collect_job_description():
 
     return job_description  
 
+#Collect screening preferences from user input.
 def collect_screening_preferences():
     while True:
         min_score_input = input("Minimum score for screening (0-100, press Enter for default 60): ")
@@ -81,11 +84,13 @@ def collect_screening_preferences():
 
     return preferences  
 
+#Display the final screening results in descending order of score.
 def display_result(candidates):
     sorted_candidates = sorted(candidates, key=lambda c: c["final_score"], reverse=True)
     for c in sorted_candidates:
         print(c["file_name"], c["final_score"])
 
+#Define a function to display detailed information about a candidate
 def display_candidate_detail(candidate):
     print(f"File: {candidate['file_name']}")
     print(f"Score: {candidate['final_score']}")
@@ -96,6 +101,7 @@ def display_candidate_detail(candidate):
     print(f"Evidence: {ai_result['evidence']}")
     print(f"Confidence: {ai_result['confidence']}")
 
+#Define the main menu for user interaction
 def main_menu():
     while True:
         print("\n1. Screen new batch of resumes")
@@ -134,7 +140,7 @@ if __name__ == "__main__":
     print(preferences)
 
     fake_candidates = {
-        "file_name": "resume1.pdf",
+        "file_name": "resume1.pdf",s
         "final_score": 85.0,
         "ai_result": {
             "skills_present": ["Python", "SQL"],
