@@ -140,7 +140,7 @@ if __name__ == "__main__":
     print(preferences)
 
     fake_candidates = {
-        "file_name": "resume1.pdf",s
+        "file_name": "resume1.pdf",
         "final_score": 85.0,
         "ai_result": {
             "skills_present": ["Python", "SQL"],
