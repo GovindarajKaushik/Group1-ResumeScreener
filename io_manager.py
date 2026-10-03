@@ -1,5 +1,4 @@
 import os
-import re 
 
 from pypdf import PdfReader
 from docx import Document
@@ -47,9 +46,6 @@ def clean_resume_text(text):
 
         if line:
             lines.append(line)
-
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
 
@@ -99,6 +95,22 @@ def extract_docx_text(file_path):
         return ""
 
     return "\n".join(text_parts)
+
+def extract_resume_text(file_path):
+
+    extension = os.path.splittext(file_path)[1].lower()
+
+    if extension == ".pdf":
+        raw_text = extract_pdf_text(file_path)
+
+    elif extension == ".docx":
+        raw_text = extract_docx_text(file_path)
+
+    else:
+        print(f"Unsupported resume type: {file_path}")
+        return ""
+
+    return clean_resume_text(raw_text)
 
 
 #Collect job description details from user input.
