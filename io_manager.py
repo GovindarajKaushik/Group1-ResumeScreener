@@ -126,7 +126,7 @@ def prepare_resumes_for_ai(files):
             continue 
 
         resume = {
-            "file_name": os.path.basename(filepath),
+            "file_name": os.path.basename(file_path),
             "file_path": file_path,
             "raw_text": raw_text
         }
@@ -219,6 +219,7 @@ def main_menu():
         if choice == "1":
             folder = get_valid_folder("Folder containing resumes: ")
             files = collect_resume_batch(folder)
+            resumes = prepare_resumes_for_ai(files)
 
             job_description = collect_job_description()
             preferences = collect_screening_preferences()
@@ -227,6 +228,16 @@ def main_menu():
             print(f"{len(files)} resume(s) ready to screen.")
             print(job_description)
             print(preferences)
+
+            print("\n--- Resumes prepared for AI ---\n")
+            for r in resumes:
+                print(f"File: {r['file_name']}")
+                print(f"Path: {r['file_path']}")
+                print(f"Raw text length: "
+                      f"{len(r['raw_text'])} characters")
+                print("Raw text: ")
+                print(r["raw_text"])
+                print("\n-------------------------------")
 
         elif choice == "2":
             print("Exiting program....")
