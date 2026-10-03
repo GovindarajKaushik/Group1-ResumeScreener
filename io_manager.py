@@ -98,7 +98,7 @@ def extract_docx_text(file_path):
 
 def extract_resume_text(file_path):
 
-    extension = os.path.splittext(file_path)[1].lower()
+    extension = os.path.splitext(file_path)[1].lower()
 
     if extension == ".pdf":
         raw_text = extract_pdf_text(file_path)
@@ -111,6 +111,29 @@ def extract_resume_text(file_path):
         return ""
 
     return clean_resume_text(raw_text)
+
+def prepare_resumes_for_ai(files):
+    resumes = []
+
+    for file_path in files:
+        raw_text = extract_resume_text(file_path)
+
+        if not raw_text:
+            print(
+                f"Skipping '{os.path.basename(file_path)}': "
+                "Could not extract resume text."
+            )
+            continue 
+
+        resume = {
+            "file_name": os.path.basename(filepath),
+            "file_path": file_path,
+            "raw_text": raw_text
+        }
+
+        resumes.append(resume)
+
+    return resumes
 
 
 #Collect job description details from user input.
