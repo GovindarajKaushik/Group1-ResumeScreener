@@ -1,12 +1,9 @@
 import os
 
-from pypdf import PdfReader
-from docx import Document
+valid_resume_extensions = ('.pdf', '.docx')
 
-VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
-
+#Check for valid folder path and return it. If invalid, prompt user to re-enter.
 def get_valid_folder(prompt_text):
-    """Check for a valid folder path and return it; re-prompt if invalid."""
     while True:
         path = input(prompt_text)
         if os.path.isdir(path):
@@ -14,26 +11,25 @@ def get_valid_folder(prompt_text):
         else:
             print("Invalid folder path. Please try again.")
 
-
+#Collect all valid resume files from the specified folder.
 def collect_resume_batch(folder):
-    """Collect all valid resume files from the specified folder."""
     all_files = []
     for f in os.listdir(folder):
         all_files.append(os.path.join(folder, f))
 
     valid_files = []
     for f in all_files:
-        if not f.endswith(VALID_RESUME_EXTENSIONS):
+        if not f.endswith(valid_resume_extensions):
             print(f"Skipping '{f}': Unsupported file type (use .pdf or .docx)")
+
         else:
             valid_files.append(f)
 
     print(f"Found {len(valid_files)} valid resume(s).")
     return valid_files
 
-
 def clean_resume_text(text):
-    """Normalize line endings and strip blank/whitespace-only lines."""
+
     if not text:
         return ""
     text = text.replace("\r\n", "\n")
@@ -44,16 +40,12 @@ def clean_resume_text(text):
         line = line.strip()
         if line:
             lines.append(line)
-<<<<<<< HEAD
-
-    return "\n".join(lines)
-
-=======
     return text.strip()
->>>>>>> e274c6a154297a94704f1c9698f1940a7f29117d
 
 def extract_pdf_text(file_path):
-    """Extract plain text from a PDF file, page by page."""
+    from pypdf import PdfReader
+    reader = PdfReader(file_path)
+
     text_parts = []
     try:
         reader = PdfReader(file_path)
@@ -61,15 +53,17 @@ def extract_pdf_text(file_path):
             page_text = page.extract_text()
             if page_text:
                 text_parts.append(page_text)
+
     except Exception as e:
         print(f"Error reading PDF '{file_path}': {e}")
         return ""
 
     return "\n".join(text_parts)
 
-
 def extract_docx_text(file_path):
-    """Extract plain text from a DOCX file, including table cells."""
+    from docx import Document
+    document = Document(file_path)
+
     text_parts = []
     try:
         document = Document(file_path)
@@ -85,64 +79,53 @@ def extract_docx_text(file_path):
                         row_text.append(cell.text.strip())
                 if row_text:
                     text_parts.append(" | ".join(row_text))
+
     except Exception as e:
         print(f"Error reading DOCX '{file_path}': {e}")
         return ""
 
     return "\n".join(text_parts)
 
-
 def extract_resume_text(file_path):
-    """Extract and clean text from a resume file, based on its extension."""
+
     extension = os.path.splitext(file_path)[1].lower()
 
     if extension == ".pdf":
         raw_text = extract_pdf_text(file_path)
+
     elif extension == ".docx":
         raw_text = extract_docx_text(file_path)
+
     else:
         print(f"Unsupported resume type: {file_path}")
         return ""
 
     return clean_resume_text(raw_text)
 
-
 def prepare_resumes_for_ai(files):
-    """Extract text from each resume file, skipping any that fail."""
     resumes = []
+
     for file_path in files:
         raw_text = extract_resume_text(file_path)
 
         if not raw_text:
-<<<<<<< HEAD
-            print(f"Skipping '{os.path.basename(file_path)}': Could not extract resume text.")
-            continue
-
-=======
             print(
                 f"Skipping '{os.path.basename(file_path)}': "
                 "Could not extract resume text."
             )
             continue 
->>>>>>> e274c6a154297a94704f1c9698f1940a7f29117d
         resume = {
             "file_name": os.path.basename(file_path),
             "file_path": file_path,
-            "raw_text": raw_text,
+            "raw_text": raw_text
         }
         resumes.append(resume)
 
     return resumes
 
-<<<<<<< HEAD
-
-=======
 #Collect job description details from user input.
->>>>>>> e274c6a154297a94704f1c9698f1940a7f29117d
 def collect_job_description():
-    """Collect job description details from user input."""
     title = input("Job Title: ")
-
     skills_input = input("Required skills (comma-separated): ")
     skills = []
     for skill in skills_input.split(","):
@@ -159,22 +142,22 @@ def collect_job_description():
     education = input("Education requirements: ")
 
     preferred_input = input("Preferred skills (comma-separated): ")
-    preferred_qualifications = []
+    preferred = []
     for item in preferred_input.split(","):
-        preferred_qualifications.append(item.strip())
+        preferred.append(item.strip())
 
     job_description = {
         "title": title,
         "required_skills": skills,
         "min_experience": min_experience,
         "education": education,
-        "preferred_qualifications": preferred_qualifications,
+        "preferred": preferred
     }
-    return job_description
 
+    return job_description  
 
+#Collect screening preferences from user input.
 def collect_screening_preferences():
-    """Collect screening preferences (minimum qualifying score) from user input."""
     while True:
         min_score_input = input("Minimum score for screening (0-100, press Enter for default 60): ")
         if min_score_input.strip() == "":
@@ -191,20 +174,19 @@ def collect_screening_preferences():
                 print("Invalid input. Please enter a number.")
 
     preferences = {
-        "min_qualifying_score": min_score,
+        "min_qualifying_score": min_score
     }
-    return preferences
 
+    return preferences  
 
-def display_results(candidates):
-    """Display the final screening results in descending order of score."""
+#Display the final screening results in descending order of score.
+def display_result(candidates):
     sorted_candidates = sorted(candidates, key=lambda c: c["final_score"], reverse=True)
     for c in sorted_candidates:
         print(c["file_name"], c["final_score"])
 
-
+#Define a function to display detailed information about a candidate
 def display_candidate_detail(candidate):
-    """Display detailed information about a single candidate."""
     print(f"File: {candidate['file_name']}")
     print(f"Score: {candidate['final_score']}")
 
@@ -214,9 +196,8 @@ def display_candidate_detail(candidate):
     print(f"Evidence: {ai_result['evidence']}")
     print(f"Confidence: {ai_result['confidence']}")
 
-
+#Define the main menu for user interaction
 def main_menu():
-    """Main menu loop for user interaction."""
     while True:
         print("\n1. Screen new batch of resumes")
         print("2. Exit program")
@@ -239,8 +220,9 @@ def main_menu():
             for r in resumes:
                 print(f"File: {r['file_name']}")
                 print(f"Path: {r['file_path']}")
-                print(f"Raw text length: {len(r['raw_text'])} characters")
-                print("Raw text:")
+                print(f"Raw text length: "
+                      f"{len(r['raw_text'])} characters")
+                print("Raw text: ")
                 print(r["raw_text"])
                 print("\n-------------------------------")
 
@@ -251,7 +233,27 @@ def main_menu():
         else:
             print("\nInvalid choice. Please enter 1 or 2.")
 
-
 if __name__ == "__main__":
     print("\nWELCOME TO THE RESUME SCREENING TOOL")
     main_menu()
+
+    """test code for testing purposes"""
+    """
+    job_description = collect_job_description()
+    print(job_description)
+
+    preferences = collect_screening_preferences()
+    print(preferences)
+
+    fake_candidates = {
+        "file_name": "resume1.pdf",
+        "final_score": 85.0,
+        "ai_result": {
+            "skills_present": ["Python", "SQL"],
+            "skills_missing": ["AWS"],
+            "evidence": "3 years Python experience at Company X",
+            "confidence": "high",
+        }
+    }
+    display_candidate_detail(fake_candidates)
+    """
