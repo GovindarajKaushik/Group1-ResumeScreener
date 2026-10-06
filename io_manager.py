@@ -35,30 +35,23 @@ def clean_resume_text(text):
 
     if not text:
         return ""
-
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
 
     lines = []
-
     for line in text.split("\n"):
         line = line.strip()
-
         if line:
             lines.append(line)
-
     return text.strip()
 
 def extract_pdf_text(file_path):
 
     text_parts = []
-
     try:
         reader = PdfReader(file_path)
-
         for page in reader.pages:
             page_text = page.extract_text()
-
             if page_text:
                 text_parts.append(page_text)
 
@@ -71,10 +64,8 @@ def extract_pdf_text(file_path):
 def extract_docx_text(file_path):
 
     text_parts = []
-
     try:
         document = Document(file_path)
-
         for paragraph in document.paragraphs:
             if paragraph.text.strip():
                 text_parts.append(paragraph.text)
@@ -82,11 +73,9 @@ def extract_docx_text(file_path):
         for table in document.tables:
             for row in table.rows:
                 row_text = []
-
                 for cell in row.cells:
                     if cell.text.strip():
                         row_text.append(cell.text.strip())
-
                 if row_text:
                     text_parts.append(" | ".join(row_text))
 
