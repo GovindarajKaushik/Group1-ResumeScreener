@@ -44,7 +44,6 @@ def clean_resume_text(text):
 
 def extract_pdf_text(file_path):
     from pypdf import PdfReader
-    reader = PdfReader(file_path)
 
     text_parts = []
     try:
@@ -62,7 +61,6 @@ def extract_pdf_text(file_path):
 
 def extract_docx_text(file_path):
     from docx import Document
-    document = Document(file_path)
 
     text_parts = []
     try:
@@ -235,25 +233,3 @@ def main_menu():
 
 if __name__ == "__main__":
     print("\nWELCOME TO THE RESUME SCREENING TOOL")
-    main_menu()
-
-    """test code for testing purposes"""
-    """
-    job_description = collect_job_description()
-    print(job_description)
-
-    preferences = collect_screening_preferences()
-    print(preferences)
-
-    fake_candidates = {
-        "file_name": "resume1.pdf",
-        "final_score": 85.0,
-        "ai_result": {
-            "skills_present": ["Python", "SQL"],
-            "skills_missing": ["AWS"],
-            "evidence": "3 years Python experience at Company X",
-            "confidence": "high",
-        }
-    }
-    display_candidate_detail(fake_candidates)
-    """
