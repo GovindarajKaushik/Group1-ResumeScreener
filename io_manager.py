@@ -113,17 +113,14 @@ def prepare_resumes_for_ai(files):
                 "Could not extract resume text."
             )
             continue 
-
         resume = {
             "file_name": os.path.basename(file_path),
             "file_path": file_path,
             "raw_text": raw_text
         }
-
         resumes.append(resume)
 
     return resumes
-
 
 #Collect job description details from user input.
 def collect_job_description():
