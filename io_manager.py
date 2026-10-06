@@ -1,8 +1,5 @@
 import os
 
-from pypdf import PdfReader
-from docx import Document
-
 valid_resume_extensions = ('.pdf', '.docx')
 
 #Check for valid folder path and return it. If invalid, prompt user to re-enter.
