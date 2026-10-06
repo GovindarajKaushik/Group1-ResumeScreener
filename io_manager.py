@@ -36,7 +36,6 @@ def clean_resume_text(text):
     """Normalize line endings and strip blank/whitespace-only lines."""
     if not text:
         return ""
-
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
 
@@ -45,9 +44,13 @@ def clean_resume_text(text):
         line = line.strip()
         if line:
             lines.append(line)
+<<<<<<< HEAD
 
     return "\n".join(lines)
 
+=======
+    return text.strip()
+>>>>>>> e274c6a154297a94704f1c9698f1940a7f29117d
 
 def extract_pdf_text(file_path):
     """Extract plain text from a PDF file, page by page."""
@@ -70,7 +73,6 @@ def extract_docx_text(file_path):
     text_parts = []
     try:
         document = Document(file_path)
-
         for paragraph in document.paragraphs:
             if paragraph.text.strip():
                 text_parts.append(paragraph.text)
@@ -112,9 +114,17 @@ def prepare_resumes_for_ai(files):
         raw_text = extract_resume_text(file_path)
 
         if not raw_text:
+<<<<<<< HEAD
             print(f"Skipping '{os.path.basename(file_path)}': Could not extract resume text.")
             continue
 
+=======
+            print(
+                f"Skipping '{os.path.basename(file_path)}': "
+                "Could not extract resume text."
+            )
+            continue 
+>>>>>>> e274c6a154297a94704f1c9698f1940a7f29117d
         resume = {
             "file_name": os.path.basename(file_path),
             "file_path": file_path,
@@ -124,7 +134,11 @@ def prepare_resumes_for_ai(files):
 
     return resumes
 
+<<<<<<< HEAD
 
+=======
+#Collect job description details from user input.
+>>>>>>> e274c6a154297a94704f1c9698f1940a7f29117d
 def collect_job_description():
     """Collect job description details from user input."""
     title = input("Job Title: ")
