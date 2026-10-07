@@ -1,0 +1,23 @@
+~~~ profile ~~~
+data guy w/ 6 yrs. building stuff that moves data around. like clean data. like it a lot.
+ 
+EXPERIENCE
+ 
+Senior Data Engineer -- BrightLoop Analytics   (Mar 2021 - present)
+ * wrote ETL jobs in py (pandas, some pyspark) that load ~40M rows nightly into warehouse
+ * designed + tuned postgres and T-SQL queries, got slow report from 12 min -> 40 sec
+ * orchestration: DAGs scheduled and monitored w/ apache airflow, retries + alerting
+ * mentored 2 juniors, code reviews
+ 
+Data Analyst -- Kestrel Retail   2018-2021
+ - sql reports for finance (joins, window functions, CTEs)
+ - some python scripts to automate excel stuff
+ - dashboards in tableau
+ 
+EDUCATION
+B.Sc. Computer Science, State University of Northfield, 2018
+ 
+skills: Python, SQL, Airflow, Docker, AWS (S3, Glue), git, Tableau
+languages: English, some Spanish
+ 
+hobbies: climbing, board games

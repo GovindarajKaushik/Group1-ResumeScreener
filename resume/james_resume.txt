@@ -1,0 +1,21 @@
+OBJECTIVE
+Looking for a challenging role where i can grow. Hard working team player.
+ 
+WORK HISTORY (not in order sorry)
+ 
+2022 - 2024   Software Developer, PixelNest Studio
+Developed backend services using Python and Flask. Wrote unit tests with pytest. Built REST APIs consumed by mobile app.
+Worked on a data import tool (csv -> json) in python.  Used MongoDB.
+ 
+2012 - 2016 Database Administrator   Harbor Insurance Group
+Responsible for SQL Server databases, wrote stored procedures, SQL optimisation, nightly backups, reporting queries.
+(this was a long time ago but i did a lot of SQL here)
+ 
+2016-2019 junior dev @ Orbit Soft
+  java, some c#, bug fixing, support tickets
+ 
+Education: Diploma in Information Technology (2010)
+Online courses: Python for Everybody (2023), intro to cloud (2021)
+ 
+Other: i am 36 years old, hardworking, good communicator. References on request
+ 
