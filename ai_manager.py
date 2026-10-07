@@ -46,15 +46,11 @@ def get_client(API_URL, API_KEY):
         api_key=API_KEY
     )
 
-client = OpenAI(
-  base_url="https://openrouter.ai/api/v1",
-  api_key=load_api_client(),
-)
 
-def ai_processing(system_prompt, user_prompt):
+def ai_processing(client, system_prompt, user_prompt):
     # API call
     response = client.chat.completions.create(
-        model="nvidia/nemotron-3-ultra-550b-a55b:free",
+        model="apodex/apodex-1.1-mini:free",
         messages=[
             {
                 "role": "system",
@@ -67,14 +63,25 @@ def ai_processing(system_prompt, user_prompt):
         ],
         temperature=0
     )
+    print(response)
     return response.choices[0].message.content
 
-
-
-if __name__ == "__main__":
+def main():
     test_prompt = (
         "MUST-HAVE SKILLS: Python, SQL\n"
         "PREFERRED SKILLS: Airflow\n"
         "RESUME:\nSenior data engineer, 6 years of Python ETL jobs and Postgres tuning."
     )
-    print(ai_processing(SYSTEM_PROMPT, test_prompt))
+    try:
+        ai_api_url = "https://openrouter.ai/api/v1"
+        api_key = load_api_key()
+        client = get_client(ai_api_url, api_key)
+        result = ai_processing(client, SYSTEM_PROMPT, test_prompt)
+        print(result)
+    except ValueError as e:
+        print(f"error in ai_manager: {e}")
+
+
+
+if __name__ == "__main__":
+    main()
