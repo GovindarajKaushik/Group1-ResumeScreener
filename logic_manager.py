@@ -364,3 +364,124 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
         )
 
     return result
+
+def screen_all(json_path, job_description=None, preferences=None):
+    ai_results = load_ai_results(json_path)
+
+    # Derive the skill requirements if no job description was supplied.
+    if job_description is None:
+        required = []
+        preferred = []
+        seen = []
+
+        for candidate_name in ai_results:
+            ai_data = ai_results[candidate_name]
+
+            if not isinstance(ai_data, dict):
+                continue
+
+            if not isinstance(ai_data.get("skills"), list):
+                continue
+
+            for skill in ai_data["skills"]:
+                if not isinstance(skill, dict):
+                    continue
+
+                name = str(skill.get("name", "")).strip()
+
+                if not name or name.lower() in seen:
+                    continue
+
+                seen.append(name.lower())
+
+                if str(skill.get("category", "")).strip().lower() == "must_have":
+                    required.append(name)
+                else:
+                    preferred.append(name)
+
+        job_description = {
+            "title": "(derived from ai_results.json)",
+            "required_skills": required,
+            "preferred": preferred,
+            "min_experience": 0.0,
+            "education": "",
+        }
+
+    results = {}
+
+    for name in ai_results:
+        results[name] = evaluate_candidate(
+            ai_results[name],
+            job_description,
+            preferences,
+        )
+
+    return results
+
+def print_results(results):
+    remaining = list(results)
+
+    while len(remaining) > 0:
+        best_name = remaining[0]
+
+        # Find the next candidate to display.
+        for name in remaining:
+            candidate = results[name]
+            best = results[best_name]
+
+            if candidate["fast_track"] and not best["fast_track"]:
+                best_name = name
+
+            elif candidate["fast_track"] == best["fast_track"]:
+                if candidate["final_score"] > best["final_score"]:
+                    best_name = name
+
+        result = results[best_name]
+
+        tag = ""
+
+        if result["fast_track"]:
+            tag = " [FAST-TRACK]"
+
+        print(
+            f"{best_name}: {result['final_score']} "
+            f"({result['status']}){tag}"
+        )
+
+        if result["status"] != "RE_ENTRY":
+            print(
+                f"    skills {result['skills_score']} "
+                f"| experience {result['experience_score']:.0f} "
+                f"| education {result['education_score']:.0f} "
+                f"| confidence {result['confidence']}"
+            )
+
+        for note in result["notes"]:
+            print("    -", note)
+
+        remaining.remove(best_name)
+
+
+if __name__ == "__main__":
+    # Change to True to collect inputs through io_manager.py.
+    use_io_manager = False
+
+    if use_io_manager:
+        job_description, preferences = get_inputs()
+    else:
+        job_description = None
+        preferences = None
+
+    results = screen_all(
+        "ai_results.json",
+        job_description,
+        preferences,
+    )
+
+    print(
+        "\n--- Results from ai_results.json (",
+        len(results),
+        "candidates) ---",
+    )
+
+    print_results(results)
