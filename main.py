@@ -23,3 +23,39 @@ def load_results():
     except FileNotFoundError:
         results = {}
     return results
+
+
+def save_results(results):
+    # save the results to json file
+    try:
+        with open(RESULT_FILE_PATH, "w") as f:
+            json.dump(results, f)
+    except Exception as e:
+        print(f"Error occurred while saving results: {e}")
+
+
+# screen each resume sequentially
+def screen_resume(file_name, user_prompt):
+    # API call
+    result = process_resume_ai(user_prompt)
+
+    # load existing data (if any)
+    results = load_results()
+
+    # unique ID
+    unique_id = f"resume_{uuid.uuid4().hex}"
+
+
+    # skeleton of data
+    record = {
+        "resume_name": file_name,
+        "unique_id": unique_id,
+        "screening_result": result
+    }
+
+    results[unique_id] = record
+
+    return {
+        "resume_id": unique_id
+        **record
+    }
