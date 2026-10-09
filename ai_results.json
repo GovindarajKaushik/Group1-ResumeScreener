@@ -1,0 +1,448 @@
+{
+  "alice_strong.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "6 years building Python data pipelines"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Query tuning on Postgres and Redshift"
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "Designed nightly ETL jobs for 40 sources"
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "Orchestrated DAGs in Apache Airflow"
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Containerised services with Docker"
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "S3, Glue and Lambda in production"
+      }
+    ],
+    "experience_score": 95,
+    "experience_summary": "Six years of directly relevant data engineering work, including ownership of production pipelines.",
+    "education_score": 90,
+    "education_summary": "BSc in Computer Science, which meets the requirement.",
+    "overall_score": 94,
+    "confidence": "high",
+    "summary": "Meets every must-have and all preferred skills, all recently used. Experience and education both exceed the role requirements."
+  },
+  "ben_stale_sql.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Python services and scripts since 2019"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2018,
+        "evidence": "Wrote reporting queries at first job"
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "Maintained ETL jobs in Talend"
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2024,
+        "evidence": "Docker for local development"
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      }
+    ],
+    "experience_score": 82,
+    "experience_summary": "Solid recent Python and ETL experience, but SQL work dates from early in the career.",
+    "education_score": 78,
+    "education_summary": "Diploma in Information Technology, close to but below the degree requirement.",
+    "overall_score": 80,
+    "confidence": "high",
+    "summary": "Covers all must-have skills, though SQL has not been used recently. Missing Airflow and AWS from the preferred list."
+  },
+  "carla_missing_sql.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Built Python ingestion framework"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Led migration of legacy ETL to Spark"
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Scheduled workflows with Airflow"
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Docker-based CI runners"
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "EMR and S3 data lake"
+      }
+    ],
+    "experience_score": 88,
+    "experience_summary": "Strong data engineering background with Spark and cloud tooling.",
+    "education_score": 85,
+    "education_summary": "BEng in Software Engineering, meets the requirement.",
+    "overall_score": 84,
+    "confidence": "high",
+    "summary": "Strong profile overall but no evidence of SQL, which is a must-have. Worth a human look before rejecting."
+  },
+  "dan_low_confidence.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Python listed under skills"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "SQL listed under skills"
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "ETL listed under skills"
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Airflow listed under skills"
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Docker listed under skills"
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "AWS listed under skills"
+      }
+    ],
+    "experience_score": 96,
+    "experience_summary": "Skills are listed but job descriptions are too brief to verify depth.",
+    "education_score": 94,
+    "education_summary": "Master's degree in a related field.",
+    "overall_score": 95,
+    "confidence": "low",
+    "summary": "Resume is a short keyword list with little supporting detail. Scores may be overstated."
+  },
+  "eva_unknown_years.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": null,
+        "evidence": "Python data analysis projects"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": null,
+        "evidence": "SQL reporting"
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": null,
+        "evidence": "Built ETL scripts"
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      }
+    ],
+    "experience_score": 75,
+    "experience_summary": "Relevant experience, but the resume gives no dates for individual skills.",
+    "education_score": 70,
+    "education_summary": "Bachelor's degree in Statistics, partly relevant.",
+    "overall_score": 72,
+    "confidence": "medium",
+    "summary": "Has all must-have skills but dates are unclear. No preferred skills shown."
+  },
+  "frank_weak_match.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "Python for personal projects"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      }
+    ],
+    "experience_score": 35,
+    "experience_summary": "Mostly front-end development experience with limited data work.",
+    "education_score": 40,
+    "education_summary": "Self-taught with an unrelated diploma.",
+    "overall_score": 30,
+    "confidence": "high",
+    "summary": "Does not meet most of the requirements. Only Python is evidenced."
+  },
+  "grace_ai_disagrees.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Python automation"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "SQL queries"
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "ETL maintenance"
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": false,
+        "last_used_year": null,
+        "evidence": ""
+      }
+    ],
+    "experience_score": 55,
+    "experience_summary": "About two years of relevant experience, below the typical level for the role.",
+    "education_score": 50,
+    "education_summary": "Associate degree in an unrelated field.",
+    "overall_score": 92,
+    "confidence": "medium",
+    "summary": "Has the core skills but limited experience and education. Overall rating looks generous."
+  },
+  "henry_one_weak_criterion.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Senior Python developer"
+      },
+      {
+        "name": "SQL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Advanced SQL and query optimisation"
+      },
+      {
+        "name": "ETL",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Owned ETL platform"
+      },
+      {
+        "name": "Airflow",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Airflow in production"
+      },
+      {
+        "name": "Docker",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "Docker and Kubernetes"
+      },
+      {
+        "name": "AWS",
+        "category": "preferred",
+        "present": true,
+        "last_used_year": 2026,
+        "evidence": "AWS certified"
+      }
+    ],
+    "experience_score": 96,
+    "experience_summary": "Eight years of senior data engineering experience.",
+    "education_score": 70,
+    "education_summary": "Bootcamp certificate rather than a degree, below the stated requirement.",
+    "overall_score": 90,
+    "confidence": "high",
+    "summary": "Excellent technical match with every skill present. Education does not meet the degree requirement."
+  },
+  "invalid_missing_scores.pdf": {
+    "skills": [
+      {
+        "name": "Python",
+        "category": "must_have",
+        "present": true,
+        "last_used_year": 2025,
+        "evidence": "Python"
+      }
+    ],
+    "confidence": "high"
+  },
+  "invalid_empty_skills.pdf": {
+    "skills": [],
+    "experience_score": 50,
+    "experience_summary": "",
+    "education_score": 50,
+    "education_summary": "",
+    "overall_score": 50,
+    "confidence": "medium",
+    "summary": ""
+  }
+}
