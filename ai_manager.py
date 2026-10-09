@@ -1,9 +1,10 @@
+import json
 import os
 from os import getenv
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Should system prompt be here or in .env?
+# system prompt
 SYSTEM_PROMPT = """You are an expert recruiter assisting with resume screening.
 Compare the candidate resume with the job requirements using semantic understanding: treat equivalent skills described with different wording as a match (e.g. "built REST services" satisfies "API development").
 Base every judgement ONLY on the resume text. Never consider or infer personal attributes such as name, age, gender, ethnicity or marital status.
@@ -63,8 +64,20 @@ def ai_processing(client, system_prompt, user_prompt):
         ],
         temperature=0
     )
-    print(response)
-    return response.choices[0].message.content
+
+    # save valid output to variable
+    content = response.choices[0].message.content
+
+    if not content:
+        raise ValueError("The API returned an empty response")
+
+    # Check if AI returned valid json output
+    try:
+        result = json.loads(content)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON response from AI model: {e}")
+    return result
+
 
 def main():
     test_prompt = (
