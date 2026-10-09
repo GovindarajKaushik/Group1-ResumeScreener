@@ -54,8 +54,35 @@ def screen_resume(file_name, user_prompt):
     }
 
     results[unique_id] = record
+    # Save results
+    save_results(results)
 
     return {
-        "resume_id": unique_id
-        **record
+        "resume_id": unique_id,
+        "record": record
     }
+
+
+
+def main():
+
+    # Example usage
+    test_prompt = (
+        "MUST-HAVE SKILLS: Python, SQL\n"
+        "PREFERRED SKILLS: Airflow\n"
+        "RESUME:\n"
+        "Senior data engineer, 6 years of Python ETL jobs and Postgres tuning."
+    )
+
+    try:
+         result = screen_resume("test_resume.pdf", test_prompt)
+
+         print("screening completed successfully.")
+         print(f"Resume ID: {result['resume_id']}")
+         print(json.dumps(result, indent=2, ensure_ascii=False))
+    except (ValueError, Exception) as e:
+        print(f"Error occurred: {e}")
+
+
+if __name__ == "__main__":
+    main()
