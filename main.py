@@ -45,12 +45,23 @@ def screen_resume(file_name, user_prompt):
     # unique ID
     unique_id = f"resume_{uuid.uuid4().hex}"
 
+    try:
+        screening_result = process_resume_ai(user_prompt)
+        status = "success"
+        error = None
+    except ValueError as e:
+        screening_result = None
+        status = "error"
+        error = str(e)
 
     # skeleton of data
     record = {
         "resume_name": file_name,
         "unique_id": unique_id,
-        "screening_result": result
+        "status": status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "screening_result": result,
+        "error": error
     }
 
     results[unique_id] = record

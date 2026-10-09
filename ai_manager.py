@@ -86,5 +86,5 @@ def process_resume_ai(user_prompt):
         client = get_client(ai_api_url, api_key)
         result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
         return result
-    except ValueError as e:
+    except Exception as e:
         raise ValueError(f"Error in ai_manager: {e}")
