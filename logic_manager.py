@@ -62,3 +62,98 @@ def load_ai_results(json_path):
         return {}
 
     return ai_results
+
+def extract_ai_fields(raw):
+    if not isinstance(raw, dict):
+        return None
+
+    # Check that all required fields exist.
+    for key in REQUIRED_KEYS:
+        if key not in raw:
+            return None
+
+    if not isinstance(raw["skills"], list):
+        return None
+
+    if len(raw["skills"]) == 0:
+        return None
+
+    ai = {}
+
+    # Convert scores to numbers and keep them between 0 and 100.
+    score_fields = [
+        "experience_score",
+        "education_score",
+        "overall_score",
+    ]
+
+    for field in score_fields:
+        try:
+            score = float(raw[field])
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+        # Reject invalid numeric values such as infinity and NaN.
+        if not (float("-inf") < score < float("inf")):
+            return None
+
+        if score < 0:
+            score = 0.0
+        elif score > 100:
+            score = 100.0
+
+        ai[field] = score
+
+    ai["skills"] = []
+    current_year = date.today().year
+
+    # Clean each skill's information.
+    for skill in raw["skills"]:
+        if not isinstance(skill, dict):
+            continue
+
+        cleaned_skill = {}
+        cleaned_skill["name"] = str(skill.get("name", "")).strip()
+        cleaned_skill["category"] = str(
+            skill.get("category", "")
+        ).strip().lower()
+
+        cleaned_skill["present"] = False
+
+        if str(skill.get("present")).lower() == "true":
+            cleaned_skill["present"] = True
+
+        cleaned_skill["last_used_year"] = None
+
+        if cleaned_skill["present"]:
+            try:
+                year = int(skill.get("last_used_year"))
+
+                if year >= 1950 and year <= current_year:
+                    cleaned_skill["last_used_year"] = year
+
+            except (TypeError, ValueError, OverflowError):
+                cleaned_skill["last_used_year"] = None
+
+        evidence = skill.get("evidence", "")
+
+        if evidence is None:
+            evidence = ""
+
+        cleaned_skill["evidence"] = str(evidence).strip()
+        ai["skills"].append(cleaned_skill)
+
+    if len(ai["skills"]) == 0:
+        return None
+
+    confidence = str(raw["confidence"]).strip().lower()
+
+    if confidence not in VALID_CONFIDENCE:
+        confidence = "low"
+
+    ai["confidence"] = confidence
+
+    for field in ["experience_summary", "education_summary", "summary"]:
+        ai[field] = str(raw.get(field, "")).strip()
+
+    return ai
