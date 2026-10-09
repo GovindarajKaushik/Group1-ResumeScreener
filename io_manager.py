@@ -1,12 +1,12 @@
-import os
+from pathlib import Path
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
 def get_valid_folder(prompt_text):
     """Check for a valid folder path and return it; re-prompt if invalid."""
     while True:
-        path = input(prompt_text)
-        if os.path.isdir(path):
+        path = Path(input(prompt_text).strip())
+        if path.isdir(path):
             return path
         else:
             print("Invalid folder path. Please try again.")
@@ -14,8 +14,9 @@ def get_valid_folder(prompt_text):
 def collect_resume_batch(folder):
     """Collect all valid resume files from the specified folder."""
     all_files = []
-    for f in os.listdir(folder):
-        all_files.append(os.path.join(folder, f))
+    folder = Path(folder)
+    for f in folder.listdir():
+        all_files.append(Path.join(folder, f))
 
     valid_files = []
     for f in all_files:
@@ -49,7 +50,7 @@ def extract_pdf_text(file_path):
 
     text_parts = []
     try:
-        reader = PdfReader(file_path)
+        reader = PdfReader(str(file_path))
         for page in reader.pages:
             page_text = page.extract_text()
             if page_text:
@@ -67,7 +68,7 @@ def extract_docx_text(file_path):
 
     text_parts = []
     try:
-        document = Document(file_path)
+        document = Document(str(file_path))
         for paragraph in document.paragraphs:
             if paragraph.text.strip():
                 text_parts.append(paragraph.text)
