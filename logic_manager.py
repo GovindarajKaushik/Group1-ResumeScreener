@@ -30,7 +30,7 @@ REQUIRED_KEYS = [
     "confidence",
 ]
 
-#
+
 def get_inputs():
     from io_manager import collect_job_description, collect_screening_preferences
 
@@ -38,3 +38,27 @@ def get_inputs():
     preferences = collect_screening_preferences()
 
     return job_description, preferences
+
+
+def load_ai_results(json_path):
+    try:
+        with open(json_path, "r", encoding="utf-8") as file:
+            ai_results = json.load(file)
+
+    except OSError:
+        print("Could not open:", json_path)
+        return {}
+
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        print("The file does not contain valid UTF-8 JSON.")
+        return {}
+
+    if not isinstance(ai_results, dict):
+        print("Expected a dictionary of candidate names and AI results.")
+        return {}
+
+    if "skills" in ai_results and isinstance(ai_results["skills"], list):
+        print("Put each candidate's AI result under their filename.")
+        return {}
+
+    return ai_results
