@@ -157,3 +157,210 @@ def extract_ai_fields(raw):
         ai[field] = str(raw.get(field, "")).strip()
 
     return ai
+
+
+def evaluate_candidate(ai_response, job_description, preferences=None):
+    rules = DEFAULT_RULES.copy()
+
+    if preferences is None:
+        preferences = {}
+
+    rules["min_score"] = preferences.get(
+        "min_qualifying_score", rules["min_score"]
+    )
+
+    result = {
+        "final_score": 0.0,
+        "skills_score": 0.0,
+        "experience_score": 0.0,
+        "education_score": 0.0,
+        "ai_overall_score": 0.0,
+        "confidence": "",
+        "status": "",
+        "fast_track": False,
+        "missing_must_haves": [],
+        "stale_skills": [],
+        "skill_details": [],
+        "experience_summary": "",
+        "education_summary": "",
+        "summary": "",
+        "notes": [],
+    }
+
+    ai = extract_ai_fields(ai_response)
+
+    if ai is None:
+        result["status"] = "RE_ENTRY"
+        result["notes"].append(
+            "AI output missing/invalid; resume marked for re-entry"
+        )
+        return result
+
+    # Match the job requirements with the candidate's skills.
+    skills = []
+
+    for category in ["must_have", "preferred"]:
+        if category == "must_have":
+            names = job_description["required_skills"]
+        else:
+            names = job_description["preferred"]
+
+        for name in names:
+            if name == "":
+                continue
+
+            job_skill = {
+                "name": name,
+                "category": category,
+                "present": False,
+                "last_used_year": None,
+                "evidence": "",
+            }
+
+            found = None
+
+            for ai_skill in ai["skills"]:
+                if ai_skill["name"].lower() == name.strip().lower():
+                    found = ai_skill
+
+            if found is not None:
+                job_skill["present"] = found["present"]
+                job_skill["last_used_year"] = found["last_used_year"]
+                job_skill["evidence"] = found["evidence"]
+
+                if found["category"] != "" and found["category"] != category:
+                    result["notes"].append(
+                        f"AI labelled '{name}' as {found['category']}; "
+                        f"job description says {category}"
+                    )
+
+            skills.append(job_skill)
+
+    # Calculate skill points.
+    total = 0.0
+    earned = 0.0
+    missing = []
+    stale = []
+    has_must_haves = False
+    unknown_dates = False
+    today_year = date.today().year
+
+    for skill in skills:
+        if skill["category"] == "must_have":
+            weight = 1.0
+            has_must_haves = True
+
+            if not skill["present"]:
+                missing.append(skill["name"])
+        else:
+            weight = rules["preferred_weight"]
+
+        total += weight
+
+        if skill["present"]:
+            multiplier = 1.0
+            last_year = skill["last_used_year"]
+
+            if last_year is None:
+                unknown_dates = True
+            elif today_year - last_year >= rules["recency_years"]:
+                multiplier = rules["recency_factor"]
+
+            if multiplier < 1.0:
+                stale.append(skill["name"])
+
+            earned += weight * multiplier
+
+    skills_score = 0.0
+
+    if total > 0:
+        skills_score = 100 * earned / total
+
+    # Combine skills, experience and education scores.
+    computed = (
+        skills_score * DEFAULT_WEIGHTS["skills"]
+        + ai["experience_score"] * DEFAULT_WEIGHTS["experience"]
+        + ai["education_score"] * DEFAULT_WEIGHTS["education"]
+    )
+
+    final = computed
+
+    # Add the bonus or apply the missing-skill score cap.
+    if has_must_haves and len(missing) == 0:
+        final += rules["must_have_bonus"]
+        result["notes"].append(
+            f"Must-have bonus +{rules['must_have_bonus']}"
+        )
+
+    elif len(missing) > 0:
+        if final > rules["must_have_missing_cap"]:
+            final = rules["must_have_missing_cap"]
+
+        result["notes"].append(
+            f"Missing must-haves: {', '.join(missing)}; score capped"
+        )
+
+    if stale:
+        result["notes"].append(
+            f"Recency reduction applied: {', '.join(stale)}"
+        )
+
+    if unknown_dates:
+        result["notes"].append(
+            "Some skill dates unknown; no recency penalty applied"
+        )
+
+    # Keep the final score between 0 and 100.
+    if final > 100:
+        final = 100
+    elif final < 0:
+        final = 0
+
+    final = round(final, 1)
+
+    # Compare our calculated score with the AI's overall score.
+    if abs(ai["overall_score"] - computed) >= rules["ai_disagree_gap"]:
+        result["notes"].append(
+            f"AI overall {ai['overall_score']:.0f} differs from "
+            f"computed {computed:.0f}; recommend human review"
+        )
+
+    # Store the results.
+    result["final_score"] = final
+    result["skills_score"] = round(skills_score, 1)
+    result["experience_score"] = ai["experience_score"]
+    result["education_score"] = ai["education_score"]
+    result["ai_overall_score"] = ai["overall_score"]
+    result["confidence"] = ai["confidence"]
+    result["missing_must_haves"] = missing
+    result["stale_skills"] = stale
+    result["skill_details"] = skills
+    result["experience_summary"] = ai["experience_summary"]
+    result["education_summary"] = ai["education_summary"]
+    result["summary"] = ai["summary"]
+
+    # Every condition must be met to receive fast-track status.
+    if (
+        final >= rules["fast_track_score"]
+        and len(missing) == 0
+        and skills_score >= rules["fast_track_min_criterion"]
+        and ai["experience_score"] >= rules["fast_track_min_criterion"]
+        and ai["education_score"] >= rules["fast_track_min_criterion"]
+        and ai["confidence"] != "low"
+    ):
+        result["fast_track"] = True
+
+    if final >= rules["min_score"]:
+        result["status"] = "SHORTLIST"
+    else:
+        result["status"] = "SECONDARY_REVIEW"
+
+    if result["fast_track"]:
+        result["notes"].append("Fast-track tag")
+
+    if ai["confidence"] == "low":
+        result["notes"].append(
+            "Low AI confidence: recommend human review"
+        )
+
+    return result
