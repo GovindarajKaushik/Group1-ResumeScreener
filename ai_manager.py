@@ -78,23 +78,13 @@ def ai_processing(client, system_prompt, user_prompt):
         raise ValueError(f"Invalid JSON response from AI model: {e}")
     return result
 
-
-def main():
-    test_prompt = (
-        "MUST-HAVE SKILLS: Python, SQL\n"
-        "PREFERRED SKILLS: Airflow\n"
-        "RESUME:\nSenior data engineer, 6 years of Python ETL jobs and Postgres tuning."
-    )
+# main function for API
+def process_resume_ai(user_prompt):
     try:
         ai_api_url = "https://openrouter.ai/api/v1"
         api_key = load_api_key()
         client = get_client(ai_api_url, api_key)
-        result = ai_processing(client, SYSTEM_PROMPT, test_prompt)
-        print(result)
+        result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
+        return result
     except ValueError as e:
-        print(f"error in ai_manager: {e}")
-
-
-
-if __name__ == "__main__":
-    main()
+        raise ValueError(f"Error in ai_manager: {e}")
