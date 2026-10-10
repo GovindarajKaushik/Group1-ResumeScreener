@@ -4,7 +4,9 @@ import uuid
 from datetime import datetime, timezone
 
 # import main function from ai_manager
-from ai_manager import process_resume_ai, validate_ai_result
+from ai_manager import process_resume_ai, validate_ai_result, build_user_prompt
+# import io_manager
+from iomanager import collect_inputs
 
 
 
@@ -40,7 +42,7 @@ def save_results(results):
         print(f"Error occurred while saving results: {e}")
 
 
-# screen each resume sequentially
+# screen each resume sequentially and saves it in resume_results.json
 def screen_resume(file_name, user_prompt):
 
     # unique ID
@@ -84,21 +86,39 @@ def screen_resume(file_name, user_prompt):
 def main():
 
     # Example usage
-    test_prompt = (
-        "MUST-HAVE SKILLS: Python, SQL\n"
-        "PREFERRED SKILLS: Airflow\n"
-        "RESUME:\n"
-        "Senior data engineer, 6 years of Python ETL jobs and Postgres tuning."
-    )
+    # test_prompt = (
+    #     "MUST-HAVE SKILLS: Python, SQL\n"
+    #     "PREFERRED SKILLS: Airflow\n"
+    #     "RESUME:\n"
+    #     "Senior data engineer, 6 years of Python ETL jobs and Postgres tuning."
+    # )
 
-    try:
-         result = screen_resume("test_resume.pdf", test_prompt)
+    # call function from IO manager to collect data for API
+    resumes, jobs_description, preferences = collect_inputs()
 
-         print("screening completed successfully.")
-         print(f"Resume ID: {result['resume_id']}")
-         print(json.dumps(result, indent=2, ensure_ascii=False))
-    except (ValueError, Exception) as e:
-        print(f"Error occurred: {e}")
+    if not resumes:
+        print("No valid resumes to screen.")
+        return
+
+    success = 0
+    failed = 0
+    for resume in resumes:
+        try:
+            user_prompt = build_user_prompt(jobs_description, resume["raw_text"])
+            result = screen_resume(resume["file_name"], user_prompt)
+            status = result["record"]["status"]
+            print(f"Processed {resume['file_name']}: {status}")
+            if status == "success":
+                success += 1
+            else:
+                failed += 1
+        except Exception as e:
+            print(f"Unexpected error on {resume['file_name']}: {e}")
+            failed += 1
+
+    print(f"\nDone. {success} succeeded, {failed} failed.")
+    print(f"Results saved to {RESULT_FILE_PATH}")
+
 
 
 if __name__ == "__main__":
