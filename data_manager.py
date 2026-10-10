@@ -92,3 +92,12 @@ def bool_to_text(value):
     if str(value).lower() in ["true", "yes"]:
         return "yes"
     return "no"
+
+def create_file_if_missing(path, fields):
+    try:
+        with open(path, "r", newline="", encoding="utf-8") as file:
+            pass
+    except FileNotFoundError:
+        with open(path, "w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=fields)
+            writer.writeheader()
