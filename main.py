@@ -29,18 +29,13 @@ def save_results(results):
     # save the results to json file
     try:
         with open(RESULT_FILE_PATH, "w") as f:
-            json.dump(results, f)
+            json.dump(results, f, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f"Error occurred while saving results: {e}")
 
 
 # screen each resume sequentially
 def screen_resume(file_name, user_prompt):
-    # API call
-    result = process_resume_ai(user_prompt)
-
-    # load existing data (if any)
-    results = load_results()
 
     # unique ID
     unique_id = f"resume_{uuid.uuid4().hex}"
@@ -49,7 +44,7 @@ def screen_resume(file_name, user_prompt):
         screening_result = process_resume_ai(user_prompt)
         status = "success"
         error = None
-    except ValueError as e:
+    except Exception as e:
         screening_result = None
         status = "error"
         error = str(e)
@@ -60,13 +55,15 @@ def screen_resume(file_name, user_prompt):
         "unique_id": unique_id,
         "status": status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "screening_result": result,
+        "screening_result": screening_result,
         "error": error
     }
 
-    results[unique_id] = record
+    # load existing data (if any)
+    current_results = load_results()
+    current_results[unique_id] = record
     # Save results
-    save_results(results)
+    save_results(current_results)
 
     return {
         "resume_id": unique_id,
