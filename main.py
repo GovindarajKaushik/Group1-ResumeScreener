@@ -1,6 +1,6 @@
 import json
 import uuid
-
+import os
 from datetime import datetime, timezone
 
 # import main function from ai_manager
@@ -34,10 +34,14 @@ def load_results():
 
 
 def save_results(results):
+    # create a tmp file first
+    tmp_path = RESULT_FILE_PATH + ".tmp"
     # save the results to json file
     try:
-        with open(RESULT_FILE_PATH, "w") as f:
+        with open(tmp_path, "w") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
+        # Atomically replace the original file
+        os.replace(tmp_path, RESULT_FILE_PATH)
     except Exception as e:
         print(f"Error occurred while saving results: {e}")
 
@@ -102,6 +106,7 @@ def main():
 
     success = 0
     failed = 0
+    # processing each resume
     for resume in resumes:
         try:
             user_prompt = build_user_prompt(jobs_description, resume["raw_text"])
