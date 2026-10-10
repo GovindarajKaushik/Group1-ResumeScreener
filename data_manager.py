@@ -59,3 +59,36 @@ AI_RESULTS_FIELD = [
 ]
 
 SEPARATOR = " | "
+
+def get_timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+def list_to_text(items):
+    texts = []
+    for item in items:
+        texts.append(str(item))
+    return SEPARATOR.join(texts)
+
+def text_to_list(text):
+    items = []
+    if text:
+        for part in text.split(SEPARATOR):
+            if part:
+                items.append(part)
+    return items
+
+def text_to_number(text, as_int=False):
+    if text == "" or text is None:
+        return None
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    if as_int:
+        return int(number)
+    return number
+
+def bool_to_text(value):
+    if str(value).lower() in ["true", "yes"]:
+        return "yes"
+    return "no"
