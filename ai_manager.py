@@ -32,6 +32,7 @@ The "skills" list must contain one entry for EVERY must-have and preferred skill
 load_dotenv()
 
 
+# load openrouter api key from env
 def load_api_key():
     try:
         api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -41,13 +42,74 @@ def load_api_key():
     except Exception as e:
         raise ValueError(f"Error loading API client: {e}")
 
-def get_client(API_URL, API_KEY):
+# get openAI client
+def get_client(api_url, api_key):
     return OpenAI(
-        base_url=API_URL,
-        api_key=API_KEY
+        base_url=api_url,
+        api_key=api_key
+    )
+
+# build the user prompt
+def build_user_prompt(job_description, resume_text):
+    return (
+        "JOB TITLE:\n" + str(job_description.get("title", "")) + "\n\n"
+        "MUST-HAVE SKILLS:\n" + ", ".join(job_description.get("required_skills", [])) + "\n\n"
+        "PREFERRED SKILLS:\n" + ", ".join(job_description.get("preferred", [])) + "\n\n"
+        "MINIMUM YEARS OF EXPERIENCE:\n" + str(job_description.get("min_experience", 0)) + "\n\n"
+        "EDUCATION REQUIREMENT:\n" + str(job_description.get("education", "")) + "\n\n"
+        "ANONYMISED RESUME TEXT:\n" + resume_text
     )
 
 
+# validate json data and check right values
+def validate_ai_result(raw_response):
+    """Parse the AI response and check essential fields."""
+    try:
+        data = json.loads(raw_response)
+    except (json.JSONDecodeError, TypeError):
+        raise ValueError("AI returned invalid JSON.")
+
+    if not isinstance(data, dict):
+        raise ValueError("AI response must be a JSON object.")
+
+    required_fields = [
+        "skills",
+        "experience_score",
+        "education_score",
+        "overall_score",
+        "confidence",
+    ]
+
+    for field in required_fields:
+        if field not in data:
+            raise ValueError(f"Missing required field: {field}")
+
+    if not isinstance(data["skills"], list):
+        raise ValueError("'skills' must be a list.")
+
+    for field in (
+        "experience_score",
+        "education_score",
+        "overall_score",
+    ):
+        score = data[field]
+
+        if (
+            isinstance(score, bool)
+            or not isinstance(score, (int, float))
+            or not 0 <= score <= 100
+        ):
+            raise ValueError(
+                f"'{field}' must be a number from 0 to 100."
+            )
+
+    if data["confidence"] not in ("low", "medium", "high"):
+        raise ValueError("Invalid confidence value.")
+
+    return data
+
+
+# make the api call
 def ai_processing(client, system_prompt, user_prompt):
     # API call
     response = client.chat.completions.create(
@@ -78,13 +140,16 @@ def ai_processing(client, system_prompt, user_prompt):
         raise ValueError(f"Invalid JSON response from AI model: {e}")
     return result
 
+
+
+
 # main function for API
-def process_resume_ai(user_prompt):
-    try:
-        ai_api_url = "https://openrouter.ai/api/v1"
-        api_key = load_api_key()
-        client = get_client(ai_api_url, api_key)
-        result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
-        return result
-    except Exception as e:
-        raise ValueError(f"Error in ai_manager: {e}")
+# def process_resume_ai(user_prompt):
+#     try:
+#         ai_api_url = "https://openrouter.ai/api/v1"
+#         api_key = load_api_key()
+#         client = get_client(ai_api_url, api_key)
+#         result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
+#         return result
+#     except Exception as e:
+#         raise ValueError(f"Error in ai_manager: {e}")
