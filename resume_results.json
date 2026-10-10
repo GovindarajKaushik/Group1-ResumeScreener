@@ -1,1 +1,41 @@
-{"resume_530d4574d83649429d965841715ceea4": {"resume_name": "test_resume.pdf", "unique_id": "resume_530d4574d83649429d965841715ceea4", "screening_result": {"skills": [{"name": "Python", "category": "must_have", "present": true, "last_used_year": null, "evidence": "6 years of Python ETL jobs"}, {"name": "SQL", "category": "must_have", "present": true, "last_used_year": null, "evidence": "Postgres tuning"}, {"name": "Airflow", "category": "preferred", "present": false, "last_used_year": null, "evidence": ""}], "experience_score": 90, "experience_summary": "Candidate has 6 years of experience as a Senior Data Engineer with strong Python ETL and database tuning skills matching both must-have requirements.", "education_score": 0, "education_summary": "No education information is provided in the resume text, so it cannot be evaluated.", "overall_score": 85, "confidence": "high", "summary": "The candidate meets both must-have skills (Python and SQL via Postgres) with 6 years of relevant senior-level experience. However, the preferred Airflow skill is not mentioned, and no education details are provided in the limited resume text. This is a strong match on core technical requirements."}}, "resume_b8aa6b44627d44c6aff387fac41313b1": {"resume_name": "test_resume.pdf", "unique_id": "resume_b8aa6b44627d44c6aff387fac41313b1", "status": "success", "timestamp": "2026-10-09T17:18:30.837161+00:00", "screening_result": {"skills": [{"name": "Python", "category": "must_have", "present": true, "last_used_year": null, "evidence": "6 years of Python ETL jobs"}, {"name": "SQL", "category": "must_have", "present": true, "last_used_year": null, "evidence": "Postgres tuning"}, {"name": "Airflow", "category": "preferred", "present": false, "last_used_year": null, "evidence": ""}], "experience_score": 85, "experience_summary": "Candidate has 6 years of senior data engineering experience with Python ETL jobs, directly aligning with core role requirements.", "education_score": 0, "education_summary": "Resume does not list any educational background, degree, or institution information.", "overall_score": 80, "confidence": "low", "summary": "The candidate meets the primary requirement of Python experience with six years in data engineering, and Postgres tuning implies SQL proficiency. Airflow is not mentioned in the resume, though it is only a preferred skill. Education details are absent, limiting the confidence of this assessment."}, "error": null}}
+{
+  "resume_327b2e95cd3c4c1ba0e890a4f17427f7": {
+    "resume_name": "test_resume.pdf",
+    "unique_id": "resume_327b2e95cd3c4c1ba0e890a4f17427f7",
+    "status": "success",
+    "timestamp": "2026-10-10T12:39:31.408840+00:00",
+    "screening_result": {
+      "skills": [
+        {
+          "name": "Python",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": null,
+          "evidence": "6 years of Python ETL jobs"
+        },
+        {
+          "name": "SQL",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": null,
+          "evidence": "Postgres tuning"
+        },
+        {
+          "name": "Airflow",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 75,
+      "experience_summary": "The candidate has 6 years of relevant experience as a senior data engineer with explicit Python ETL skills and database tuning that implies SQL proficiency. Depth regarding specific projects or recent years of activity is not detailed in the text.",
+      "education_score": 0,
+      "education_summary": "No education history or degree information is provided in the resume text.",
+      "overall_score": 70,
+      "confidence": "medium",
+      "summary": "The candidate demonstrates strong alignment with the core must-have requirements, explicitly listing six years of Python experience and database tuning that implies SQL proficiency. However, the resume does not mention Airflow or other preferred technologies, and provides no details on education or specific dates of employment. Further verification is recommended to confirm the depth of their SQL and orchestration experience before advancing."
+    },
+    "error": null
+  }
+}

@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from os import getenv
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -46,7 +47,11 @@ def load_api_key():
 def get_client(api_url, api_key):
     return OpenAI(
         base_url=api_url,
-        api_key=api_key
+        api_key=api_key,
+        # max time before stopping
+        timeout=60,
+        # auto retry 429 (rate limit errors) and 5xx (server errors)
+        max_retries=3
     )
 
 # build the user prompt
@@ -110,46 +115,51 @@ def validate_ai_result(raw_response):
 
 
 # make the api call
-def ai_processing(client, system_prompt, user_prompt):
-    # API call
-    response = client.chat.completions.create(
-        model="apodex/apodex-1.1-mini:free",
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": user_prompt
-            }
-        ],
-        temperature=0
-    )
+def ai_processing(client, system_prompt, user_prompt, attempts=3):
+    last_error = None
 
-    # save valid output to variable
-    content = response.choices[0].message.content
+    for attempt in range(1, attempts + 1):
+        try:
+            response = client.chat.completions.create(
+                model="apodex/apodex-1.1-mini:free",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0,
+            )
 
-    if not content:
-        raise ValueError("The API returned an empty response")
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("The API returned an empty response")
 
-    # Check if AI returned valid json output
-    try:
-        result = json.loads(content)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON response from AI model: {e}")
-    return result
+            return json.loads(content)
+
+        except (OpenAI.AuthenticationError, OpenAI.PermissionDeniedError,
+                OpenAI.BadRequestError, OpenAI.NotFoundError) as e:
+            # permanent errors: retrying won't help
+            raise ValueError(f"Non-retryable API error: {e}")
+
+        except (OpenAI.RateLimitError, OpenAI.APITimeoutError,
+                OpenAI.APIConnectionError, OpenAI.InternalServerError,
+                json.JSONDecodeError, ValueError) as e:
+            # transient errors or bad model output: retry
+            last_error = e
+            if attempt < attempts:
+                time.sleep(2 ** attempt)  # waits 2s, then 4s
+
+    raise ValueError(f"Failed after {attempts} attempts: {last_error}")
 
 
 
 
 # main function for API
-# def process_resume_ai(user_prompt):
-#     try:
-#         ai_api_url = "https://openrouter.ai/api/v1"
-#         api_key = load_api_key()
-#         client = get_client(ai_api_url, api_key)
-#         result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
-#         return result
-#     except Exception as e:
-#         raise ValueError(f"Error in ai_manager: {e}")
+def process_resume_ai(user_prompt):
+    try:
+        ai_api_url = "https://openrouter.ai/api/v1"
+        api_key = load_api_key()
+        client = get_client(ai_api_url, api_key)
+        result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
+        return result
+    except Exception as e:
+        raise ValueError(f"Error in ai_manager: {e}")

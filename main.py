@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 # import main function from ai_manager
-from ai_manager import process_resume_ai
+from ai_manager import process_resume_ai, validate_ai_result
 
 
 
@@ -12,16 +12,22 @@ from ai_manager import process_resume_ai
 RESULT_FILE_PATH = "resume_results.json"
 
 
+# load existing results
 def load_results():
-    # load existing results from the JSON file or create empty dict
     try:
         with open(RESULT_FILE_PATH, "r") as f:
-            results = json.load(f)
-
-            if not isinstance(results, dict):
-                raise ValueError("Invalid results format in JSON file")
+            content = f.read().strip()
+            # if empty
+            if not content:          
+                return {}
+            results = json.loads(content)
     except FileNotFoundError:
-        results = {}
+        return {}
+    except json.JSONDecodeError:
+        raise ValueError(f"{RESULT_FILE_PATH} contains invalid JSON")
+
+    if not isinstance(results, dict):
+        raise ValueError("Invalid results format in JSON file")
     return results
 
 
@@ -41,11 +47,14 @@ def screen_resume(file_name, user_prompt):
     unique_id = f"resume_{uuid.uuid4().hex}"
 
     try:
+        # calls the API using function from ai_manager
         screening_result = process_resume_ai(user_prompt)
+        # validates the raw response
+        validated_screening_result = validate_ai_result(json.dumps(screening_result))
         status = "success"
         error = None
     except Exception as e:
-        screening_result = None
+        validated_screening_result = None
         status = "error"
         error = str(e)
 
@@ -55,7 +64,7 @@ def screen_resume(file_name, user_prompt):
         "unique_id": unique_id,
         "status": status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "screening_result": screening_result,
+        "screening_result": validated_screening_result,
         "error": error
     }
 
