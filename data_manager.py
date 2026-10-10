@@ -101,3 +101,23 @@ def create_file_if_missing(path, fields):
         with open(path, "w", newline="", encoding="utf-8") as file:
             writer = csv.DictWriter(file, fieldnames=fields)
             writer.writeheader()
+
+def read_csv(path, fields):
+    create_file_if_missing(path, fields)
+    rows = []
+    with open(path, "r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            rows.append(row)
+    return rows
+
+def write_csv(path, fields, rows):
+    try:
+        with open(path, "w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=fields)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
+    except OSError as error:
+        print(f"Error saving '{path}': {error}")
+        raise
