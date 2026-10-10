@@ -10,17 +10,20 @@ candidate_fields = [
     "file_name"
     "file_path"
     "final_score",
-    "ai_score",
+    "skills_score",
+    "ai_overall_score"
     "experience_score",
     "education_score",
-    "match_label",
+    "status",
     "confidence",
+    "fast_track",
     "skills_present",
     "skills_missing",
+    "missing_must_haves",
+    "stale_skills",
     "evidence",
     "summary",
-    "tags",
-    "status",
+    "notes",
     "recruiter_decision",
     "feedback_rating",
     "created_at",
@@ -28,10 +31,22 @@ candidate_fields = [
 ]
 
 LOG_FIELDS = ["timestamp", "action", "candidate_id", "details"]
-VALID_STATUSES = ["ranked", "secondary_review", "needs_reentry"]
+VALID_STATUSES = ["SHORTLISTED", "SECONDARY_REVIEW", "RE_ENTRY"]
 VALID_DECISIONS = ["pending", "shortlisted", "rejected"]
-LIST_FIELDS = ["skills_present", "skills_missing", "tags"]
-NUMBER_FIELDS = ["final_score", "ai_score", "experience_score", "education_score"]
+LIST_FIELDS = [
+    "skills_present", 
+    "skills_missing",
+    "missing_must_haves",
+    "stale_skills", 
+    "notes",
+]
+NUMBER_FIELDS = [
+    "final_score", 
+    "skills_score", 
+    "experience_score", 
+    "education_score",
+    "ai_overall_score",
+    ]
 
 AI_RESULTS_FIELD = [
     "skills_present",
@@ -43,4 +58,4 @@ AI_RESULTS_FIELD = [
     "education_score",
 ]
 
-SEPARATOR = "; "
+SEPARATOR = " | "
