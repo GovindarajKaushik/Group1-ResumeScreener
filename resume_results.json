@@ -1,0 +1,302 @@
+{
+  "resume_9b1522bf83e0405b86641867d422d824": {
+    "resume_name": "resume_01_strong_match.docx",
+    "unique_id": "resume_9b1522bf83e0405b86641867d422d824",
+    "status": "success",
+    "timestamp": "2026-10-10T17:13:53.148548+00:00",
+    "screening_result": {
+      "skills": [
+        {
+          "name": "MySQL",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": null,
+          "evidence": "Docker"
+        },
+        {
+          "name": "AWS Cloud",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": null,
+          "evidence": "AWS (S3, Glue, Redshift)"
+        },
+        {
+          "name": "Data Structures Algorithms",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "CCNA",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 80,
+      "experience_summary": "Candidate has 7 years of relevant engineering experience, exceeding the 5-year minimum, though the title is Senior Data Engineer rather than Software Engineer.",
+      "education_score": 100,
+      "education_summary": "B.S. in Computer Science from University of Texas at Austin meets the Bachelor's requirement in Computer Science or similar field exactly.",
+      "overall_score": 75,
+      "confidence": "high",
+      "summary": "The candidate meets the education requirement and has strong experience with AWS and Docker, but the resume does not explicitly list MySQL, Data Structures/Algorithms, CCNA, or ITIL. Strong SQL and Python background exists, yet specific gap exists in the required database engine and algorithmic focus typical for a Software Engineer role."
+    },
+    "error": null
+  },
+  "resume_7fe18ebd22be43e7a93567ba6a2fd204": {
+    "resume_name": "resume_02_missing_airflow.docx",
+    "unique_id": "resume_7fe18ebd22be43e7a93567ba6a2fd204",
+    "status": "success",
+    "timestamp": "2026-10-10T17:14:13.129068+00:00",
+    "screening_result": {
+      "skills": [
+        {
+          "name": "MySQL",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": 2022,
+          "evidence": "loading shipment data into MySQL"
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "AWS Cloud",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "Data Structures Algorithms",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "CCNA",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 75,
+      "experience_summary": "Resume explicitly states 4 years of experience, which falls one year short of the 5-year minimum requirement.",
+      "education_score": 90,
+      "education_summary": "Candidate holds a B.S. in Information Systems, which satisfies the Bachelor's degree and similar field requirement.",
+      "overall_score": 32,
+      "confidence": "high",
+      "summary": "The candidate holds a relevant degree and demonstrates experience with MySQL and Python data engineering, but lacks Docker, AWS Cloud, and explicit Data Structures/Algorithms skills. Additionally, the stated 4 years of experience is below the required 5-year minimum. This profile does not currently meet the core technical requirements for the Software Engineer role."
+    },
+    "error": null
+  },
+  "resume_179a575d1d3b42edadf456078e64e5e3": {
+    "resume_name": "resume_03_missing_must_have.docx",
+    "unique_id": "resume_179a575d1d3b42edadf456078e64e5e3",
+    "status": "success",
+    "timestamp": "2026-10-10T17:14:25.853794+00:00",
+    "screening_result": {
+      "skills": [
+        {
+          "name": "MySQL",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "AWS Cloud",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "Data Structures Algorithms",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "CCNA",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 45,
+      "experience_summary": "The candidate meets the minimum 5-year experience requirement stated in the summary and supported by work history from 2019 to present, but the background is exclusively front-end web development.",
+      "education_score": 50,
+      "education_summary": "The candidate holds a Bachelor's degree which satisfies the education level requirement, though the major is Graphic Design rather than Computer Science or a directly related technical discipline.",
+      "overall_score": 20,
+      "confidence": "high",
+      "summary": "The candidate satisfies the years of experience and degree level requirements but possesses none of the four required technical skills (MySQL, Docker, AWS Cloud, Data Structures Algorithms). Their technical expertise is focused on front-end technologies like React and JavaScript, which does not align with the backend and infrastructure focus of the job. The preferred networking and service management certifications are also absent."
+    },
+    "error": null
+  },
+  "resume_38c1d6c2f1e34f87b8fbe92c12e7ebe6": {
+    "resume_name": "resume_04_junior_candidate.docx",
+    "unique_id": "resume_38c1d6c2f1e34f87b8fbe92c12e7ebe6",
+    "status": "success",
+    "timestamp": "2026-10-10T17:14:44.433754+00:00",
+    "screening_result": {
+      "skills": [
+        {
+          "name": "MySQL",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "AWS Cloud",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "Data Structures Algorithms",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "CCNA",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 10,
+      "experience_summary": "Candidate has only a 6-month internship and is a recent graduate, falling significantly short of the required 5 years of experience.",
+      "education_score": 95,
+      "education_summary": "Holds a B.S. in Statistics from the University of Washington, which satisfies the requirement for a Bachelor's in Computer Science or a similar field.",
+      "overall_score": 20,
+      "confidence": "high",
+      "summary": "The candidate is a recent graduate with a relevant bachelor's degree but lacks the required 5 years of experience and core technical skills such as AWS, Docker, MySQL, and algorithms. Their technical stack is limited to Python, SQL, and Airflow without evidence of cloud infrastructure or containerization experience. This profile is not a strong match for the mid-to-senior level Software Engineer role."
+    },
+    "error": null
+  },
+  "resume_11af7f4694264b1daff3aff097e6815b": {
+    "resume_name": "resume_05_no_education.docx",
+    "unique_id": "resume_11af7f4694264b1daff3aff097e6815b",
+    "status": "success",
+    "timestamp": "2026-10-10T17:15:03.895822+00:00",
+    "screening_result": {
+      "skills": [
+        {
+          "name": "MySQL",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": "Resume lists Postgres and SQL; MySQL not explicitly mentioned"
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": "Containerization not mentioned in skills or experience"
+        },
+        {
+          "name": "AWS Cloud",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": "Terraform listed but no AWS cloud services specified"
+        },
+        {
+          "name": "Data Structures Algorithms",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": "Resume focuses on ETL pipelines; no DSA specifics listed"
+        },
+        {
+          "name": "CCNA",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": "Networking certification not mentioned"
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": "Service management framework not mentioned"
+        }
+      ],
+      "experience_score": 55,
+      "experience_summary": "Candidate meets the 5-year minimum with 6 years of data engineering experience, but the background is ETL-focused rather than the required software engineering infrastructure stack.",
+      "education_score": 0,
+      "education_summary": "No education section is provided, and the summary explicitly states the candidate is self-taught, failing the Bachelor's requirement.",
+      "overall_score": 28,
+      "confidence": "high",
+      "summary": "The candidate meets the experience duration requirement with 6 years in data engineering, but lacks the specific must-have technical skills (MySQL, Docker, AWS) and has no listed formal education. The profile is misaligned with the software engineering infrastructure focus of the role."
+    },
+    "error": null
+  }
+}
