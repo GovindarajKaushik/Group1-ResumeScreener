@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import openai
 from os import getenv
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -135,13 +136,13 @@ def ai_processing(client, system_prompt, user_prompt, attempts=3):
 
             return json.loads(content)
 
-        except (OpenAI.AuthenticationError, OpenAI.PermissionDeniedError,
-                OpenAI.BadRequestError, OpenAI.NotFoundError) as e:
+        except (openai.AuthenticationError, openai.PermissionDeniedError,
+                openai.BadRequestError, openai.NotFoundError) as e:
             # permanent errors: retrying won't help
             raise ValueError(f"Non-retryable API error: {e}")
 
-        except (OpenAI.RateLimitError, OpenAI.APITimeoutError,
-                OpenAI.APIConnectionError, OpenAI.InternalServerError,
+        except (openai.RateLimitError, openai.APITimeoutError,
+                openai.APIConnectionError, openai.InternalServerError,
                 json.JSONDecodeError, ValueError) as e:
             # transient errors or bad model output: retry
             last_error = e
@@ -149,7 +150,6 @@ def ai_processing(client, system_prompt, user_prompt, attempts=3):
                 time.sleep(2 ** attempt)  # waits 2s, then 4s
 
     raise ValueError(f"Failed after {attempts} attempts: {last_error}")
-
 
 
 

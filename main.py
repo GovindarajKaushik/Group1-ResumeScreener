@@ -53,7 +53,7 @@ def screen_resume(file_name, user_prompt):
     unique_id = f"resume_{uuid.uuid4().hex}"
 
     try:
-        # calls the API using function from ai_manager
+        # ai manager calls the API
         screening_result = process_resume_ai(user_prompt)
         # validates the raw response
         validated_screening_result = validate_ai_result(json.dumps(screening_result))
@@ -64,7 +64,7 @@ def screen_resume(file_name, user_prompt):
         status = "error"
         error = str(e)
 
-    # skeleton of data
+    # skeleton of data in resume_results.json
     record = {
         "resume_name": file_name,
         "unique_id": unique_id,

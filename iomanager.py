@@ -41,7 +41,7 @@ def clean_resume_text(text):
         if line:
             lines.append(line)
 
-    return text.strip()
+    return "\n".join(lines)
 
 def extract_pdf_text(file_path):
     """Extract plain text from a PDF file, page by page."""
