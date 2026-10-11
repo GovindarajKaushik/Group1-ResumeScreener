@@ -214,12 +214,13 @@ def collect_inputs():
     return resumes, job_description, preferences
 
 # ask user to retry API req if failed
-def ask_API_retry(question):
+def ask_api_retry(question):
     while True:
         response = input(question).lower()
         if response in ["yes", "no"]:
             return response == "yes"
-        print("Please enter 'yes' or 'no'.")
+        else:
+            print("Please enter 'yes' or 'no'.")
 
 # print a line information to user
 def show_message(text):
@@ -240,6 +241,11 @@ def show_summary(success_count, failed_record):
     print(f"No. of failed resumes: {len(failed_record)}")
     for record in failed_record:
         print(f"  - {record['file_name']}: {record['error']}")
+
+# uses the ask_api_retry function to ask user if they want to retry failed resumes
+def ask_api_retry(count):
+    question = f"{count} resumes failed to process. Would you like to retry them? (yes/no): "
+    return ask_api_retry(question)
 
 def main_menu():
     """Main menu loop for user interaction."""
