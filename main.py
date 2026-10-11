@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 
 # import main function from ai_manager
 from ai_manager import process_resume_ai, create_client
+# import scoring functions from logic_manager
+from logic_manager import evaluate_candidate, rank_candidates
 # import io_manager
 from io_manager import (
     collect_inputs,
