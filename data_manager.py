@@ -203,3 +203,42 @@ def result_to_candidate(file_name, file_path, result):
         "ai_result": ai_result,
     }
     return candidate
+
+def result_to_candidate(file_name, file_path, result):
+    present, missing, evidence_parts = split_skills(result.get("skill_details", []))
+    ai_result = {
+        "skills_present": present,
+        "skills_missing": missing,
+        "evidence": "; ".join(evidence_parts),
+        "confidence": result.get("confidence", ""),
+        "summary": result.get("summary", ""),
+        "experience_score": result.get("experience_score"),
+        "education_score": result.get("education_score"),
+    }
+
+    candidate = {
+        "file_name": file_name,
+        "file_path": file_path,
+        "final_score": result.get("final_score"),
+        "skills_score": result.get("skills_score"),
+        "ai_overall_score": result.get("ai_overall_score"),
+        "status": result.get("status", "RE_ENTRY"),
+        "fast_track": result.get("fast_track", False),
+        "missing_must_haves": result.get("missing_must_haves", []),
+        "stale_skills": result.get("stale_skills", []),
+        "notes": result.get("notes", []),
+        "ai_result": ai_result,
+    }
+    return candidate
+
+def flatten_candidate(candidate):
+    flat = {}
+    for key in candidate:
+        if key != "ai_result":
+            flat[key] = candidate[key]
+
+    ai_result = candidate.get("ai_results", {})
+    for key in ai_result:
+        if key in CANDIDATE_FIELDS and key not in flat:
+            flat[key] = ai_result[key]
+    return flat
