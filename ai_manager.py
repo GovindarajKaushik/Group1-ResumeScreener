@@ -6,6 +6,8 @@ from os import getenv
 from dotenv import load_dotenv
 from openai import OpenAI
 
+
+
 # system prompt
 SYSTEM_PROMPT = """You are an expert recruiter assisting with resume screening.
 Compare the candidate resume with the job requirements using semantic understanding: treat equivalent skills described with different wording as a match (e.g. "built REST services" satisfies "API development").
@@ -29,7 +31,10 @@ Respond with ONE JSON object and nothing else (no markdown, no commentary), usin
 }
 The "skills" list must contain one entry for EVERY must-have and preferred skill provided."""
 
-
+# API URL
+API_URL = "https://openrouter.ai/api/v1"
+# Model Name
+MODEL_NAME = "apodex/apodex-1.1-mini:free"
 
 load_dotenv()
 
@@ -55,6 +60,11 @@ def get_client(api_url, api_key):
         max_retries=3
     )
 
+# create the client to reuse
+def create_client():
+    api_key = load_api_key()
+    return get_client(API_URL, api_key)
+
 # build the user prompt
 def build_user_prompt(job_description, resume_text):
     return (
@@ -66,18 +76,27 @@ def build_user_prompt(job_description, resume_text):
         "ANONYMISED RESUME TEXT:\n" + resume_text
     )
 
+# check the reply
+def parse_response(response):
+    # Pull the JSON result out of an API response. Raises ValueError if malformed
+    try:
+        if not response.choices:
+            raise ValueError("response contained no choices")
+        content = response.choices[0].message.content
+        if not content:
+            raise ValueError("response was empty")
+        # JSONDecodeError is a kind of ValueError, so it is caught below too
+        return validate_ai_result(json.loads(content))
+    except ValueError as e:
+        raise ValueError(f"Malformed API response: {e}")
+
 
 # validate json data and check right values
-def validate_ai_result(raw_response):
-    """Parse the AI response and check essential fields."""
-    try:
-        data = json.loads(raw_response)
-    except (json.JSONDecodeError, TypeError):
-        raise ValueError("AI returned invalid JSON.")
-
+def validate_ai_result(data):
+    # check the data has all teh fields the logic manager needs
     if not isinstance(data, dict):
-        raise ValueError("AI response must be a JSON object.")
-
+        raise ValueError("reply must be a JSON object")
+ 
     required_fields = [
         "skills",
         "experience_score",
@@ -85,80 +104,55 @@ def validate_ai_result(raw_response):
         "overall_score",
         "confidence",
     ]
-
     for field in required_fields:
         if field not in data:
-            raise ValueError(f"Missing required field: {field}")
-
+            raise ValueError(f"missing field '{field}'")
+ 
     if not isinstance(data["skills"], list):
-        raise ValueError("'skills' must be a list.")
-
-    for field in (
-        "experience_score",
-        "education_score",
-        "overall_score",
-    ):
+        raise ValueError("'skills' must be a list")
+ 
+    for field in ("experience_score", "education_score", "overall_score"):
         score = data[field]
-
         if (
             isinstance(score, bool)
             or not isinstance(score, (int, float))
             or not 0 <= score <= 100
         ):
-            raise ValueError(
-                f"'{field}' must be a number from 0 to 100."
-            )
-
+            raise ValueError(f"'{field}' must be a number from 0 to 100")
+ 
     if data["confidence"] not in ("low", "medium", "high"):
-        raise ValueError("Invalid confidence value.")
-
+        raise ValueError("invalid confidence value")
+ 
     return data
 
 
 # make the api call
-def ai_processing(client, system_prompt, user_prompt, attempts=3):
-    last_error = None
-
-    for attempt in range(1, attempts + 1):
-        try:
-            response = client.chat.completions.create(
-                model="apodex/apodex-1.1-mini:free",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0,
-            )
-
-            content = response.choices[0].message.content
-            if not content:
-                raise ValueError("The API returned an empty response")
-
-            return json.loads(content)
-
-        except (openai.AuthenticationError, openai.PermissionDeniedError,
-                openai.BadRequestError, openai.NotFoundError) as e:
-            # permanent errors: retrying won't help
-            raise ValueError(f"Non-retryable API error: {e}")
-
-        except (openai.RateLimitError, openai.APITimeoutError,
-                openai.APIConnectionError, openai.InternalServerError,
-                json.JSONDecodeError, ValueError) as e:
-            # transient errors or bad model output: retry
-            last_error = e
-            if attempt < attempts:
-                time.sleep(2 ** attempt)  # waits 2s, then 4s
-
-    raise ValueError(f"Failed after {attempts} attempts: {last_error}")
+def ai_processing(client, system_prompt, user_prompt):
+    # call the model and return validated dictionary
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0,
+        )
+        # includes timeouts
+    except openai.APIConnectionError as e: 
+        raise ValueError(f"API connection problem ({type(e).__name__}); check your internet connection")
+    # bad key, bad request, rate limit, server error...
+    except openai.OpenAIError as e:
+        raise ValueError(f"API request failed: {e}")
+ 
+    return parse_response(response)
 
 
 
 # main function for API
 def process_resume_ai(user_prompt):
     try:
-        ai_api_url = "https://openrouter.ai/api/v1"
-        api_key = load_api_key()
-        client = get_client(ai_api_url, api_key)
+        client = create_client()
         result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
         return result
     except Exception as e:
