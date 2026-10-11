@@ -24,20 +24,6 @@ STATUS_SUCCESS = "success"
 STATUS_ERROR = "error"
 
 
-
-def save_results(results):
-    # create a tmp file first
-    tmp_path = RESULT_FILE_PATH + ".tmp"
-    # save the results to json file
-    try:
-        with open(tmp_path, "w") as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        # Atomically replace the original file
-        os.replace(tmp_path, RESULT_FILE_PATH)
-    except Exception as e:
-        print(f"Error occurred while saving results: {e}")
-
-
 # screen each resume sequentially
 def screen_resume(client, resume, job_description):
 
@@ -115,6 +101,17 @@ def report_summary(results):
     success_count = len(results) - len(failed_ids)
     # function from io manager
     show_summary(success_count, len(failed_ids), failed_records)
+
+
+# saves results to a JSON file (for debugging)
+def save_results_json(results):
+    tmp_path = DEBUG_JSON_PATH + ".tmp"
+    try:
+        with open(tmp_path, "w") as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_path, DEBUG_JSON_PATH)
+    except (OSError, TypeError, ValueError)as e:
+        print(f"Error saving results to JSON from {DEBUG_JSON_PATH}: {e}")
 
 def main():
 
