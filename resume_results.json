@@ -1,184 +1,24 @@
 {
-  "5f7f1a5f850546469937766e8014655d": {
-    "id": "5f7f1a5f850546469937766e8014655d",
+  "871b4569aae34d6a989487a44fc37c27": {
+    "id": "871b4569aae34d6a989487a44fc37c27",
     "file_name": "resume_01_strong_match.docx",
     "status": "success",
     "retryable": false,
     "screening_result": {
       "skills": [
         {
-          "name": "Docker",
-          "category": "must_have",
-          "present": true,
-          "last_used_year": 2024,
-          "evidence": "Docker listed in Skills section during 2021 - Present role"
-        },
-        {
           "name": "Python",
           "category": "must_have",
           "present": true,
           "last_used_year": 2024,
-          "evidence": "orchestrating Python ETL jobs"
+          "evidence": "Developed Python ingestion services"
         },
-        {
-          "name": "ITIL",
-          "category": "preferred",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        }
-      ],
-      "experience_score": 92,
-      "experience_summary": "The candidate explicitly states 7 years of experience, exceeding the 5-year minimum, with relevant engineering roles from 2018 to present. They have applied Python and Docker within cloud-based data engineering pipelines throughout their career.",
-      "education_score": 100,
-      "education_summary": "The candidate holds a B.S. in Computer Science from the University of Texas at Austin, which exactly matches the degree requirement.",
-      "overall_score": 93,
-      "confidence": "high",
-      "summary": "Priya Nair is a strong match for the Software Engineer role, meeting all must-have requirements with 7 years of experience and a Computer Science degree. Python and Docker are both confirmed present in her skills and work history, though the preferred ITIL certification is not mentioned. Her background as a Senior Data Engineer aligns semantically with the software engineering responsibilities listed."
-    },
-    "error": null,
-    "timestamp": "2026-10-11T12:35:20.222514+00:00"
-  },
-  "b721e27c0aef431e95ac5d064d98f1ac": {
-    "id": "b721e27c0aef431e95ac5d064d98f1ac",
-    "file_name": "resume_02_missing_airflow.docx",
-    "status": "success",
-    "retryable": false,
-    "screening_result": {
-      "skills": [
         {
           "name": "Docker",
-          "category": "must_have",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        },
-        {
-          "name": "Python",
           "category": "must_have",
           "present": true,
-          "last_used_year": 2022,
-          "evidence": "Wrote Python scripts and cron-scheduled ETL jobs loading shipment data"
-        },
-        {
-          "name": "ITIL",
-          "category": "preferred",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        }
-      ],
-      "experience_score": 60,
-      "experience_summary": "Candidate reports 4 years of experience, falling short of the 5-year minimum, though the work is directly relevant to Python backend engineering.",
-      "education_score": 75,
-      "education_summary": "Candidate holds a B.S. in Information Systems, which is related to but not the required Computer Science degree.",
-      "overall_score": 55,
-      "confidence": "medium",
-      "summary": "The candidate is a solid Python fit with relevant backend and data engineering experience, but lacks the required 5 years of experience and explicit Docker proficiency. Their Information Systems degree is adjacent to the Computer Science requirement, and the preferred ITIL skill is absent."
-    },
-    "error": null,
-    "timestamp": "2026-10-11T12:35:32.487977+00:00"
-  },
-  "baffd7724a134cb298c2db5bcdb4333d": {
-    "id": "baffd7724a134cb298c2db5bcdb4333d",
-    "file_name": "resume_03_missing_must_have.docx",
-    "status": "success",
-    "retryable": false,
-    "screening_result": {
-      "skills": [
-        {
-          "name": "Docker",
-          "category": "must_have",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        },
-        {
-          "name": "Python",
-          "category": "must_have",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        },
-        {
-          "name": "ITIL",
-          "category": "preferred",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        }
-      ],
-      "experience_score": 40,
-      "experience_summary": "The resume explicitly states 5 years of experience, meeting the minimum tenure requirement, but the work history is focused on front-end web development (React, Node.js) rather than the required Docker/Python engineering context.",
-      "education_score": 20,
-      "education_summary": "The candidate holds a B.A. in Graphic Design from Colorado State University, which does not match the required Computer Science degree.",
-      "overall_score": 25,
-      "confidence": "high",
-      "summary": "This candidate does not meet the core technical requirements, as neither Docker nor Python is mentioned anywhere in the resume. Additionally, the educational background is in Graphic Design rather than Computer Science. While the 5 years of stated experience meets the tenure threshold, the technical skills and domain focus do not align with the Software Engineer role."
-    },
-    "error": null,
-    "timestamp": "2026-10-11T12:35:42.565242+00:00"
-  },
-  "275cb595aaed4d07b243c1df7adde1e2": {
-    "id": "275cb595aaed4d07b243c1df7adde1e2",
-    "file_name": "resume_04_junior_candidate.docx",
-    "status": "success",
-    "retryable": false,
-    "screening_result": {
-      "skills": [
-        {
-          "name": "Docker",
-          "category": "must_have",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        },
-        {
-          "name": "Python",
-          "category": "must_have",
-          "present": true,
-          "last_used_year": 2025,
-          "evidence": "Assisted with Python scripts that cleaned and loaded CSV data"
-        },
-        {
-          "name": "ITIL",
-          "category": "preferred",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        }
-      ],
-      "experience_score": 5,
-      "experience_summary": "Candidate has only a 6-month internship listed and identifies as a recent graduate, which is significantly below the 5-year minimum experience requirement.",
-      "education_score": 75,
-      "education_summary": "Candidate holds a B.S. in Statistics from the University of Washington, which is related to Computer Science but does not explicitly meet the degree requirement.",
-      "overall_score": 20,
-      "confidence": "high",
-      "summary": "The candidate matches one of the two must-have skills (Python) but lacks Docker and ITIL entirely. Qualifications fall short on experience, with only internship-level exposure versus the 5-year requirement, and the education is in Statistics rather than Computer Science."
-    },
-    "error": null,
-    "timestamp": "2026-10-11T12:35:49.209825+00:00"
-  },
-  "e43a570f3b99443388f16e1103c6c826": {
-    "id": "e43a570f3b99443388f16e1103c6c826",
-    "file_name": "resume_05_no_education.docx",
-    "status": "success",
-    "retryable": false,
-    "screening_result": {
-      "skills": [
-        {
-          "name": "Docker",
-          "category": "must_have",
-          "present": false,
-          "last_used_year": null,
-          "evidence": ""
-        },
-        {
-          "name": "Python",
-          "category": "must_have",
-          "present": true,
-          "last_used_year": 2022,
-          "evidence": "Run Python ETL jobs on Airflow processing 20M daily transactions"
+          "last_used_year": 2024,
+          "evidence": "Skills list includes Docker"
         },
         {
           "name": "ITIL",
@@ -189,14 +29,174 @@
         }
       ],
       "experience_score": 95,
-      "experience_summary": "Candidate reports 6 years of hands-on experience, exceeding the 5-year minimum requirement, with recent roles as a Senior Data Engineer and Freelance Data Engineer.",
-      "education_score": 0,
-      "education_summary": "The resume states the candidate is 'self-taught' and does not list any Computer Science degree, failing the education requirement.",
-      "overall_score": 40,
+      "experience_summary": "The candidate explicitly states 7 years of experience, exceeding the 5-year minimum requirement. Their work history spans from 2018 to the present without gaps.",
+      "education_score": 100,
+      "education_summary": "The candidate holds a B.S. in Computer Science from the University of Texas at Austin, which directly matches the education requirement.",
+      "overall_score": 90,
       "confidence": "high",
-      "summary": "The candidate meets the experience and Python requirements but lacks Docker, a mandatory skill, and does not hold the required Computer Science degree. The preferred ITIL skill is also absent, resulting in a partial match."
+      "summary": "This candidate is a strong match, possessing both required skills (Python, Docker) and holding a Computer Science degree with 7 years of experience. The preferred ITIL skill is not mentioned in the resume, which slightly lowers the overall fit. Experience duration and technical stack align well with the role."
     },
     "error": null,
-    "timestamp": "2026-10-11T12:36:03.859649+00:00"
+    "timestamp": "2026-10-11T14:16:56.273410+00:00"
+  },
+  "87f1d3a201f74d5b90cecf54efc8074a": {
+    "id": "87f1d3a201f74d5b90cecf54efc8074a",
+    "file_name": "resume_02_missing_airflow.docx",
+    "status": "success",
+    "retryable": false,
+    "screening_result": {
+      "skills": [
+        {
+          "name": "Python",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": 2024,
+          "evidence": "4 years of experience in Python and relational databases; wrote Python scripts"
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 60,
+      "experience_summary": "Candidate has 4 years of Python/ETL experience, falling one year short of the 5-year minimum and lacks Docker exposure.",
+      "education_score": 90,
+      "education_summary": "B.S. in Information Systems is a related degree to Computer Science, meeting the educational requirement.",
+      "overall_score": 58,
+      "confidence": "high",
+      "summary": "The candidate possesses strong Python and database skills with a related degree, but does not meet the 5-year experience requirement or possess the mandatory Docker skill. ITIL is also absent."
+    },
+    "error": null,
+    "timestamp": "2026-10-11T14:17:05.744749+00:00"
+  },
+  "9642a13708704e0a9409b4935c37714f": {
+    "id": "9642a13708704e0a9409b4935c37714f",
+    "file_name": "resume_03_missing_must_have.docx",
+    "status": "success",
+    "retryable": false,
+    "screening_result": {
+      "skills": [
+        {
+          "name": "Python",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 45,
+      "experience_summary": "The candidate meets the 5-year minimum experience requirement, but the background is focused on front-end JavaScript and React development rather than the required Python and Docker stack.",
+      "education_score": 65,
+      "education_summary": "The candidate holds a Bachelor's degree in Graphic Design, which satisfies the degree requirement broadly as a related field but is not a Computer Science degree.",
+      "overall_score": 20,
+      "confidence": "high",
+      "summary": "The candidate does not match the core technical requirements, as Python and Docker are absent from the resume despite being listed as must-have skills. While the 5 years of experience and Bachelor's degree meet the baseline criteria, the background is heavily focused on front-end JavaScript development rather than the required backend and infrastructure stack."
+    },
+    "error": null,
+    "timestamp": "2026-10-11T14:17:15.247097+00:00"
+  },
+  "418c3f68dc194394969205b3331f866c": {
+    "id": "418c3f68dc194394969205b3331f866c",
+    "file_name": "resume_04_junior_candidate.docx",
+    "status": "success",
+    "retryable": false,
+    "screening_result": {
+      "skills": [
+        {
+          "name": "Python",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": 2025,
+          "evidence": "Python scripts that cleaned and loaded CSV data"
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 15,
+      "experience_summary": "Candidate has only 6 months of internship experience, significantly below the 5-year minimum requirement.",
+      "education_score": 85,
+      "education_summary": "Holds a B.S. in Statistics from a recognized university, which qualifies as a related degree, though not strictly Computer Science.",
+      "overall_score": 25,
+      "confidence": "high",
+      "summary": "This candidate is a recent graduate with limited professional exposure and does not meet the 5-year experience requirement. Key must-have skills are partially met; Python is present but Docker is absent. Education is acceptable as a related field, but the lack of core tooling and experience makes for a poor fit."
+    },
+    "error": null,
+    "timestamp": "2026-10-11T14:17:25.003492+00:00"
+  },
+  "68780416a5fb4407bd385b694e0c4c84": {
+    "id": "68780416a5fb4407bd385b694e0c4c84",
+    "file_name": "resume_05_no_education.docx",
+    "status": "success",
+    "retryable": false,
+    "screening_result": {
+      "skills": [
+        {
+          "name": "Python",
+          "category": "must_have",
+          "present": true,
+          "last_used_year": 2024,
+          "evidence": "Run Python ETL jobs on Airflow processing 20M daily transactions"
+        },
+        {
+          "name": "Docker",
+          "category": "must_have",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        },
+        {
+          "name": "ITIL",
+          "category": "preferred",
+          "present": false,
+          "last_used_year": null,
+          "evidence": ""
+        }
+      ],
+      "experience_score": 90,
+      "experience_summary": "Candidate has 6 years of hands-on experience, exceeding the 5-year minimum, with recent Python usage at a Senior Data Engineer role.",
+      "education_score": 0,
+      "education_summary": "Resume does not list a Computer Science degree or any education section, describing the candidate instead as self-taught.",
+      "overall_score": 55,
+      "confidence": "medium",
+      "summary": "Strong Python experience meets the core technical requirement and exceeds the minimum years of experience. However, the candidate lacks the must-have Docker skill and does not provide the required Computer Science degree on the resume."
+    },
+    "error": null,
+    "timestamp": "2026-10-11T14:17:41.415144+00:00"
   }
 }

@@ -171,11 +171,12 @@ def main():
 
         # logic manager
         try:
-            ranking_rows = evaluate_and_rank(RESULTS_JSON_PATH, job_description, preferences)
+            ranking_rows = evaluate_and_rank(DEBUG_JSON_PATH, job_description, preferences)
         except ValueError as e:
             show_error(f"Cannot score the results: {e}")
             return
         show_rankings(ranking_rows)
+
         # data_manager.save_to_csv(...) persists them.
  
     except (KeyboardInterrupt, EOFError):
