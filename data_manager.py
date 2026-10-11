@@ -329,3 +329,18 @@ def save_screening_record(record, resume, logic_result=None, job_description=Non
 
     candidate = result_to_candidate(file_name, file_path, logic_result)
     return save_candidate_result(candidate, job_description, results_file, log_file)
+
+def load_all_results(results_file=RESULTS_FILE):
+    """Return all candidates as a list of dictionaries."""
+    candidates = []
+    for row in read_csv(results_file, CANDIDATE_FIELDS):
+        candidates.append(row_to_candidate(row))
+    return candidates
+
+
+def get_candidate(candidate_id, results_file=RESULTS_FILE):
+    """Return one candidate dictionary, or None if the ID is not found."""
+    for row in read_csv(results_file, CANDIDATE_FIELDS):
+        if row["candidate_id"] == candidate_id:
+            return row_to_candidate(row)
+    return None
