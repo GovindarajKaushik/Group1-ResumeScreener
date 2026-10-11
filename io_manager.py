@@ -229,7 +229,17 @@ def show_message(text):
 def show_error(text):
     print(f"Error: {text}")
 
+# print progress information to user
+def show_progress(record):
+    print(f"Progress: {record['file_name']} - {record['status']}")
 
+# prints number of resumes successfully processed by API and also failed (with reason)
+def show_summary(success_count, failed_record):
+    print(f"\n--- Summary ---")
+    print(f"Successfully processed: {success_count}")
+    print(f"No. of failed resumes: {len(failed_record)}")
+    for record in failed_record:
+        print(f"  - {record['file_name']}: {record['error']}")
 
 def main_menu():
     """Main menu loop for user interaction."""
