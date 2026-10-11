@@ -221,6 +221,16 @@ def ask_API_retry(question):
             return response == "yes"
         print("Please enter 'yes' or 'no'.")
 
+# print a line information to user
+def show_message(text):
+    print(text)
+
+# print error message to user
+def show_error(text):
+    print(f"Error: {text}")
+
+
+
 def main_menu():
     """Main menu loop for user interaction."""
     while True:
