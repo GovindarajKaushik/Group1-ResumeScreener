@@ -313,3 +313,19 @@ def save_failed_resume(file_name, file_path="", job_title="", reason="", results
         "notes": [reason],
     }
     return save_candidate_result(candidate, None, results_file, log_file)
+
+def save_screening_record(record, resume, logic_result=None, job_description=None, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    file_name = record.get("resume_name") or resume.get("file_name", "")
+    file_path = resume.get("file_path", "")
+
+    job_title = ""
+    if job_description:
+        job_title = job_description.get("title") or job_description.get("job_title", "")
+
+    if record.get("status") != "success" or logic_result is None:
+        reason = record.get("error") or "No AI result"
+        return save_failed_resume(file_name, file_path, job_title, reason,
+                                  results_file, log_file)
+
+    candidate = result_to_candidate(file_name, file_path, logic_result)
+    return save_candidate_result(candidate, job_description, results_file, log_file)
