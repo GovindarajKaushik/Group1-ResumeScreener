@@ -225,3 +225,64 @@ def row_to_candidate(row):
         ai_result[field] = candidate[field]
     candidate["ai_result"] = ai_result
     return candidate
+
+def generate_candidate_id(results_file=RESULTS_FILE):
+    rows = read_csv(results_file, CANDIDATE_FIELDS)
+    highest = 0
+    for row in rows:
+        candidate_id = row["candidate_id"]
+        if candidate_id.startswith("C") and candidate_id[1:].isdigit():
+            number = int(candidate_id[1:])
+            if number > highest:
+                highest = number
+    return "C" + str(highest + 1).zfill(3)
+
+def save_candidate_result(candidate, job_description=None, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    flat = flatten_candidate(candidate)
+
+    if job_description and not flat.get("job_title"):
+        flat["job_title"] = job_description.get("title") or job_description.get("job_title", "")
+
+    status = str(flat.get("status", "")).upper()
+    if status not in VALID_STATUSES:
+        raise ValueError(f"Invalid status '{status}'. Use one of {VALID_STATUSES}")
+    flat["status"] = status
+
+    if not flat.get("candidate_id"):
+        flat["candidate_id"] = generate_candidate_id(results_file)
+    candidate_id = flat["candidate_id"]
+
+    rows = read_csv(results_file, CANDIDATE_FIELDS)
+    new_row = candidate_to_row(flat)
+
+    existing_index = -1
+    for index in range(len(rows)):
+        if rows[index]["candidate_id"] == candidate_id:
+            existing_index = index
+            break
+
+    if existing_index == -1:
+        if new_row["created_at"] == "":
+            new_row["created_at"] = get_timestamp()
+        if new_row["recruiter_decision"] == "":
+            new_row["recruiter_decision"] = "pending"
+        new_row["updated_at"] = get_timestamp()
+        rows.append(new_row)
+        action = "SAVE_RESULT"
+    else:
+        old_row = rows[existing_index]
+        for field in ["created_at", "recruiter_decision", "feedback_rating"]:
+            if new_row[field] == "":
+                new_row[field] = old_row.get(field, "")
+        new_row["updated_at"] = get_timestamp()
+        rows[existing_index] = new_row
+        action = "UPDATE_RESULT"
+
+    write_csv(results_file, CANDIDATE_FIELDS, rows)
+    log_action(
+        action,
+        f"{new_row['file_name']} | score={new_row['final_score']} | status={status}",
+        candidate_id,
+        log_file,
+    )
+    return candidate_id
