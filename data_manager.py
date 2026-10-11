@@ -31,7 +31,7 @@ CANDIDATE_FIELDS = [
 ]
 
 LOG_FIELDS = ["timestamp", "action", "candidate_id", "details"]
-VALID_STATUSES = ["SHORTLISTED", "SECONDARY_REVIEW", "RE_ENTRY"]
+VALID_STATUSES = ["SHORTLIST", "SECONDARY_REVIEW", "RE_ENTRY"]
 VALID_DECISIONS = ["pending", "shortlisted", "rejected"]
 LIST_FIELDS = [
     "skills_present", 
@@ -331,7 +331,6 @@ def save_screening_record(record, resume, logic_result=None, job_description=Non
     return save_candidate_result(candidate, job_description, results_file, log_file)
 
 def load_all_results(results_file=RESULTS_FILE):
-    """Return all candidates as a list of dictionaries."""
     candidates = []
     for row in read_csv(results_file, CANDIDATE_FIELDS):
         candidates.append(row_to_candidate(row))
@@ -339,7 +338,6 @@ def load_all_results(results_file=RESULTS_FILE):
 
 
 def get_candidate(candidate_id, results_file=RESULTS_FILE):
-    """Return one candidate dictionary, or None if the ID is not found."""
     for row in read_csv(results_file, CANDIDATE_FIELDS):
         if row["candidate_id"] == candidate_id:
             return row_to_candidate(row)
