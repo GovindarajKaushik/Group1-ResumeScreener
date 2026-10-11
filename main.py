@@ -63,6 +63,11 @@ def screen_all_resumes(client, resumes, job_description, results, on_progress=No
         if on_progress:
             on_progress(resume["id"], record)
 
+# get number of failed API calls from AI manager API call (any reason)
+def get_failed_ids(results):
+    for resume_id, record in results.items():
+        if record["status"] == STATUS_ERROR:
+            return resume_id
 
 def main():
 
