@@ -121,3 +121,18 @@ def write_csv(path, fields, rows):
     except OSError as error:
         print(f"Error saving '{path}': {error}")
         raise
+
+def log_action(actions, details="", candidate_id="", log_file=LOG_FILE):
+    create_file_if_missing(log_file, LOG_FIELDS)
+    row = {
+        "timestamp": get_timestamp(),
+        "action": actions,
+        "candidate_id": candidate_id,
+        "details": details,
+    }
+    with open(log_file, "a", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=LOG_FIELDS)
+        writer.writerow(row)
+
+def load_log(log_file=LOG_FILE):
+    return read_csv(log_file, LOG_FIELDS)

@@ -36,7 +36,9 @@ def make_results(**changes):
 
 def save_one(files, file_name="alice.pdf", job=None, **changes):
     candidate = dm.results_to_candidate(file_name, "resume/" + file_name, make_results(**changes))
-    return dm.save_candidate_results(candidate, job, **files)
+    return dm.save_candidate_results(candidate, job,
+        results_file=files["results_file"],
+        log_file=files["log_file"])
 
 def test_list_text_round_trip():
     items = ["Python", "SQL", "C++"]
@@ -53,3 +55,11 @@ def test_bool_to_text():
     assert dm.bool_to_text(True) == "yes"
     assert dm.bool_to_text(False) == "no"
     assert dm.bool_to_text("True") == "yes"
+
+def test_log_action_adds_a_timestamped_line(files):
+    dm.log_action("TEST_ACTION", "some details", "C001", files["log_file"])
+    log = dm.load_log(files["log_file"])
+    assert len(log) == 1
+    assert log[0]["action"] == "TEST_ACTION"
+    assert log[0]["candidate_id"] == "C001"
+    assert log[0]["timestamp"] != ""
