@@ -101,6 +101,21 @@ def retry_failed(client, resumes, job_description, results, on_progress=None):
             on_progress(resume_id, record)
     return len(retry_ids)
 
+
+# reports a summary for IO manager to display
+def report_summary(results):
+
+
+    failed_ids = get_failed_ids(results)
+
+    failed_records = []
+    for resume_id in failed_ids:
+        failed_records.append(results[resume_id])
+
+    success_count = len(results) - len(failed_ids)
+    # function from io manager
+    show_summary(success_count, len(failed_ids), failed_records)
+
 def main():
 
     # Example usage
