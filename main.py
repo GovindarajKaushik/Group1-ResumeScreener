@@ -6,31 +6,16 @@ from datetime import datetime, timezone
 # import main function from ai_manager
 from ai_manager import process_resume_ai, validate_ai_result, build_user_prompt
 # import io_manager
-from io_manager import collect_inputs
+from io_manager import collect_inputs, ask_API_retry
 
 
 
 # constant result file path
-RESULT_FILE_PATH = "resume_results.json"
+DEBUG_JSON_PATH = "resume_results.json"
 
+STATUS_SUCCESS = "success"
+STATUS_ERROR = "error"
 
-# load existing results
-def load_results():
-    try:
-        with open(RESULT_FILE_PATH, "r") as f:
-            content = f.read().strip()
-            # if empty
-            if not content:          
-                return {}
-            results = json.loads(content)
-    except FileNotFoundError:
-        return {}
-    except json.JSONDecodeError:
-        raise ValueError(f"{RESULT_FILE_PATH} contains invalid JSON")
-
-    if not isinstance(results, dict):
-        raise ValueError("Invalid results format in JSON file")
-    return results
 
 
 def save_results(results):
@@ -46,45 +31,37 @@ def save_results(results):
         print(f"Error occurred while saving results: {e}")
 
 
-# screen each resume sequentially and saves it in resume_results.json
-def screen_resume(file_name, user_prompt):
-
-    # unique ID
-    unique_id = f"resume_{uuid.uuid4().hex}"
+# screen each resume sequentially
+def screen_resume(client, resume, job_description):
 
     try:
         # ai manager calls the API
-        screening_result = process_resume_ai(user_prompt)
-        # validates the raw response
-        validated_screening_result = validate_ai_result(json.dumps(screening_result))
-        status = "success"
-        error = None
-    except Exception as e:
-        validated_screening_result = None
-        status = "error"
-        error = str(e)
+        screening_result = process_resume_ai(client, job_description, resume["text"])
+        status, error, retryable = STATUS_SUCCESS, None, False
+    except ConnectionError as e:
+        result, status, error, retryable = None, STATUS_ERROR, str(e), True
+    except ValueError as e:
+        result, status, error, retryable = None, STATUS_ERROR, str(e), False
 
     # skeleton of data in resume_results.json
-    record = {
-        "resume_name": file_name,
-        "unique_id": unique_id,
-        "status": status,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "screening_result": validated_screening_result,
-        "error": error
-    }
-
-    # load existing data (if any)
-    current_results = load_results()
-    current_results[unique_id] = record
-    # Save results
-    save_results(current_results)
-
     return {
-        "resume_id": unique_id,
-        "record": record
+        "id": resume["id"],
+        "file_name": resume["file_name"],
+        "status": status,
+        "retryable": retryable,
+        "screening_result": screening_result,
+        "error": error,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
+# Screen all resumes storing each record in results dictionary temp
+def screen_all_resumes(client, resumes, job_description, results, on_progress=None):
+
+    for resume in resumes:
+        record = screen_resume(client, resume, job_description)
+        results[resume["id"]] = record
+        if on_progress:
+            on_progress(resume["id"], record)
 
 
 def main():

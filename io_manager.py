@@ -122,7 +122,7 @@ def prepare_resumes_for_ai(files):
             "id": uuid.uuid4().hex,
             "file_name": os.path.basename(file_path),
             "file_path": file_path,
-            "raw_text": text
+            "text": text
         }
         resumes.append(resume)
 
@@ -247,7 +247,7 @@ def main_menu():
                 print(f"Path: {r['file_path']}")
                 print(f"Raw text length: {len(r['text'])} characters")
                 print("Raw text: ")
-                print(r["raw_text"])
+                print(r["text"])
                 print("\n-------------------------------")
 
         elif choice == "2":
