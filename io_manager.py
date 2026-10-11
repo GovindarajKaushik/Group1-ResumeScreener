@@ -1,3 +1,4 @@
+import uuid
 import os
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
@@ -41,7 +42,7 @@ def clean_resume_text(text):
         if line:
             lines.append(line)
 
-    return text.strip()
+    return "\n".join(lines)
 
 def extract_pdf_text(file_path):
     """Extract plain text from a PDF file, page by page."""
@@ -109,18 +110,19 @@ def prepare_resumes_for_ai(files):
     resumes = []
 
     for file_path in files:
-        raw_text = extract_resume_text(file_path)
+        text = extract_resume_text(file_path)
 
-        if not raw_text:
+        if not text:
             print(
                 f"Skipping '{os.path.basename(file_path)}': "
                 "Could not extract resume text."
             )
             continue 
         resume = {
+            "id": uuid.uuid4().hex,
             "file_name": os.path.basename(file_path),
             "file_path": file_path,
-            "raw_text": raw_text
+            "text": text
         }
         resumes.append(resume)
 
@@ -199,6 +201,52 @@ def display_candidate_detail(candidate):
     print(f"Evidence: {ai_result['evidence']}")
     print(f"Confidence: {ai_result['confidence']}")
 
+# create a main menu function to import to main.py
+def collect_inputs():
+
+    folder = get_valid_folder("Folder containing resumes: ")
+    files = collect_resume_batch(folder)
+    resumes = prepare_resumes_for_ai(files)
+
+    job_description = collect_job_description()
+    preferences = collect_screening_preferences()
+
+    return resumes, job_description, preferences
+
+# ask user to retry API req if failed
+def ask_api_retry(question):
+    while True:
+        response = input(question).lower()
+        if response in ["yes", "no"]:
+            return response == "yes"
+        else:
+            print("Please enter 'yes' or 'no'.")
+
+# print a line information to user
+def show_message(text):
+    print(text)
+
+# print error message to user
+def show_error(text):
+    print(f"Error: {text}")
+
+# print progress information to user
+def show_progress(record):
+    print(f"Progress: {record['file_name']} - {record['status']}")
+
+# prints number of resumes successfully processed by API and also failed (with reason)
+def show_summary(success_count, failed_record):
+    print(f"\n--- Summary ---")
+    print(f"Successfully processed: {success_count}")
+    print(f"No. of failed resumes: {len(failed_record)}")
+    for record in failed_record:
+        print(f"  - {record['file_name']}: {record['error']}")
+
+# uses the ask_api_retry function to ask user if they want to retry failed resumes
+def question_api_retry(count):
+    question = f"{count} resumes failed to process. Would you like to retry them? (yes/no): "
+    return ask_api_retry(question)
+
 def main_menu():
     """Main menu loop for user interaction."""
     while True:
@@ -223,9 +271,9 @@ def main_menu():
             for r in resumes:
                 print(f"File: {r['file_name']}")
                 print(f"Path: {r['file_path']}")
-                print(f"Raw text length: {len(r['raw_text'])} characters")
+                print(f"Raw text length: {len(r['text'])} characters")
                 print("Raw text: ")
-                print(r["raw_text"])
+                print(r["text"])
                 print("\n-------------------------------")
 
         elif choice == "2":

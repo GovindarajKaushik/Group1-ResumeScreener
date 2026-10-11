@@ -1,129 +1,168 @@
 import json
-import uuid
 import os
 from datetime import datetime, timezone
 
 # import main function from ai_manager
-from ai_manager import process_resume_ai, validate_ai_result, build_user_prompt
+from ai_manager import process_resume_ai, create_client
 # import io_manager
-from iomanager import collect_inputs
+from io_manager import (
+    collect_inputs,
+    show_message,
+    show_error,
+    show_progress,
+    show_summary,
+    question_api_retry,
+)
 
 
 
 # constant result file path
-RESULT_FILE_PATH = "resume_results.json"
+DEBUG_JSON_PATH = "resume_results.json"
+
+STATUS_SUCCESS = "success"
+STATUS_ERROR = "error"
 
 
-# load existing results
-def load_results():
-    try:
-        with open(RESULT_FILE_PATH, "r") as f:
-            content = f.read().strip()
-            # if empty
-            if not content:          
-                return {}
-            results = json.loads(content)
-    except FileNotFoundError:
-        return {}
-    except json.JSONDecodeError:
-        raise ValueError(f"{RESULT_FILE_PATH} contains invalid JSON")
-
-    if not isinstance(results, dict):
-        raise ValueError("Invalid results format in JSON file")
-    return results
-
-
-def save_results(results):
-    # create a tmp file first
-    tmp_path = RESULT_FILE_PATH + ".tmp"
-    # save the results to json file
-    try:
-        with open(tmp_path, "w") as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        # Atomically replace the original file
-        os.replace(tmp_path, RESULT_FILE_PATH)
-    except Exception as e:
-        print(f"Error occurred while saving results: {e}")
-
-
-# screen each resume sequentially and saves it in resume_results.json
-def screen_resume(file_name, user_prompt):
-
-    # unique ID
-    unique_id = f"resume_{uuid.uuid4().hex}"
+# screen each resume sequentially
+def screen_resume(client, resume, job_description):
 
     try:
-        # calls the API using function from ai_manager
-        screening_result = process_resume_ai(user_prompt)
-        # validates the raw response
-        validated_screening_result = validate_ai_result(json.dumps(screening_result))
-        status = "success"
-        error = None
-    except Exception as e:
-        validated_screening_result = None
-        status = "error"
-        error = str(e)
+        # ai manager calls the API
+        screening_result = process_resume_ai(client, job_description, resume["text"])
+        status, error, retryable = STATUS_SUCCESS, None, False
+    except ConnectionError as e:
+        screening_result, status, error, retryable = None, STATUS_ERROR, str(e), True
+    except ValueError as e:
+        screening_result, status, error, retryable = None, STATUS_ERROR, str(e), False
 
-    # skeleton of data
-    record = {
-        "resume_name": file_name,
-        "unique_id": unique_id,
-        "status": status,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "screening_result": validated_screening_result,
-        "error": error
-    }
-
-    # load existing data (if any)
-    current_results = load_results()
-    current_results[unique_id] = record
-    # Save results
-    save_results(current_results)
-
+    # skeleton of data in resume_results.json
     return {
-        "resume_id": unique_id,
-        "record": record
+        "id": resume["id"],
+        "file_name": resume["file_name"],
+        "status": status,
+        "retryable": retryable,
+        "screening_result": screening_result,
+        "error": error,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
+# Screen all resumes storing each record in results dictionary temp
+def screen_all_resumes(client, resumes, job_description, results, on_progress=None):
 
+    # resumes is a dictionary (id -> resume), so use .items() to get both parts
+    for resume_id, resume in resumes.items():
+        record = screen_resume(client, resume, job_description)
+        results[resume_id] = record
+        if on_progress:
+            on_progress(record)
+
+# get number of failed API calls from AI manager API call (any reason)
+def get_failed_ids(results):
+    failed_ids = []
+    for resume_id, record in results.items():
+        if record["status"] == STATUS_ERROR:
+            failed_ids.append(resume_id)
+    return failed_ids
+
+
+# number of failed API calls that can be retried
+def get_retryable_ids(results):
+    retryable_ids = []
+    for resume_id in get_failed_ids(results):
+        if results[resume_id]["retryable"]:
+            retryable_ids.append(resume_id)
+    return retryable_ids
+
+# call ai manager again to retry faield attempts
+def retry_failed(client, resumes, job_description, results, on_progress=None):
+    # re-screens only failed resumes
+
+    # list of failed resumes
+    retry_ids = get_retryable_ids(results)
+    # loop through each failed resume and call ai manager
+    for resume_id in retry_ids:
+        record = screen_resume(client, resumes[resume_id], job_description)
+        results[resume_id] = record
+        if on_progress:
+            on_progress(record)
+    return len(retry_ids)
+
+
+# reports a summary for IO manager to display
+def report_summary(results):
+
+    failed_ids = get_failed_ids(results)
+
+    failed_records = []
+    for resume_id in failed_ids:
+        failed_records.append(results[resume_id])
+
+    success_count = len(results) - len(failed_ids)
+    # function from io manager
+    show_summary(success_count, failed_records)
+
+
+# saves results to a JSON file (for debugging)
+def save_results_json(results):
+    # raises ValueError if the file can't be written; main() shows the warning
+    tmp_path = DEBUG_JSON_PATH + ".tmp"
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_path, DEBUG_JSON_PATH)
+    except (OSError, TypeError, ValueError) as e:
+        raise ValueError(f"could not save results to {DEBUG_JSON_PATH}: {e}")
 
 def main():
 
-    # Example usage
-    # test_prompt = (
-    #     "MUST-HAVE SKILLS: Python, SQL\n"
-    #     "PREFERRED SKILLS: Airflow\n"
-    #     "RESUME:\n"
-    #     "Senior data engineer, 6 years of Python ETL jobs and Postgres tuning."
-    # )
-
-    # call function from IO manager to collect data for API
-    resumes, jobs_description, preferences = collect_inputs()
-
-    if not resumes:
-        print("No valid resumes to screen.")
+    # Fail early if API key is not found
+    try:
+        client = create_client()
+    except ValueError as e:
+        # printing function from io manager
+        show_error(f"creating AI client: {e}")
         return
 
-    success = 0
-    failed = 0
-    # processing each resume
-    for resume in resumes:
-        try:
-            user_prompt = build_user_prompt(jobs_description, resume["raw_text"])
-            result = screen_resume(resume["file_name"], user_prompt)
-            status = result["record"]["status"]
-            print(f"Processed {resume['file_name']}: {status}")
-            if status == "success":
-                success += 1
-            else:
-                failed += 1
-        except Exception as e:
-            print(f"Unexpected error on {resume['file_name']}: {e}")
-            failed += 1
-
-    print(f"\nDone. {success} succeeded, {failed} failed.")
-    print(f"Results saved to {RESULT_FILE_PATH}")
-
+    try:
+        resume_list, job_description, preferences = collect_inputs()
+        if not resume_list:
+            show_message("No valid resumes to screen.")
+            return
+ 
+        resumes = {r["id"]: r for r in resume_list}
+        results = {}
+ 
+        def on_progress(record):
+            # Runs after every resume: show progress and save the debug json
+            show_progress(record)
+            try:
+                save_results_json(results)
+            except ValueError as e:
+                show_message(f"Warning: {e}")
+ 
+        show_message("\nScreening...")
+        screen_all_resumes(client, resumes, job_description, results, on_progress)
+        report_summary(results)
+ 
+        # Ask only about failures a retry could fix (connection, timeout,
+        # rate limit, server error). Repeat until none are left or the user says no.
+        while True:
+            retryable_ids = get_retryable_ids(results)
+            if not retryable_ids:
+                break
+            if not question_api_retry(len(retryable_ids)):
+                break
+            show_message("\nRetrying...")
+            retry_failed(client, resumes, job_description, results, on_progress)
+            report_summary(results)
+ 
+        show_message(f"\nDebug copy of the results: {DEBUG_JSON_PATH}")
+ 
+        # Next: logic_manager scores `results`, io_manager displays them,
+        # data_manager.save_to_csv(...) persists them.
+ 
+    except (KeyboardInterrupt, EOFError):
+        show_message("\nInterrupted. Unsaved results were discarded.")
 
 
 if __name__ == "__main__":
