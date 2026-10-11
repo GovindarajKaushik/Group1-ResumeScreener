@@ -247,6 +247,39 @@ def question_api_retry(count):
     question = f"{count} resumes failed to process. Would you like to retry them? (yes/no): "
     return ask_api_retry(question)
 
+# replaces the print result from logic manager
+def show_rankings(rows):
+    """Print candidates in the order given (best first).
+ 
+    rows: list of {"file_name": str, "evaluation": result dict from logic_manager}
+    """
+    if not rows:
+        print("\nNo resumes were screened successfully, so there is nothing to rank.")
+        return
+ 
+    print(f"\n--- Results ({len(rows)} candidate(s), best first) ---")
+ 
+    for row in rows:
+        name = row["file_name"]
+        result = row["evaluation"]
+ 
+        tag = ""
+        if result["fast_track"]:
+            tag = " [FAST-TRACK]"
+ 
+        print(f"{name}: {result['final_score']} ({result['status']}){tag}")
+ 
+        if result["status"] != "RE_ENTRY":
+            print(
+                f"    skills {result['skills_score']} "
+                f"| experience {result['experience_score']:.0f} "
+                f"| education {result['education_score']:.0f} "
+                f"| confidence {result['confidence']}"
+            )
+ 
+        for note in result["notes"]:
+            print("    -", note)
+
 def main_menu():
     """Main menu loop for user interaction."""
     while True:

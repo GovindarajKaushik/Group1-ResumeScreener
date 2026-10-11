@@ -1,10 +1,27 @@
-"""Logic manager: turns the AI's raw result into a score and a decision.
+# Logic manager: all scoring and ranking logic lives here.
 
-Public interface (pure functions: no printing, no input, no file access):
+"""
+Entry point for main.py:
+    evaluate_and_rank(json_path, job_description, preferences) -> rows for display
+
+Building blocks (also usable on their own):
+    load_results(json_path)                                       -> results dict
     evaluate_candidate(ai_response, job_description, preferences) -> result dict
-    rank_candidates(evaluations)                                  -> list of ids, best first
+    evaluate_results(results, job_description, preferences)       -> id -> evaluation
+    rank_candidates(evaluations)                                  -> ids, best first
+    build_ranking_rows(results, evaluations)                      -> rows, best first
+
+The results file is the JSON that main.py writes: id -> record. This module
+only relies on two keys in each record:
+    record["file_name"]        the resume's file name
+    record["screening_result"] the AI's result dict, or null if the API call failed
+
+Error contract: load_results and evaluate_and_rank raise ONLY ValueError
+(file missing, unreadable, corrupt, or the wrong shape).
+No printing and no input: io_manager shows the output.
 """
 
+import json
 from datetime import date
 
 
@@ -364,3 +381,74 @@ def rank_candidates(evaluations):
     for fast_track, final_score, resume_id in entries:
         ranked_ids.append(resume_id)
     return ranked_ids
+
+
+def load_results(json_path):
+    """Read the results file written by main.py and return it as a dict.
+
+    Raises ValueError with a readable message if the file is missing,
+    unreadable, not valid JSON, or not shaped like id -> record.
+    """
+    try:
+        with open(json_path, "r", encoding="utf-8") as file:
+            results = json.load(file)
+    except FileNotFoundError:
+        raise ValueError(f"Results file not found: {json_path}")
+    except OSError as e:
+        raise ValueError(f"Could not open {json_path}: {e}")
+    except ValueError:
+        # JSONDecodeError and UnicodeDecodeError are both kinds of ValueError
+        raise ValueError(f"{json_path} is not valid UTF-8 JSON")
+
+    if not isinstance(results, dict):
+        raise ValueError(f"{json_path} must contain a dictionary of records")
+
+    for resume_id, record in results.items():
+        if (
+            not isinstance(record, dict)
+            or "file_name" not in record
+            or "screening_result" not in record
+        ):
+            raise ValueError(f"Record '{resume_id}' in {json_path} is malformed")
+
+    return results
+
+
+def evaluate_results(results, job_description, preferences):
+    """Score every resume that has an AI result; returns id -> evaluation.
+
+    Records with no AI result (the API call failed) are skipped.
+    """
+    evaluations = {}
+    for resume_id, record in results.items():
+        if record["screening_result"] is None:
+            continue
+
+        evaluations[resume_id] = evaluate_candidate(
+            record["screening_result"], job_description, preferences
+        )
+    return evaluations
+
+
+def build_ranking_rows(results, evaluations):
+    """Return display rows, best candidate first.
+
+    Each row is {"file_name": str, "evaluation": result dict}.
+    """
+    rows = []
+    for resume_id in rank_candidates(evaluations):
+        rows.append({
+            "file_name": results[resume_id]["file_name"],
+            "evaluation": evaluations[resume_id],
+        })
+    return rows
+
+
+def evaluate_and_rank(json_path, job_description, preferences):
+    """Read the results file, score every screened resume, return ranked rows.
+
+    Raises ValueError if the results file can't be used.
+    """
+    results = load_results(json_path)
+    evaluations = evaluate_results(results, job_description, preferences)
+    return build_ranking_rows(results, evaluations)

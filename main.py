@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 
 # import main function from ai_manager
 from ai_manager import process_resume_ai, create_client
+# import scoring functions from logic_manager
+from logic_manager import evaluate_and_rank
 # import io_manager
 from io_manager import (
     collect_inputs,
@@ -12,6 +14,7 @@ from io_manager import (
     show_progress,
     show_summary,
     question_api_retry,
+    show_rankings
 )
 
 
@@ -158,7 +161,22 @@ def main():
  
         show_message(f"\nDebug copy of the results: {DEBUG_JSON_PATH}")
  
-        # Next: logic_manager scores `results`, io_manager displays them,
+        # Next: logic_manager scores `results`, io_manager displays them
+        try:
+            # save results after retry
+            save_results_json(results)
+        except ValueError as e:
+            show_error(f"Cannot score the results: {e}")
+            return
+
+        # logic manager
+        try:
+            ranking_rows = evaluate_and_rank(DEBUG_JSON_PATH, job_description, preferences)
+        except ValueError as e:
+            show_error(f"Cannot score the results: {e}")
+            return
+        show_rankings(ranking_rows)
+
         # data_manager.save_to_csv(...) persists them.
  
     except (KeyboardInterrupt, EOFError):
