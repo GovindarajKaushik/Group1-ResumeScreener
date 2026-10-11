@@ -302,3 +302,14 @@ def save_all_results(results, resumes=None, job_description=None, results_file=R
         )
         saved_ids.append(candidate_id)
     return saved_ids
+
+def save_failed_resume(file_name, file_path="", job_title="", reason="", results_file=RESULTS_FILE, log_file=LOG_FILE):
+    candidate = {
+        "file_name": file_name,
+        "file_path": file_path,
+        "job_title": job_title,
+        "final_score": 0.0,   
+        "status": "RE_ENTRY",
+        "notes": [reason],
+    }
+    return save_candidate_result(candidate, None, results_file, log_file)
