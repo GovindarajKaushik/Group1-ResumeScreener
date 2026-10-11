@@ -65,9 +65,20 @@ def screen_all_resumes(client, resumes, job_description, results, on_progress=No
 
 # get number of failed API calls from AI manager API call (any reason)
 def get_failed_ids(results):
+    failed_ids = []
     for resume_id, record in results.items():
         if record["status"] == STATUS_ERROR:
-            return resume_id
+            failed_ids.append(resume_id)
+    return failed_ids
+
+
+# number of failed API calls that can be retried
+def get_retryable_ids(results):
+    retryable_ids = []
+    for resume_id in get_failed_ids(results):
+        if results[resume_id]["retryable"]:
+            retryable_ids.append(resume_id)
+    return retryable_ids
 
 def main():
 
