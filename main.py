@@ -6,7 +6,14 @@ from datetime import datetime, timezone
 # import main function from ai_manager
 from ai_manager import process_resume_ai, validate_ai_result, build_user_prompt
 # import io_manager
-from io_manager import collect_inputs, ask_API_retry
+from io_manager import (
+    collect_inputs,
+    show_message,
+    show_error,
+    show_progress,
+    show_summary,
+    ask_retry_failed,
+)
 
 
 
@@ -79,6 +86,20 @@ def get_retryable_ids(results):
         if results[resume_id]["retryable"]:
             retryable_ids.append(resume_id)
     return retryable_ids
+
+# call ai manager again to retry faield attempts
+def retry_failed(client, resumes, job_description, results, on_progress=None):
+    # re-screens only failed resumes
+
+    # list of failed resumes
+    retry_ids = get_retryable_ids(results)
+    # loop through each failed resume and call ai manager
+    for resume_id in retry_ids:
+        record = screen_resume(client, resumes[resume_id], job_description)
+        results[resume_id] = record
+        if on_progress:
+            on_progress(resume_id, record)
+    return len(retry_ids)
 
 def main():
 

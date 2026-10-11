@@ -243,7 +243,7 @@ def show_summary(success_count, failed_record):
         print(f"  - {record['file_name']}: {record['error']}")
 
 # uses the ask_api_retry function to ask user if they want to retry failed resumes
-def ask_api_retry(count):
+def question_api_retry(count):
     question = f"{count} resumes failed to process. Would you like to retry them? (yes/no): "
     return ask_api_retry(question)
 
