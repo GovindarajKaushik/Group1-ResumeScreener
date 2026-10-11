@@ -4,7 +4,7 @@ from datetime import datetime
 RESULTS_FILE = "candidate_results.csv"
 LOG_FILE = "audit_log.csv"
 
-candidate_fields = [
+CANDIDATE_FIELDS = [
     "candidate_id",
     "job_title",
     "file_name"
@@ -136,3 +136,56 @@ def log_action(actions, details="", candidate_id="", log_file=LOG_FILE):
 
 def load_log(log_file=LOG_FILE):
     return read_csv(log_file, LOG_FIELDS)
+
+def split_skills(skills_details):
+    present = []
+    missing = []
+    evidence_parts = []
+    for skill in skills_details:
+        if skill.get("present"):
+            present.append(skill["name"])
+            if skill.get("evidence"):
+                evidence_parts.append(f"{skill['name']}: {skill['evidence']}")
+        else:
+            missing.append(skill["name"])
+    return present, missing, evidence_parts
+
+def result_to_candidate(file_name, file_path, result):
+    present, missing, evidence_parts = split_skills(result.get("skill_details", []))
+    ai_result = {
+        "skills_present": present,
+        "skills_missing": missing,
+        "evidence": "; ".join(evidence_parts),
+        "confidence": result.get("confidence", ""),
+        "summary": result.get("summary", ""),
+        "experience_score": result.get("experience_score"),
+        "education_score": result.get("education_score"),
+    }
+
+    candidate = {
+        "file_name": file_name,
+        "file_path": file_path,
+        "final_score": result.get("final_score"),
+        "skills_score": result.get("skills_score"),
+        "ai_overall_score": result.get("ai_overall_score"),
+        "status": result.get("status", "RE_ENTRY"),
+        "fast_track": result.get("fast_track", False),
+        "missing_must_haves": result.get("missing_must_haves", []),
+        "stale_skills": result.get("stale_skills", []),
+        "notes": result.get("notes", []),
+        "ai_result": ai_result,
+    }
+    return candidate
+
+def flatten_candidate(candidate):
+    flat = {}
+    for key in candidate:
+        if key != "ai_result":
+            flat[key] = candidate[key]
+
+    ai_result = candidate.get("ai_results", {})
+    for key in ai_result:
+        if key in CANDIDATE_FIELDS and key not in flat:
+            flat[key] = ai_result[key]
+    return flat
+
