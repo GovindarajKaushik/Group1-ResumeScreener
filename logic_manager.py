@@ -1,4 +1,10 @@
-import json
+"""Logic manager: turns the AI's raw result into a score and a decision.
+
+Public interface (pure functions: no printing, no input, no file access):
+    evaluate_candidate(ai_response, job_description, preferences) -> result dict
+    rank_candidates(evaluations)                                  -> list of ids, best first
+"""
+
 from datetime import date
 
 
@@ -30,38 +36,6 @@ REQUIRED_KEYS = [
     "confidence",
 ]
 
-
-def get_inputs():
-    from io_manager import collect_job_description, collect_screening_preferences
-
-    job_description = collect_job_description()
-    preferences = collect_screening_preferences()
-
-    return job_description, preferences
-
-
-def load_ai_results(json_path):
-    try:
-        with open(json_path, "r", encoding="utf-8") as file:
-            ai_results = json.load(file)
-
-    except OSError:
-        print("Could not open:", json_path)
-        return {}
-
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        print("The file does not contain valid UTF-8 JSON.")
-        return {}
-
-    if not isinstance(ai_results, dict):
-        print("Expected a dictionary of candidate names and AI results.")
-        return {}
-
-    if "skills" in ai_results and isinstance(ai_results["skills"], list):
-        print("Put each candidate's AI result under their filename.")
-        return {}
-
-    return ai_results
 
 def extract_ai_fields(raw):
     if not isinstance(raw, dict):
@@ -233,6 +207,11 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
                         f"AI labelled '{name}' as {found['category']}; "
                         f"job description says {category}"
                     )
+            else:
+                # NEW: make a skill the AI left out (or renamed) visible
+                result["notes"].append(
+                    f"AI did not report '{name}'; treated as not present"
+                )
 
             skills.append(job_skill)
 
@@ -365,123 +344,23 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
 
     return result
 
-def screen_all(json_path, job_description=None, preferences=None):
-    ai_results = load_ai_results(json_path)
 
-    # Derive the skill requirements if no job description was supplied.
-    if job_description is None:
-        required = []
-        preferred = []
-        seen = []
+def rank_candidates(evaluations):
+    """Return the ids in display order: fast-track first, then highest score.
 
-        for candidate_name in ai_results:
-            ai_data = ai_results[candidate_name]
-
-            if not isinstance(ai_data, dict):
-                continue
-
-            if not isinstance(ai_data.get("skills"), list):
-                continue
-
-            for skill in ai_data["skills"]:
-                if not isinstance(skill, dict):
-                    continue
-
-                name = str(skill.get("name", "")).strip()
-
-                if not name or name.lower() in seen:
-                    continue
-
-                seen.append(name.lower())
-
-                if str(skill.get("category", "")).strip().lower() == "must_have":
-                    required.append(name)
-                else:
-                    preferred.append(name)
-
-        job_description = {
-            "title": "(derived from ai_results.json)",
-            "required_skills": required,
-            "preferred": preferred,
-            "min_experience": 0.0,
-            "education": "",
-        }
-
-    results = {}
-
-    for name in ai_results:
-        results[name] = evaluate_candidate(
-            ai_results[name],
-            job_description,
-            preferences,
+    evaluations: id -> result dict from evaluate_candidate.
+    It only sorts; printing is io_manager's job.
+    """
+    entries = []
+    for resume_id, evaluation in evaluations.items():
+        entries.append(
+            (evaluation["fast_track"], evaluation["final_score"], resume_id)
         )
 
-    return results
+    # tuples sort left to right: fast_track first, then score
+    entries.sort(reverse=True)
 
-def print_results(results):
-    remaining = list(results)
-
-    while len(remaining) > 0:
-        best_name = remaining[0]
-
-        # Find the next candidate to display.
-        for name in remaining:
-            candidate = results[name]
-            best = results[best_name]
-
-            if candidate["fast_track"] and not best["fast_track"]:
-                best_name = name
-
-            elif candidate["fast_track"] == best["fast_track"]:
-                if candidate["final_score"] > best["final_score"]:
-                    best_name = name
-
-        result = results[best_name]
-
-        tag = ""
-
-        if result["fast_track"]:
-            tag = " [FAST-TRACK]"
-
-        print(
-            f"{best_name}: {result['final_score']} "
-            f"({result['status']}){tag}"
-        )
-
-        if result["status"] != "RE_ENTRY":
-            print(
-                f"    skills {result['skills_score']} "
-                f"| experience {result['experience_score']:.0f} "
-                f"| education {result['education_score']:.0f} "
-                f"| confidence {result['confidence']}"
-            )
-
-        for note in result["notes"]:
-            print("    -", note)
-
-        remaining.remove(best_name)
-
-
-if __name__ == "__main__":
-    # Change to True to collect inputs through io_manager.py.
-    use_io_manager = False
-
-    if use_io_manager:
-        job_description, preferences = get_inputs()
-    else:
-        job_description = None
-        preferences = None
-
-    results = screen_all(
-        "ai_results.json",
-        job_description,
-        preferences,
-    )
-
-    print(
-        "\n--- Results from ai_results.json (",
-        len(results),
-        "candidates) ---",
-    )
-
-    print_results(results)
+    ranked_ids = []
+    for fast_track, final_score, resume_id in entries:
+        ranked_ids.append(resume_id)
+    return ranked_ids
