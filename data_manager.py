@@ -286,3 +286,19 @@ def save_candidate_result(candidate, job_description=None, results_file=RESULTS_
         log_file,
     )
     return candidate_id
+
+def save_all_results(results, resumes=None, job_description=None, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    paths = {}
+    if resumes:
+        for resume in resumes:
+            paths[resume["file_name"]] = resume["file_path"]
+
+    saved_ids = []
+    for file_name in results:
+        file_path = paths.get(file_name, "")
+        candidate = result_to_candidate(file_name, file_path, results[file_name])
+        candidate_id = save_candidate_result(
+            candidate, job_description, results_file, log_file
+        )
+        saved_ids.append(candidate_id)
+    return saved_ids
