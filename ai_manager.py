@@ -126,6 +126,26 @@ def validate_ai_result(data):
     return data
 
 
+# handling API call errors
+def api_error_description(error):
+    # return user-friendly message for any OpenAI API excepions
+
+    # Order is important - APITimeoutErrro is a subclass of APIConnectionError
+    if isinstance(error, openai.APITimeoutError):
+        return "The API request timed out. The service may be slow or unavailable; try again later."
+    elif isinstance(error, openai.APIConnectionError): # elif is not needed but added for readability as its an early return
+        return "Could not connect to the API. Check your internet connection."
+    elif isinstance(error, openai.RateLimitError):
+        return "The API rate limit was reached. Wait a moment, then retry."
+    elif isinstance(error, openai.InternalServerError):
+        return "The API service is currently unavailable. Try again later."
+    elif isinstance(error, (openai.AuthenticationError, openai.PermissionDeniedError)):
+        return "The API key was rejected. Check OPENROUTER_API_KEY in your .env file."
+    elif isinstance(error, openai.NotFoundError):
+        return "The AI model was not found. It may no longer be available; check MODEL_NAME."
+    return f"The API rejected the request: {error}"
+
+
 # make the api call
 def ai_processing(client, system_prompt, user_prompt):
     # call the model and return validated dictionary
@@ -139,21 +159,17 @@ def ai_processing(client, system_prompt, user_prompt):
             temperature=0,
         )
         # includes timeouts
-    except openai.APIConnectionError as e: 
-        raise ValueError(f"API connection problem ({type(e).__name__}); check your internet connection")
-    # bad key, bad request, rate limit, server error...
     except openai.OpenAIError as e:
-        raise ValueError(f"API request failed: {e}")
+        # OpenAI SDK already retried the errors worth retrying
+        error_msg = api_error_description(e)
+        raise ValueError(f"API request failed: {error_msg}")
  
     return parse_response(response)
 
 
 
 # main function for API
-def process_resume_ai(user_prompt):
-    try:
-        client = create_client()
-        result = ai_processing(client, SYSTEM_PROMPT, user_prompt)
-        return result
-    except Exception as e:
-        raise ValueError(f"Error in ai_manager: {e}")
+def process_resume_ai(client, job_description, resume_text):
+    # calls API and screens each resume and returns validated data else raise error
+    user_prompt = build_user_prompt(job_description, resume_text)
+    return ai_processing(client, SYSTEM_PROMPT, user_prompt)
