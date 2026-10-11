@@ -48,7 +48,7 @@ NUMBER_FIELDS = [
     "ai_overall_score",
     ]
 
-AI_RESULTS_FIELD = [
+AI_RESULT_FIELD = [
     "skills_present",
     "skills_missing",
     "evidence",
@@ -242,3 +242,34 @@ def flatten_candidate(candidate):
         if key in CANDIDATE_FIELDS and key not in flat:
             flat[key] = ai_result[key]
     return flat
+
+def candidate_to_row(flat):
+    row = {}
+    for field in CANDIDATE_FIELDS:
+        value = flat.get(field, "")
+        if value is None:
+            value = ""
+        elif field == "fast track":
+            value = bool_to_text(value)
+        elif isinstance(value, list):
+            value = list_to_text(value)
+        row[field] = value
+    return row
+
+def row_to_candidate(row):
+    candidate = {}
+    for field in CANDIDATE_FIELDS:
+        candidate[field] = row.get(field) or ""
+
+    for field in LIST_FIELDS:
+        candidate[field] = text_to_list(candidate[field])
+    for field in NUMBER_FIELDS:
+        candidate[field] = text_to_number(candidate[field])
+    candidate["fast_track"] = candidate["fast_track"] == "yes"
+    candidate["feedback_rating"] = text_to_number(candidate["feedback_rating"], True)
+
+    ai_result = {}
+    for field in AI_RESULT_FIELD:
+        ai_result[field] = candidate[field]
+    candidate["ai_result"] = ai_result
+    return candidate
