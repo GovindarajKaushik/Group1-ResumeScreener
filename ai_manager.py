@@ -126,7 +126,7 @@ def validate_ai_result(data):
     return data
 
 
-# handling API call errors
+# describe API call errors
 def api_error_description(error):
     # return user-friendly message for any OpenAI API excepions
 
@@ -145,6 +145,13 @@ def api_error_description(error):
         return "The AI model was not found. It may no longer be available; check MODEL_NAME."
     return f"The API rejected the request: {error}"
 
+# check for erorrs that you can retry
+def can_retry_error(error):
+    # only true for temporary problems (connection, timeout, rate limit, server erorr)
+    return isinstance(error, (openai.APIConnectionError, 
+                              openai.APITimeoutError, 
+                              openai.RateLimitError, 
+                              openai.InternalServerError))
 
 # make the api call
 def ai_processing(client, system_prompt, user_prompt):
@@ -162,6 +169,11 @@ def ai_processing(client, system_prompt, user_prompt):
     except openai.OpenAIError as e:
         # OpenAI SDK already retried the errors worth retrying
         error_msg = api_error_description(e)
+
+        # check if error can be retried
+        if can_retry_error(e):
+            # Log the error and retry logic would go here
+            raise ConnectionError(error_msg)
         raise ValueError(f"API request failed: {error_msg}")
  
     return parse_response(response)
