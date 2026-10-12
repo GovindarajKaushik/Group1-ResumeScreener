@@ -294,14 +294,66 @@ def display_result(candidates):
 
 def display_candidate_detail(candidate):
     """Display detailed information about a single candidate."""
-    print(f"File: {candidate['file_name']}")
-    print(f"Score: {candidate['final_score']}")
-
+    print("\n" + "=" * 60)
+    print("SAVED CANDIDATE DETAILS")
+    print("=" * 60)
+    print(f"Candidate ID: {candidate.get('candidate_id') or 'Not provided'}")
+    print(f"Resume: {candidate['file_name']}")
+    print(f"Role: {candidate.get('job_title') or 'Not provided'}")
+    print(f"Final score: {format_saved_score(candidate['final_score'])}")
+    print(f"System recommendation: {candidate.get('status') or 'Not provided'}")
+    print(f"Fast-track: {'Yes' if candidate.get('fast_track') else 'No'}")
+    print(f"Recruiter decision: {candidate.get('recruiter_decision') or 'pending'}")
     ai_result = candidate["ai_result"]
-    print(f"Skills present: {ai_result['skills_present']}")
-    print(f"Skills missing: {ai_result['skills_missing']}")
-    print(f"Evidence: {ai_result['evidence']}")
-    print(f"Confidence: {ai_result['confidence']}")
+    print(f"AI confidence: {ai_result.get('confidence') or 'Not provided'}")
+    print("\nCRITERION SCORES")
+    print(f"Skills: {format_saved_score(candidate.get('skills_score'))}")
+    print(f"Experience: {format_saved_score(ai_result.get('experience_score'))}")
+    print(f"Education: {format_saved_score(ai_result.get('education_score'))}")
+    print("\nSKILLS AND EVIDENCE")
+    print(f"AI-reported present: {', '.join(ai_result['skills_present']) or 'None reported'}")
+    print(f"Not demonstrated: {', '.join(ai_result['skills_missing']) or 'None reported'}")
+    print(f"Evidence: {ai_result['evidence'] or 'Not provided'}")
+    print("\nAI SUMMARY")
+    print(ai_result.get('summary') or "Not provided")
+    print("\nSCORING NOTES / PROCESSING ERRORS")
+    for note in candidate.get("notes", []):
+        print(f"- {note}")
+    if not candidate.get("notes"):
+        print("None recorded")
+    print(f"\nSaved: {candidate.get('created_at') or 'Not provided'}")
+    print("Viewing details does not change the recruiter decision.")
+    print("=" * 60)
+
+
+def format_saved_score(score):
+    # Format stored numeric scores while keeping API failures visibly unscored.
+    if score is None:
+        return "Not scored"
+    return f"{score:g} / 100"
+
+
+def display_saved_results(candidates):
+    # List stored candidates in CSV order, including failed screening records.
+    print(f"\n--- Saved results ({len(candidates)} candidate(s)) ---")
+    for candidate in candidates:
+        print(
+            f"{candidate['candidate_id']} | {candidate['job_title'] or 'Role not provided'} "
+            f"| {candidate['file_name']} | {format_saved_score(candidate['final_score'])} "
+            f"| {candidate['status']} | Decision: {candidate['recruiter_decision'] or 'pending'}"
+        )
+
+
+def select_saved_candidate(candidates):
+    # Return a selected candidate, or None when the user returns to the main menu.
+    while True:
+        candidate_id = input("\nEnter a candidate ID to view details, or press Enter for the main menu: ").strip().upper()
+        if not candidate_id:
+            return None
+        for candidate in candidates:
+            if candidate["candidate_id"].upper() == candidate_id:
+                return candidate
+        print("Candidate ID not found. Enter an ID from the saved results list.")
 
 # create a main menu function to import to main.py
 def collect_inputs():
@@ -392,41 +444,18 @@ def show_rankings(rows):
         for note in result["notes"]:
             print("    -", note)
 
-def main_menu():
-    """Main menu loop for user interaction."""
+def get_main_menu_choice():
+    # Display available actions and return a valid choice to main.py.
     while True:
-        print("\n1. Screen new batch of resumes")
-        print("2. Exit program")
-        choice = input("Choose an option (1 or 2): ")
-
-        if choice == "1":
-            resumes, job_description, preferences = collect_inputs()
-            if not resumes:
-                print("No valid resumes to screen.")
-                continue
-
-            print("\n--- Collected so far ---\n")
-            print(f"{len(resumes)} resume(s) ready to screen.")
-            print(job_description)
-            print(preferences)
-
-            print("\n--- Resumes prepared for AI ---\n")
-            for r in resumes:
-                print(f"File: {r['file_name']}")
-                print(f"Path: {r['file_path']}")
-                print(f"Raw text length: {len(r['text'])} characters")
-                print("Raw text: ")
-                print(r["text"])
-                print("\n-------------------------------")
-
-        elif choice == "2":
-            print("Exiting program....")
-            break
-
-        else:
-            print("\nInvalid choice. Please enter 1 or 2.")
+        print("\nMAIN MENU")
+        print("1. Screen a new batch of resumes")
+        print("2. View saved screening results")
+        print("3. Exit")
+        choice = input("Choose an option (1-3): ").strip()
+        if choice in ("1", "2", "3"):
+            return choice
+        print("Invalid choice. Enter 1, 2, or 3.")
 
 
 if __name__ == "__main__":
-    print("\nWELCOME TO THE RESUME SCREENING TOOL")
-    main_menu()
+    print("Start the application with: python main.py")

@@ -346,6 +346,9 @@ def save_screening_record(record, resume, logic_result=None, job_description=Non
     return save_candidate_result(candidate, job_description, results_file, log_file)
 
 def load_all_results(results_file=RESULTS_FILE):
+    # Viewing a missing results file should return an empty list without creating it.
+    if not os.path.exists(results_file):
+        return []
     candidates = []
     for row in read_csv(results_file, CANDIDATE_FIELDS):
         candidates.append(row_to_candidate(row))

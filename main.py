@@ -4,7 +4,9 @@ from datetime import datetime, timezone
 from ai_manager import process_resume_ai, create_client
 # import scoring functions from logic_manager
 from logic_manager import evaluate_results, build_ranking_rows
-from data_manager import save_results_json, save_screening_record, RESULTS_FILE, LOG_FILE
+from data_manager import (
+    save_results_json, save_screening_record, load_all_results, RESULTS_FILE, LOG_FILE
+)
 # import io_manager
 from io_manager import (
     collect_inputs,
@@ -13,7 +15,11 @@ from io_manager import (
     show_progress,
     show_summary,
     question_api_retry,
-    show_rankings
+    show_rankings,
+    get_main_menu_choice,
+    display_saved_results,
+    select_saved_candidate,
+    display_candidate_detail,
 )
 
 
@@ -104,8 +110,8 @@ def report_summary(results):
     show_summary(success_count, failed_records)
 
 
-def main():
-    # Coordinate input, AI screening, scoring, display, and result storage.
+def screen_new_batch():
+    # Coordinate one batch of input, AI screening, scoring, display, and storage.
 
     # Fail early if API key is not found
     try:
@@ -167,6 +173,41 @@ def main():
  
     except (KeyboardInterrupt, EOFError):
         show_message("\nInterrupted. Any records already saved remain on disk.")
+
+
+def view_saved_results():
+    # Load saved candidates and let the user view details without changing decisions.
+    try:
+        candidates = load_all_results()
+    except (OSError, ValueError) as error:
+        show_error(f"Could not load saved results: {error}")
+        return
+    if not candidates:
+        show_message("No saved results yet. Screen a batch first.")
+        return
+    display_saved_results(candidates)
+    while True:
+        candidate = select_saved_candidate(candidates)
+        if candidate is None:
+            return
+        display_candidate_detail(candidate)
+
+
+def main():
+    # Coordinate menu actions; create an AI client only when screening is selected.
+    show_message("WELCOME TO THE RESUME SCREENING TOOL")
+    try:
+        while True:
+            choice = get_main_menu_choice()
+            if choice == "1":
+                screen_new_batch()
+            elif choice == "2":
+                view_saved_results()
+            else:
+                show_message("Exiting program.")
+                return
+    except (KeyboardInterrupt, EOFError):
+        show_message("\nExiting. Any records already saved remain on disk.")
 
 
 if __name__ == "__main__":
