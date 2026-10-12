@@ -342,3 +342,15 @@ def get_candidate(candidate_id, results_file=RESULTS_FILE):
         if row["candidate_id"] == candidate_id:
             return row_to_candidate(row)
     return None
+
+def update_field(candidate_id, field, value, action_name,
+                 results_file=RESULTS_FILE, log_file=LOG_FILE):
+    rows = read_csv(results_file, CANDIDATE_FIELDS)
+    for row in rows:
+        if row["candidate_id"] == candidate_id:
+            row[field] = value
+            row["updated_at"] = get_timestamp()
+            write_csv(results_file, CANDIDATE_FIELDS, rows)
+            log_action(action_name, f"{field} -> {value}", candidate_id, log_file)
+            return True
+    return False
