@@ -343,8 +343,7 @@ def get_candidate(candidate_id, results_file=RESULTS_FILE):
             return row_to_candidate(row)
     return None
 
-def update_field(candidate_id, field, value, action_name,
-                 results_file=RESULTS_FILE, log_file=LOG_FILE):
+def update_field(candidate_id, field, value, action_name, results_file=RESULTS_FILE, log_file=LOG_FILE):
     rows = read_csv(results_file, CANDIDATE_FIELDS)
     for row in rows:
         if row["candidate_id"] == candidate_id:
@@ -370,3 +369,43 @@ def save_feedback(candidate_id, rating, results_file=RESULTS_FILE, log_file=LOG_
         raise ValueError("Rating must be between 1 and 10")
     return update_field(candidate_id, "feedback_rating", rating, "FEEDBACK", results_file, log_file)
 
+def get_sort_score(candidate):
+    if candidate["final_score"] is None:
+        return -1
+    return candidate["final_score"]
+
+def search_candidates(status=None, decision=None, min_score=None, max_score=None, fast_track=None, job_title=None, keyword=None, sort_by_score=True, results_file=RESULTS_FILE):
+    matches = []
+    for candidate in load_all_results(results_file):
+        score = candidate["final_score"]
+
+        if status and candidate["status"] != status:
+            continue
+        if decision and candidate["recruiter_decision"] != decision:
+            continue
+        if min_score is not None and (score is None or score < min_score):
+            continue
+        if max_score is not None and (score is None or score > max_score):
+            continue
+        if fast_track is not None and candidate["fast_track"] != fast_track:
+            continue
+        if job_title and candidate["job_title"].lower() != job_title.lower():
+            continue
+
+        if keyword:
+            text = " ".join([
+                candidate["file_name"],
+                candidate["summary"],
+                candidate["evidence"],
+                " ".join(candidate["skills_present"]),
+                " ".join(candidate["skills_missing"]),
+                " ".join(candidate["notes"]),
+            ])
+            if keyword.lower() not in text.lower():
+                continue
+
+        matches.append(candidate)
+
+    if sort_by_score:
+        matches.sort(key=get_sort_score, reverse=True)
+    return matches
