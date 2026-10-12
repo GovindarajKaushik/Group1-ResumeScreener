@@ -354,3 +354,9 @@ def update_field(candidate_id, field, value, action_name,
             log_action(action_name, f"{field} -> {value}", candidate_id, log_file)
             return True
     return False
+
+def update_recruiter_decision(candidate_id, decision, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    if decision not in VALID_DECISIONS:
+        raise ValueError(f"Invalid decision '{decision}'. Use one of {VALID_DECISIONS}")
+    return update_field(candidate_id, "recruiter_decision", decision,
+                        "RECRUITER_DECISION", results_file, log_file)
