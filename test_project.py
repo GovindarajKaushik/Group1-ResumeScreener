@@ -317,7 +317,7 @@ def test_main_scores_and_saves_when_debug_write_fails():
             save_job=lambda description, preferences: data_manager.save_job(description, preferences, jobs_file, log_file),
             show_message=Mock(), show_error=Mock(), show_progress=Mock(),
             show_summary=Mock(), show_rankings=Mock(),
-            get_main_menu_choice=Mock(side_effect=["1", "3"]),
+            get_main_menu_choice=Mock(side_effect=["1", "4"]),
         ):
             orchestrator.main()
             rows = orchestrator.show_rankings.call_args.args[0]
@@ -374,7 +374,7 @@ def test_menu_views_csv_without_changing_records():
         original_audit = Path(log_file).read_bytes()
         output = StringIO()
         with patch.object(orchestrator, "load_all_results", side_effect=lambda: data_manager.load_all_results(results_file)), patch(
-            "builtins.input", side_effect=["bad", "2", "1", "C404", " c001 ", "C002", "", "3"]
+            "builtins.input", side_effect=["bad", "2", "1", "C404", " c001 ", "C002", "", "4"]
         ), patch.object(orchestrator, "load_all_jobs", return_value=[]), patch.object(
             orchestrator, "load_job_results", side_effect=lambda job_id: data_manager.load_job_results(job_id, results_file)
         ), redirect_stdout(output):
@@ -395,14 +395,14 @@ def test_empty_results_and_read_errors_return_to_menu():
         missing_file = str(Path(folder) / "missing.csv")
         output = StringIO()
         with patch.object(orchestrator, "load_all_results", side_effect=lambda: data_manager.load_all_results(missing_file)), patch(
-            "builtins.input", side_effect=["2", "3"]
+            "builtins.input", side_effect=["2", "4"]
         ), patch.object(orchestrator, "load_all_jobs", return_value=[]), redirect_stdout(output):
             orchestrator.main()
         assert "No saved results yet" in output.getvalue()
         assert not Path(missing_file).exists()
     output = StringIO()
     with patch.object(orchestrator, "load_all_results", side_effect=PermissionError("File is locked")), patch(
-        "builtins.input", side_effect=["2", "3"]
+        "builtins.input", side_effect=["2", "4"]
     ), redirect_stdout(output):
         orchestrator.main()
     assert "Could not load saved results" in output.getvalue()
@@ -448,7 +448,7 @@ def test_jobs_keep_identical_titles_separate():
             load_all_jobs=lambda: data_manager.load_all_jobs(jobs_file),
             load_all_results=lambda: data_manager.load_all_results(results_file),
             load_job_results=lambda job_id: data_manager.load_job_results(job_id, results_file),
-        ), patch("builtins.input", side_effect=["2", "bad", "9", "2", "C001", "C002", "", "3"]), redirect_stdout(output):
+        ), patch("builtins.input", side_effect=["2", "bad", "9", "2", "C001", "C002", "", "4"]), redirect_stdout(output):
             orchestrator.main()
         text = output.getvalue()
         assert "Required skills: SQL" in text
@@ -656,6 +656,96 @@ def test_prepared_resumes_use_anonymized_text():
         assert "No resume content remains" in output.getvalue()
         assert resume_path.read_bytes() == b"original document"
 
+# Optional recruiter review
+
+def test_optional_review_saves_decisions_and_preserves_scores():
+    # Review can override recommendations, skip records, and survive interruption.
+    orchestrator, simulated_ai = load_test_orchestrator()
+    with TemporaryDirectory() as folder:
+        results_file = str(Path(folder) / "results.csv")
+        log_file = str(Path(folder) / "audit.csv")
+        for index in range(1, 6):
+            candidate = {
+                "file_name": f"candidate_{index}.pdf", "final_score": 80,
+                "status": "SHORTLIST", "recruiter_decision": "pending",
+            }
+            if index == 1:
+                candidate.update(final_score=50, status="SECONDARY_REVIEW")
+            elif index == 4:
+                candidate.update(final_score=None, status="RE_ENTRY")
+            elif index == 5:
+                candidate["recruiter_decision"] = "rejected"
+            data_manager.save_candidate_result(candidate, results_file=results_file, log_file=log_file)
+        original_rows = data_manager.read_csv(results_file, data_manager.CANDIDATE_FIELDS)
+        output = StringIO()
+        with patch.multiple(
+            orchestrator,
+            load_all_results=lambda: data_manager.load_all_results(results_file),
+            load_all_jobs=lambda: [],
+            load_job_results=lambda job_id: data_manager.load_job_results(job_id, results_file),
+            update_recruiter_decision=lambda candidate_id, decision: data_manager.update_recruiter_decision(
+                candidate_id, decision, results_file, log_file
+            ),
+        ), patch("builtins.input", side_effect=[
+            "3", "1", "C001", "bad", "1", "C002", "2", "C003", "3",
+            "C004", "C005", "3", "C001", "3", "", "4",
+        ]), redirect_stdout(output):
+            orchestrator.main()
+        candidates = data_manager.load_all_results(results_file)
+        assert [candidate["recruiter_decision"] for candidate in candidates] == [
+            "shortlisted", "rejected", "pending", "pending", "rejected",
+        ]
+        updated_rows = data_manager.read_csv(results_file, data_manager.CANDIDATE_FIELDS)
+        for original, updated in zip(original_rows, updated_rows):
+            for field in data_manager.CANDIDATE_FIELDS:
+                if field not in ("recruiter_decision", "updated_at"):
+                    assert updated[field] == original[field]
+        decisions = [entry for entry in data_manager.load_log(log_file) if entry["action"] == "RECRUITER_DECISION"]
+        assert [entry["candidate_id"] for entry in decisions] == ["C001", "C002"]
+        assert "Invalid choice" in output.getvalue()
+        assert "needs successful screening" in output.getvalue()
+        assert "Recruiter decision: shortlisted" in output.getvalue()
+        # A decision saved before interruption must remain on disk.
+        with patch.multiple(
+            orchestrator,
+            load_all_results=lambda: data_manager.load_all_results(results_file),
+            load_all_jobs=lambda: [],
+            load_job_results=lambda job_id: data_manager.load_job_results(job_id, results_file),
+            update_recruiter_decision=lambda candidate_id, decision: data_manager.update_recruiter_decision(
+                candidate_id, decision, results_file, log_file
+            ),
+        ), patch("builtins.input", side_effect=["3", "1", "C003", "1", EOFError()]), redirect_stdout(StringIO()):
+            orchestrator.main()
+        assert data_manager.get_candidate("C003", results_file)["recruiter_decision"] == "shortlisted"
+        assert data_manager.get_candidate("C004", results_file)["recruiter_decision"] == "pending"
+    simulated_ai.create_client.assert_not_called()
+    simulated_ai.process_resume_ai.assert_not_called()
+
+
+def test_review_reports_failed_or_missing_candidate_updates():
+    # Failed saves must not report success or change the displayed decision.
+    orchestrator, simulated_ai = load_test_orchestrator()
+    for updater, expected in [
+        (Mock(side_effect=PermissionError("CSV locked")), "Could not finish saving the decision"),
+        (Mock(return_value=False), "Candidate no longer exists"),
+    ]:
+        candidate = data_manager.row_to_candidate({
+            "candidate_id": "C001", "file_name": "sample.pdf",
+            "final_score": "80", "status": "SHORTLIST", "recruiter_decision": "pending",
+        })
+        output = StringIO()
+        with patch.multiple(
+            orchestrator,
+            load_all_results=lambda: [candidate], load_all_jobs=lambda: [],
+            load_job_results=lambda job_id: [candidate], update_recruiter_decision=updater,
+        ), patch("builtins.input", side_effect=["3", "1", "C001", "1", "4"]), redirect_stdout(output):
+            orchestrator.main()
+        assert expected in output.getvalue()
+        assert "Decision saved" not in output.getvalue()
+        assert candidate["recruiter_decision"] == "pending"
+    simulated_ai.create_client.assert_not_called()
+
+
 def run_tests():
     # Run every check, report failures, and return an exit code for the terminal.
     tests = [
@@ -685,6 +775,8 @@ def run_tests():
         test_job_inputs_reject_invalid_experience_and_clean_skills,
         test_anonymization_preserves_qualifications,
         test_prepared_resumes_use_anonymized_text,
+        test_optional_review_saves_decisions_and_preserves_scores,
+        test_review_reports_failed_or_missing_candidate_updates,
     ]
     failures = 0
     for test in tests:

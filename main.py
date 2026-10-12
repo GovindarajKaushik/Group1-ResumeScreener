@@ -6,7 +6,8 @@ from ai_manager import process_resume_ai, create_client
 from logic_manager import evaluate_results, build_ranking_rows
 from data_manager import (
     save_results_json, save_screening_record, load_all_results,
-    save_job, load_all_jobs, load_job_results, RESULTS_FILE, LOG_FILE
+    save_job, load_all_jobs, load_job_results, update_recruiter_decision,
+    RESULTS_FILE, LOG_FILE
 )
 # import io_manager
 from io_manager import (
@@ -23,6 +24,7 @@ from io_manager import (
     display_candidate_detail,
     select_saved_job,
     display_job_details,
+    collect_recruiter_decision,
 )
 
 
@@ -185,8 +187,8 @@ def screen_new_batch():
         show_message("\nInterrupted. Any records already saved remain on disk.")
 
 
-def view_saved_results():
-    # Select a saved job before viewing its candidates without changing decisions.
+def view_saved_results(review=False):
+    # Share job/candidate selection; ask for decisions only in optional review mode.
     try:
         candidates = load_all_results()
         jobs = load_all_jobs()
@@ -219,6 +221,26 @@ def view_saved_results():
         if candidate is None:
             return
         display_candidate_detail(candidate)
+        if not review:
+            continue
+        if candidate["status"] == "RE_ENTRY" or candidate["final_score"] is None:
+            show_message("This candidate needs successful screening before a decision can be recorded.")
+            continue
+        decision = collect_recruiter_decision()
+        if decision is None:
+            show_message("Skipped. The current recruiter decision is unchanged.")
+            continue
+        try:
+            saved = update_recruiter_decision(candidate["candidate_id"], decision)
+        except (OSError, ValueError) as error:
+            show_error(f"Could not finish saving the decision and its audit entry: {error}")
+            show_message("Reload saved results to check the current decision.")
+            return
+        if not saved:
+            show_error("Candidate no longer exists in the CSV. Reload saved results.")
+            return
+        candidate["recruiter_decision"] = decision
+        show_message(f"Decision saved for {candidate['candidate_id']}: {decision}")
 
 
 def main():
@@ -231,6 +253,8 @@ def main():
                 screen_new_batch()
             elif choice == "2":
                 view_saved_results()
+            elif choice == "3":
+                view_saved_results(review=True)
             else:
                 show_message("Exiting program.")
                 return

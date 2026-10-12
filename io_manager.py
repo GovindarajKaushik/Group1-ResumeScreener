@@ -323,7 +323,7 @@ def display_candidate_detail(candidate):
     if not candidate.get("notes"):
         print("None recorded")
     print(f"\nSaved: {candidate.get('created_at') or 'Not provided'}")
-    print("Viewing details does not change the recruiter decision.")
+    print("System recommendations do not change the recruiter decision.")
     print("=" * 60)
 
 
@@ -392,6 +392,23 @@ def select_saved_candidate(candidates):
             if candidate["candidate_id"].upper() == candidate_id:
                 return candidate
         print("Candidate ID not found. Enter an ID from the saved results list.")
+
+
+def collect_recruiter_decision():
+    # Return an explicit decision, or None to keep the candidate's current decision.
+    print("\nYOUR DECISION")
+    print("1. Shortlist")
+    print("2. Reject")
+    print("3. Skip — keep the current decision")
+    while True:
+        choice = input("Enter your choice (1-3): ").strip()
+        if choice == "1":
+            return "shortlisted"
+        if choice == "2":
+            return "rejected"
+        if choice == "3":
+            return None
+        print("Invalid choice. Enter 1, 2, or 3.")
 
 # create a main menu function to import to main.py
 def collect_inputs():
@@ -488,11 +505,12 @@ def get_main_menu_choice():
         print("\nMAIN MENU")
         print("1. Screen a new batch of resumes")
         print("2. View saved screening results")
-        print("3. Exit")
-        choice = input("Choose an option (1-3): ").strip()
-        if choice in ("1", "2", "3"):
+        print("3. Review saved candidates")
+        print("4. Exit")
+        choice = input("Choose an option (1-4): ").strip()
+        if choice in ("1", "2", "3", "4"):
             return choice
-        print("Invalid choice. Enter 1, 2, or 3.")
+        print("Invalid choice. Enter 1, 2, 3, or 4.")
 
 
 if __name__ == "__main__":
