@@ -105,7 +105,7 @@ def report_summary(results):
 
 
 def main():
-    """Coordinate input, AI screening, scoring, display, and result storage."""
+    # Coordinate input, AI screening, scoring, display, and result storage.
 
     # Fail early if API key is not found
     try:

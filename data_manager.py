@@ -63,7 +63,7 @@ AI_RESULT_FIELD = [
 SEPARATOR = " | "
 
 def save_results_json(results, path="resume_results.json"):
-    """Save screening records as debug JSON; raise ValueError on write failure."""
+    # Save screening records as debug JSON; raise ValueError on write failure.
     temporary_path = path + ".tmp"
     try:
         with open(temporary_path, "w", encoding="utf-8") as file:
@@ -164,7 +164,7 @@ def split_skills(skill_detail):
 
 
 def result_to_candidate(file_name, file_path, result):
-    """Convert a logic result and resume file details into a storage record."""
+    # Convert a logic result and resume file details into a storage record.
     present, missing, evidence_parts = split_skills(result.get("skill_details", []))
 
     # The "box inside a box" that io_manager.display_candidate_detail() reads

@@ -1,38 +1,58 @@
 import uuid
 import os
+import math
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
+
+
+def validate_resume_file(file_path):
+    # Check the file format and reject empty files with a clear reason.
+    if not os.path.isfile(file_path):
+        raise ValueError("Path must point to a regular file.")
+    extension = os.path.splitext(file_path)[1].lower()
+    if extension not in VALID_RESUME_EXTENSIONS:
+        raise ValueError("Unsupported file type. Use .pdf or .docx.")
+    try:
+        size = os.path.getsize(file_path)
+    except OSError as error:
+        raise ValueError(f"Could not check file size: {error}") from error
+    if size == 0:
+        raise ValueError("File is empty.")
 
 def get_valid_folder(prompt_text):
     """Check for a valid folder path and return it; re-prompt if invalid."""
     while True:
-        path = input(prompt_text)
+        path = input(prompt_text).strip()
         if os.path.isdir(path):
             return path
         else:
             print("Invalid folder path. Please try again.")
 
 def collect_resume_batch(folder):
-    """Collect all valid resume files from the specified folder."""
-    all_files = []
-    for f in os.listdir(folder):
-        all_files.append(os.path.join(folder, f))
-
+    # Return files passing basic validation; report rejected paths clearly.
+    try:
+        names = sorted(os.listdir(folder))
+    except OSError as error:
+        print(f"Could not read folder '{folder}': {error}")
+        return []
     valid_files = []
-    for f in all_files:
-        if not f.endswith(VALID_RESUME_EXTENSIONS):
-            print(f"Skipping '{f}': Unsupported file type (use .pdf or .docx)")
+    for name in names:
+        file_path = os.path.join(folder, name)
+        try:
+            validate_resume_file(file_path)
+        except ValueError as error:
+            print(f"Rejected '{name}': {error}")
         else:
-            valid_files.append(f)
+            valid_files.append(file_path)
 
-    print(f"Found {len(valid_files)} valid resume(s).")
+    print(f"Found {len(valid_files)} nonempty PDF/DOCX file(s).")
     return valid_files
 
 def clean_resume_text(text):
     """Normalize line endings and strip blank/whitespace-only lines."""
     if not text:
         return ""
-    
+
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
 
@@ -110,14 +130,19 @@ def prepare_resumes_for_ai(files):
     resumes = []
 
     for file_path in files:
+        try:
+            validate_resume_file(file_path)
+        except ValueError as error:
+            print(f"Rejected '{os.path.basename(file_path)}': {error}")
+            continue
         text = extract_resume_text(file_path)
 
         if not text:
             print(
                 f"Skipping '{os.path.basename(file_path)}': "
-                "Could not extract resume text."
+                "No readable text found. Use a readable PDF or DOCX file."
             )
-            continue 
+            continue
         resume = {
             "id": uuid.uuid4().hex,
             "file_name": os.path.basename(file_path),
@@ -128,29 +153,66 @@ def prepare_resumes_for_ai(files):
 
     return resumes
 
+
+def collect_resumes():
+    # Collect readable resumes, allowing folder re-entry while keeping accepted files.
+    folder = get_valid_folder("Folder containing resumes: ")
+    resumes = []
+    accepted_paths = set()
+    while True:
+        files = collect_resume_batch(folder)
+        new_files = []
+        for file_path in files:
+            if os.path.normcase(os.path.abspath(file_path)) not in accepted_paths:
+                new_files.append(file_path)
+        for resume in prepare_resumes_for_ai(new_files):
+            resumes.append(resume)
+            accepted_paths.add(os.path.normcase(os.path.abspath(resume["file_path"])))
+        print(f"{len(resumes)} readable resume(s) ready to screen.")
+        folder = input(
+            "Enter a folder path to add/retry resumes, or press Enter to continue: "
+        ).strip()
+        if not folder:
+            return resumes
+
+
+def parse_skill_list(text):
+    # Return trimmed, nonempty skills without case-insensitive duplicates.
+    skills = []
+    seen = set()
+    for item in text.split(","):
+        skill = item.strip()
+        if skill and skill.lower() not in seen:
+            skills.append(skill)
+            seen.add(skill.lower())
+    return skills
+
 def collect_job_description():
     """Collect job description details from user input."""
     title = input("Job Title: ")
 
     skills_input = input("Required skills (comma-separated): ")
-    skills = []
-    for skill in skills_input.split(","):
-        skills.append(skill.strip())
+    skills = parse_skill_list(skills_input)
 
     while True:
         experience_input = input("Minimum years of experience: ")
         try:
             min_experience = float(experience_input)
-            break
         except ValueError:
-            print("Invalid input. Please enter a number.")
+            print("Invalid input. Enter a finite, nonnegative number.")
+            continue
+        if math.isfinite(min_experience) and min_experience >= 0:
+            break
+        print("Invalid input. Enter a finite, nonnegative number.")
 
     education = input("Education requirements: ")
 
     preferred_input = input("Preferred skills (comma-separated): ")
-    preferred_qualifications = []
-    for item in preferred_input.split(","):
-        preferred_qualifications.append(item.strip())
+    preferred_qualifications = parse_skill_list(preferred_input)
+    required_names = {skill.lower() for skill in skills}
+    preferred_qualifications = [
+        skill for skill in preferred_qualifications if skill.lower() not in required_names
+    ]
 
     job_description = {
         "title": title,
@@ -159,7 +221,7 @@ def collect_job_description():
         "education": education,
         "preferred": preferred_qualifications,
     }
-    return job_description  
+    return job_description
 
 def collect_screening_preferences():
     """Collect screening preferences (minimum qualifying score) from user input."""
@@ -182,7 +244,7 @@ def collect_screening_preferences():
         "min_qualifying_score": min_score,
     }
 
-    return preferences  
+    return preferences
 
 def display_result(candidates):
     """Display the final screening results in descending order of score."""
@@ -203,10 +265,10 @@ def display_candidate_detail(candidate):
 
 # create a main menu function to import to main.py
 def collect_inputs():
-
-    folder = get_valid_folder("Folder containing resumes: ")
-    files = collect_resume_batch(folder)
-    resumes = prepare_resumes_for_ai(files)
+    # Return validated resumes, job requirements, and screening preferences.
+    resumes = collect_resumes()
+    if not resumes:
+        return [], {}, {}
 
     job_description = collect_job_description()
     preferences = collect_screening_preferences()
@@ -250,25 +312,25 @@ def question_api_retry(count):
 # replaces the print result from logic manager
 def show_rankings(rows):
     """Print candidates in the order given (best first).
- 
+
     rows: list of {"file_name": str, "evaluation": result dict from logic_manager}
     """
     if not rows:
         print("\nNo resumes were screened successfully, so there is nothing to rank.")
         return
- 
+
     print(f"\n--- Results ({len(rows)} candidate(s), best first) ---")
- 
+
     for row in rows:
         name = row["file_name"]
         result = row["evaluation"]
- 
+
         tag = ""
         if result["fast_track"]:
             tag = " [FAST-TRACK]"
- 
+
         print(f"{name}: {result['final_score']} ({result['status']}){tag}")
- 
+
         if result["status"] != "RE_ENTRY":
             print(
                 f"    skills {result['skills_score']} "
@@ -276,7 +338,7 @@ def show_rankings(rows):
                 f"| education {result['education_score']:.0f} "
                 f"| confidence {result['confidence']}"
             )
- 
+
         for note in result["notes"]:
             print("    -", note)
 
@@ -288,15 +350,13 @@ def main_menu():
         choice = input("Choose an option (1 or 2): ")
 
         if choice == "1":
-            folder = get_valid_folder("Folder containing resumes: ")
-            files = collect_resume_batch(folder)
-            resumes = prepare_resumes_for_ai(files)
-
-            job_description = collect_job_description()
-            preferences = collect_screening_preferences()
+            resumes, job_description, preferences = collect_inputs()
+            if not resumes:
+                print("No valid resumes to screen.")
+                continue
 
             print("\n--- Collected so far ---\n")
-            print(f"{len(files)} resume(s) ready to screen.")
+            print(f"{len(resumes)} resume(s) ready to screen.")
             print(job_description)
             print(preferences)
 
