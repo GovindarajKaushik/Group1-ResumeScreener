@@ -1,11 +1,10 @@
-import json
-import os
 from datetime import datetime, timezone
 
 # import main function from ai_manager
 from ai_manager import process_resume_ai, create_client
 # import scoring functions from logic_manager
-from logic_manager import evaluate_and_rank
+from logic_manager import evaluate_results, build_ranking_rows
+from data_manager import save_results_json, save_screening_record, RESULTS_FILE, LOG_FILE
 # import io_manager
 from io_manager import (
     collect_inputs,
@@ -105,18 +104,8 @@ def report_summary(results):
     show_summary(success_count, failed_records)
 
 
-# saves results to a JSON file (for debugging)
-def save_results_json(results):
-    # raises ValueError if the file can't be written; main() shows the warning
-    tmp_path = DEBUG_JSON_PATH + ".tmp"
-    try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_path, DEBUG_JSON_PATH)
-    except (OSError, TypeError, ValueError) as e:
-        raise ValueError(f"could not save results to {DEBUG_JSON_PATH}: {e}")
-
 def main():
+    """Coordinate input, AI screening, scoring, display, and result storage."""
 
     # Fail early if API key is not found
     try:
@@ -139,7 +128,7 @@ def main():
             # Runs after every resume: show progress and save the debug json
             show_progress(record)
             try:
-                save_results_json(results)
+                save_results_json(results, DEBUG_JSON_PATH)
             except ValueError as e:
                 show_message(f"Warning: {e}")
  
@@ -159,28 +148,25 @@ def main():
             retry_failed(client, resumes, job_description, results, on_progress)
             report_summary(results)
  
-        show_message(f"\nDebug copy of the results: {DEBUG_JSON_PATH}")
- 
-        # Next: logic_manager scores `results`, io_manager displays them
-        try:
-            # save results after retry
-            save_results_json(results)
-        except ValueError as e:
-            show_error(f"Cannot score the results: {e}")
-            return
-
-        # logic manager
-        try:
-            ranking_rows = evaluate_and_rank(DEBUG_JSON_PATH, job_description, preferences)
-        except ValueError as e:
-            show_error(f"Cannot score the results: {e}")
-            return
+        # Score the in-memory results; the debug file is optional.
+        evaluations = evaluate_results(results, job_description, preferences)
+        ranking_rows = build_ranking_rows(results, evaluations)
         show_rankings(ranking_rows)
 
-        # data_manager.save_to_csv(...) persists them.
+        saved_count = 0
+        for resume_id, record in results.items():
+            try:
+                save_screening_record(
+                    record, resumes[resume_id], evaluations.get(resume_id), job_description
+                )
+            except (OSError, ValueError) as error:
+                show_error(f"Could not finish saving '{record['file_name']}' and its audit entry: {error}")
+            else:
+                saved_count += 1
+        show_message(f"\nSaved {saved_count}/{len(results)} candidate records to {RESULTS_FILE} with audit entries in {LOG_FILE}.")
  
     except (KeyboardInterrupt, EOFError):
-        show_message("\nInterrupted. Unsaved results were discarded.")
+        show_message("\nInterrupted. Any records already saved remain on disk.")
 
 
 if __name__ == "__main__":

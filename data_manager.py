@@ -1,4 +1,6 @@
 import csv
+import json
+import os
 from datetime import datetime
 
 RESULTS_FILE = "candidate_results.csv"
@@ -59,6 +61,16 @@ AI_RESULT_FIELD = [
 ]
 
 SEPARATOR = " | "
+
+def save_results_json(results, path="resume_results.json"):
+    """Save screening records as debug JSON; raise ValueError on write failure."""
+    temporary_path = path + ".tmp"
+    try:
+        with open(temporary_path, "w", encoding="utf-8") as file:
+            json.dump(results, file, indent=2, ensure_ascii=False)
+        os.replace(temporary_path, path)
+    except (OSError, TypeError, ValueError) as error:
+        raise ValueError(f"Could not save results to {path}: {error}") from error
 
 def get_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -152,7 +164,8 @@ def split_skills(skill_detail):
 
 
 def result_to_candidate(file_name, file_path, result):
-    present, missing, evidence_parts = split_skills(result.get("skill_detail", []))
+    """Convert a logic result and resume file details into a storage record."""
+    present, missing, evidence_parts = split_skills(result.get("skill_details", []))
 
     # The "box inside a box" that io_manager.display_candidate_detail() reads
     ai_result = {
@@ -308,7 +321,7 @@ def save_failed_resume(file_name, file_path="", job_title="", reason="", results
         "file_name": file_name,
         "file_path": file_path,
         "job_title": job_title,
-        "final_score": 0.0,   
+        "final_score": None,
         "status": "RE_ENTRY",
         "notes": [reason],
     }
