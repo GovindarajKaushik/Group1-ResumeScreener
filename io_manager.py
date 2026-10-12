@@ -382,10 +382,10 @@ def display_job_details(job):
     print(f"Qualifying score: {threshold if threshold is not None else 'Not provided'}")
 
 
-def select_saved_candidate(candidates):
+def select_saved_candidate(candidates, prompt="\nEnter a candidate ID to view details, or press Enter for the main menu: "):
     # Return a selected candidate, or None when the user returns to the main menu.
     while True:
-        candidate_id = input("\nEnter a candidate ID to view details, or press Enter for the main menu: ").strip().upper()
+        candidate_id = input(prompt).strip().upper()
         if not candidate_id:
             return None
         for candidate in candidates:
@@ -395,20 +395,26 @@ def select_saved_candidate(candidates):
 
 
 def collect_recruiter_decision():
-    # Return an explicit decision, or None to keep the candidate's current decision.
+    # Return a decision or navigation action; None skips without changing a decision.
     print("\nYOUR DECISION")
     print("1. Shortlist")
     print("2. Reject")
     print("3. Skip — keep the current decision")
+    print("4. Jump to a candidate ID — return here afterward")
+    print("5. Return to the main menu")
     while True:
-        choice = input("Enter your choice (1-3): ").strip()
+        choice = input("Enter your choice (1-5): ").strip()
         if choice == "1":
             return "shortlisted"
         if choice == "2":
             return "rejected"
         if choice == "3":
             return None
-        print("Invalid choice. Enter 1, 2, or 3.")
+        if choice == "4":
+            return "jump"
+        if choice == "5":
+            return "exit"
+        print("Invalid choice. Enter 1, 2, 3, 4, or 5.")
 
 # create a main menu function to import to main.py
 def collect_inputs():

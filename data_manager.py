@@ -2,10 +2,14 @@ import csv
 import json
 import os
 from datetime import datetime
+from tempfile import NamedTemporaryFile
 
-RESULTS_FILE = "candidate_results.csv"
-LOG_FILE = "audit_log.csv"
-JOBS_FILE = "jobs.csv"
+# Keep generated files beside the application, regardless of the launch directory.
+DATA_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+RESULTS_FILE = os.path.join(DATA_DIRECTORY, "candidate_results.csv")
+LOG_FILE = os.path.join(DATA_DIRECTORY, "audit_log.csv")
+JOBS_FILE = os.path.join(DATA_DIRECTORY, "jobs.csv")
+DEBUG_JSON_PATH = os.path.join(DATA_DIRECTORY, "resume_results.json")
 
 JOB_FIELDS = [
     "job_id", "title", "required_skills", "preferred", "min_experience",
@@ -69,10 +73,16 @@ AI_RESULT_FIELD = [
 
 SEPARATOR = " | "
 
-def save_results_json(results, path="resume_results.json"):
+def ensure_storage_folder(path):
+    # Create the destination's parent folder if it does not exist.
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+
+
+def save_results_json(results, path=DEBUG_JSON_PATH):
     # Save screening records as debug JSON; raise ValueError on write failure.
-    temporary_path = path + ".tmp"
+    temporary_path = os.fspath(path) + ".tmp"
     try:
+        ensure_storage_folder(path)
         with open(temporary_path, "w", encoding="utf-8") as file:
             json.dump(results, file, indent=2, ensure_ascii=False)
         os.replace(temporary_path, path)
@@ -117,9 +127,7 @@ def create_file_if_missing(path, fields):
         with open(path, "r", newline="", encoding="utf-8") as file:
             pass
     except FileNotFoundError:
-        with open(path, "w", newline="", encoding="utf-8") as file:
-            writer = csv.DictWriter(file, fieldnames=fields)
-            writer.writeheader()
+        write_csv(path, fields, [])
 
 def read_csv(path, fields):
     create_file_if_missing(path, fields)
@@ -131,15 +139,32 @@ def read_csv(path, fields):
     return rows
 
 def write_csv(path, fields, rows):
+    # Write a complete temporary CSV before replacing the saved file.
+    temporary_path = None
     try:
-        with open(path, "w", newline="", encoding="utf-8") as file:
+        ensure_storage_folder(path)
+        with NamedTemporaryFile(
+            mode="w", newline="", encoding="utf-8",
+            dir=os.path.dirname(os.path.abspath(path)),
+            prefix="csv_update_", suffix=".tmp", delete=False,
+        ) as file:
+            temporary_path = file.name
             writer = csv.DictWriter(file, fieldnames=fields)
             writer.writeheader()
             for row in rows:
                 writer.writerow(row)
+        # Close the temporary file first so replacement also works on Windows.
+        os.replace(temporary_path, path)
+        temporary_path = None
     except OSError as error:
         print(f"Error saving '{path}': {error}")
         raise
+    finally:
+        if temporary_path is not None:
+            try:
+                os.remove(temporary_path)
+            except OSError as error:
+                print(f"Could not remove temporary CSV '{temporary_path}': {error}")
 
 def log_action(actions, details="", candidate_id="", log_file=LOG_FILE):
     create_file_if_missing(log_file, LOG_FIELDS)
@@ -494,8 +519,8 @@ def count_by_status(results_file=RESULTS_FILE):
     return counts
 
 def main():
-    results_file = "demo_results.csv"
-    log_file = "demo_log.csv"
+    results_file = os.path.join(DATA_DIRECTORY, "demo_results.csv")
+    log_file = os.path.join(DATA_DIRECTORY, "demo_log.csv")
     job = {"title": "Data Engineer"}
 
     result = {

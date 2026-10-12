@@ -7,7 +7,7 @@ from logic_manager import evaluate_results, build_ranking_rows
 from data_manager import (
     save_results_json, save_screening_record, load_all_results,
     save_job, load_all_jobs, load_job_results, update_recruiter_decision,
-    RESULTS_FILE, LOG_FILE
+    RESULTS_FILE, LOG_FILE, DEBUG_JSON_PATH
 )
 # import io_manager
 from io_manager import (
@@ -28,9 +28,6 @@ from io_manager import (
 )
 
 
-
-# constant result file path
-DEBUG_JSON_PATH = "resume_results.json"
 
 STATUS_SUCCESS = "success"
 STATUS_ERROR = "error"
@@ -216,31 +213,69 @@ def view_saved_results(review=False):
         show_message("No candidates have been saved for this job.")
         return
     display_saved_results(candidates)
+    if review:
+        review_saved_candidates(candidates)
+        return
     while True:
         candidate = select_saved_candidate(candidates)
         if candidate is None:
             return
         display_candidate_detail(candidate)
-        if not review:
-            continue
-        if candidate["status"] == "RE_ENTRY" or candidate["final_score"] is None:
-            show_message("This candidate needs successful screening before a decision can be recorded.")
-            continue
-        decision = collect_recruiter_decision()
-        if decision is None:
-            show_message("Skipped. The current recruiter decision is unchanged.")
-            continue
-        try:
-            saved = update_recruiter_decision(candidate["candidate_id"], decision)
-        except (OSError, ValueError) as error:
-            show_error(f"Could not finish saving the decision and its audit entry: {error}")
-            show_message("Reload saved results to check the current decision.")
+
+
+def review_candidate(candidate):
+    # Review one candidate and save explicit decisions; return the next navigation action.
+    display_candidate_detail(candidate)
+    if candidate["status"] == "RE_ENTRY" or candidate["final_score"] is None:
+        show_message("This candidate needs successful screening before a decision can be recorded.")
+        return "next"
+    decision = collect_recruiter_decision()
+    if decision in ("jump", "exit"):
+        return decision
+    if decision is None:
+        show_message("Skipped. The current recruiter decision is unchanged.")
+        return "next"
+    try:
+        saved = update_recruiter_decision(candidate["candidate_id"], decision)
+    except (OSError, ValueError) as error:
+        show_error(f"Could not finish saving the decision and its audit entry: {error}")
+        show_message("Reload saved results to check the current decision.")
+        return "exit"
+    if not saved:
+        show_error("Candidate no longer exists in the CSV. Reload saved results.")
+        return "exit"
+    candidate["recruiter_decision"] = decision
+    show_message(f"Decision saved for {candidate['candidate_id']}: {decision}")
+    return "next"
+
+
+def review_saved_candidates(candidates):
+    # Walk the displayed list in order, keeping the sequential position during jumps.
+    position = 0
+    jumped_candidate = None
+    while position < len(candidates):
+        if jumped_candidate is None:
+            candidate = candidates[position]
+            show_message(f"\nREVIEW {position + 1} OF {len(candidates)}")
+        else:
+            candidate = jumped_candidate
+            show_message(f"\nJUMPED REVIEW — return to {candidates[position]['candidate_id']} afterward")
+        action = review_candidate(candidate)
+        if action == "exit":
             return
-        if not saved:
-            show_error("Candidate no longer exists in the CSV. Reload saved results.")
-            return
-        candidate["recruiter_decision"] = decision
-        show_message(f"Decision saved for {candidate['candidate_id']}: {decision}")
+        if action == "jump":
+            target = select_saved_candidate(
+                candidates, prompt="Enter a candidate ID to jump to, or press Enter to cancel the jump: "
+            )
+            if target is not None:
+                jumped_candidate = None if target is candidates[position] else target
+            continue
+        if jumped_candidate is not None:
+            jumped_candidate = None
+            show_message(f"Returning to {candidates[position]['candidate_id']} in the sequential review.")
+        else:
+            position += 1
+    show_message("Sequential review complete. Returning to the main menu.")
 
 
 def main():

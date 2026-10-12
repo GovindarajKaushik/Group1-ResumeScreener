@@ -1,9 +1,0 @@
-timestamp,action,candidate_id,details
-2026-10-13 01:19:40,CREATE_JOB,,J001 | Software Engineer
-2026-10-13 01:20:33,SAVE_RESULT,C001,resume_01_strong_match.docx | score=86.8 | status=SHORTLIST
-2026-10-13 01:20:33,SAVE_RESULT,C002,resume_02_missing_airflow.docx | score=47.2 | status=SECONDARY_REVIEW
-2026-10-13 01:20:33,SAVE_RESULT,C003,resume_03_missing_must_have.docx | score=26.5 | status=SECONDARY_REVIEW
-2026-10-13 01:20:33,SAVE_RESULT,C004,resume_04_junior_candidate.docx | score=31.2 | status=SECONDARY_REVIEW
-2026-10-13 01:20:33,SAVE_RESULT,C005,resume_05_no_education.docx | score=42.2 | status=SECONDARY_REVIEW
-2026-10-13 01:22:20,RECRUITER_DECISION,C001,recruiter_decision -> shortlisted
-2026-10-13 01:22:42,RECRUITER_DECISION,C002,recruiter_decision -> shortlisted
