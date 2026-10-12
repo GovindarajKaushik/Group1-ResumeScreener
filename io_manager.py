@@ -1,6 +1,7 @@
 import uuid
 import os
 import math
+import re
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
@@ -62,6 +63,38 @@ def clean_resume_text(text):
         if line:
             lines.append(line)
 
+    return "\n".join(lines)
+
+
+def anonymize_resume_text(text):
+    # Remove labelled personal details and replace recognizable contact details.
+    # Unlabelled names and personal details inside sentences may remain.
+    personal_label = (
+        r"^\s*(?:[-*•]\s*)?(?:full name|candidate name|name|"
+        r"home address|postal address|address|date of birth|dob|age|"
+        r"gender|sex|race|ethnicity|marital status|nationality|"
+        r"e-?mail|phone(?: number)?|telephone|mobile(?: number)?|contact number)\s*[:：-]"
+    )
+    email_pattern = r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}"
+    # Recognize international numbers, Singapore numbers, and US-style numbers.
+    # Avoid broad digit matching so employment year ranges remain unchanged.
+    phone_pattern = (
+        r"(?<!\w)(?:"
+        r"(?:\+65[ .-]?)?[689]\d{3}[ .-]?\d{4}|"
+        r"(?:\+1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]?\d{3}[ .-]\d{4}|"
+        r"\+\d{1,3}[ .-]\d{1,4}[ .-]\d{3,4}[ .-]\d{4}"
+        r")(?!\w)"
+    )
+    lines = []
+    for line in text.splitlines():
+        if re.match(personal_label, line, flags=re.IGNORECASE):
+            continue
+        line = re.sub(email_pattern, "[EMAIL REMOVED]", line)
+        line = re.sub(phone_pattern, "[PHONE REMOVED]", line)
+        remaining_text = line.replace("[EMAIL REMOVED]", "").replace("[PHONE REMOVED]", "")
+        # Omit lines containing only removed contacts or punctuation.
+        if re.search(r"\w", remaining_text):
+            lines.append(line.strip())
     return "\n".join(lines)
 
 def extract_pdf_text(file_path):
@@ -141,6 +174,13 @@ def prepare_resumes_for_ai(files):
             print(
                 f"Skipping '{os.path.basename(file_path)}': "
                 "No readable text found. Use a readable PDF or DOCX file."
+            )
+            continue
+        text = anonymize_resume_text(text)
+        if not text:
+            print(
+                f"Skipping '{os.path.basename(file_path)}': "
+                "No resume content remains after removing personal details."
             )
             continue
         resume = {
@@ -338,6 +378,16 @@ def show_rankings(rows):
                 f"| education {result['education_score']:.0f} "
                 f"| confidence {result['confidence']}"
             )
+
+            # Show the evidence behind skill points without treating missing evidence as absence.
+            for skill in result["skill_details"]:
+                if not skill["present"]:
+                    print(f"    {skill['name']}: NOT DEMONSTRATED")
+                elif not skill["evidence"]:
+                    print(f"    {skill['name']}: CLAIMED WITHOUT EVIDENCE (no skill points)")
+                else:
+                    print(f"    {skill['name']}: PRESENT")
+                    print(f"      Evidence: {skill['evidence']}")
 
         for note in result["notes"]:
             print("    -", note)

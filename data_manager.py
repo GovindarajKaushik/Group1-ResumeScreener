@@ -158,6 +158,8 @@ def split_skills(skill_detail):
             present.append(skill["name"])
             if skill.get("evidence"):
                 evidence_parts.append(f"{skill['name']}: {skill['evidence']}")
+            else:
+                evidence_parts.append(f"{skill['name']}: claimed by AI without supporting evidence")
         else:
             missing.append(skill["name"])
     return present, missing, evidence_parts
