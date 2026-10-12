@@ -409,3 +409,12 @@ def search_candidates(status=None, decision=None, min_score=None, max_score=None
     if sort_by_score:
         matches.sort(key=get_sort_score, reverse=True)
     return matches
+
+def count_by_status(results_file=RESULTS_FILE):
+    counts = {}
+    for status in VALID_STATUSES:
+        counts[status] = 0
+    for candidate in load_all_results(results_file):
+        if candidate["status"] in counts:
+            counts[candidate["status"]] += 1
+    return counts
