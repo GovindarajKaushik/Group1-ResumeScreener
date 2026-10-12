@@ -198,6 +198,49 @@ def test_save_screening_record_failed_ai_call(files):
     assert loaded["file_path"] == "resume/b.docx"
     assert loaded["notes"] == ["Failed after 3 attempts: timeout"]
 
+def test_failed_resume_is_marked_re_entry(files):
+    dm.save_failed_resume("bad.pdf", "resume/bad.pdf", "Analyst", "invalid JSON",
+        results_file=files["results_file"],
+        log_file=files["log_file"])
+    found = dm.search_candidates(status="RE_ENTRY", results_file=files["results_file"])
+    assert len(found) == 1
+    assert found[0]["file_name"] == "bad.pdf"
+    assert found[0]["notes"] == ["invalid JSON"]
+    assert found[0]["final_score"] == 0.0
+
+
+def test_search_filters_and_sorting(files):
+    save_one(files, "low.pdf", final_score=40.0, status="SECONDARY_REVIEW")
+    save_one(files, "top.pdf", final_score=95.0, fast_track=True)
+    save_one(files, "mid.pdf", final_score=70.0)
+    path = files["results_file"]
+
+    everyone = dm.search_candidates(results_file=path)
+    assert [c["file_name"] for c in everyone] == ["top.pdf", "mid.pdf", "low.pdf"]
+
+    assert [c["file_name"] for c in dm.search_candidates(fast_track=True, results_file=path)] == ["top.pdf"]
+    assert len(dm.search_candidates(fast_track=False, results_file=path)) == 2
+    assert len(dm.search_candidates(status="SECONDARY_REVIEW", results_file=path)) == 1
+    assert len(dm.search_candidates(min_score=60, results_file=path)) == 2
+    assert len(dm.search_candidates(max_score=60, results_file=path)) == 1
+
+
+def test_search_by_keyword(files):
+    save_one(files, "a.pdf")
+    save_one(files, "b.pdf", skill_detail=[
+        {"name": "java", "category": "must_have", "present": True,
+         "last_used_year": 2025, "evidence": "Java services"}])
+    found = dm.search_candidates(keyword="java", results_file=files["results_file"])
+    assert [c["file_name"] for c in found] == ["b.pdf"]
+
+
+def test_count_by_status(files):
+    save_one(files, "a.pdf")
+    save_one(files, "b.pdf")
+    save_one(files, "c.pdf", status="SECONDARY_REVIEW")
+    counts = dm.count_by_status(files["results_file"])
+    assert counts == {"SHORTLIST": 2, "SECONDARY_REVIEW": 1, "RE_ENTRY": 0}
+
 def test_actions_are_logged(files):
     candidate_id = save_one(files)
     dm.update_recruiter_decision(candidate_id, "rejected",
