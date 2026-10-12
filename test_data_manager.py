@@ -21,7 +21,7 @@ def make_result(**changes):
         "fast_track": False,
         "missing_must_haves": [],
         "stale_skills": [],
-        "skill_detail": [
+        "skill_details": [
             {"name": "Python", "category": "must_have", "present": True,
              "last_used_year": 2026, "evidence": "6 years of Python"},
             {"name": "Mircosoft", "category": "preferred", "present": False,
@@ -194,7 +194,7 @@ def test_save_screening_record_failed_ai_call(files):
         log_file=files["log_file"])
     loaded = dm.get_candidate(candidate_id, files["results_file"])
     assert loaded["status"] == "RE_ENTRY"
-    assert loaded["final_score"] == 0.0
+    assert loaded["final_score"] is None
     assert loaded["file_path"] == "resume/b.docx"
     assert loaded["notes"] == ["Failed after 3 attempts: timeout"]
 

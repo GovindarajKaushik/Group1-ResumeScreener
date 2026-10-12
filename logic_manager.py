@@ -130,8 +130,9 @@ def extract_ai_fields(raw):
 
         if evidence is None:
             evidence = ""
-
-        cleaned_skill["evidence"] = str(evidence).strip()
+        if not isinstance(evidence, str):
+            return None
+        cleaned_skill["evidence"] = evidence.strip()
         ai["skills"].append(cleaned_skill)
 
     if len(ai["skills"]) == 0:
@@ -238,6 +239,7 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
     missing = []
     stale = []
     has_must_haves = False
+    unsupported_must_have = False
     unknown_dates = False
     today_year = date.today().year
 
@@ -254,6 +256,15 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
         total += weight
 
         if skill["present"]:
+            # An unsupported claim earns no points but is not a missing skill.
+            if not skill["evidence"]:
+                result["notes"].append(
+                    f"{skill['name']}: claimed by AI without supporting evidence; "
+                    "no skill points awarded. Review the resume."
+                )
+                if skill["category"] == "must_have":
+                    unsupported_must_have = True
+                continue
             multiplier = 1.0
             last_year = skill["last_used_year"]
 
@@ -282,7 +293,7 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
     final = computed
 
     # Add the bonus or apply the missing-skill score cap.
-    if has_must_haves and len(missing) == 0:
+    if has_must_haves and len(missing) == 0 and not unsupported_must_have:
         final += rules["must_have_bonus"]
         result["notes"].append(
             f"Must-have bonus +{rules['must_have_bonus']}"
@@ -339,6 +350,7 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
     if (
         final >= rules["fast_track_score"]
         and len(missing) == 0
+        and not unsupported_must_have
         and skills_score >= rules["fast_track_min_criterion"]
         and ai["experience_score"] >= rules["fast_track_min_criterion"]
         and ai["education_score"] >= rules["fast_track_min_criterion"]

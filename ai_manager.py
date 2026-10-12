@@ -19,7 +19,7 @@ Respond with ONE JSON object and nothing else (no markdown, no commentary), usin
      "category": "must_have" or "preferred",
      "present": true or false,
      "last_used_year": <integer year the skill was last used, or null if unknown/absent>,
-     "evidence": "<short phrase from the resume that justifies this, or empty if absent>"}
+     "evidence": "<short exact excerpt from the supplied resume supporting this skill, or empty if unavailable>"}
   ],
   "experience_score": <0-100, how well the candidate's experience matches the role>,
   "experience_summary": "<1-2 sentences>",
@@ -29,7 +29,9 @@ Respond with ONE JSON object and nothing else (no markdown, no commentary), usin
   "confidence": "low" or "medium" or "high",
   "summary": "<2-3 sentence overall assessment>"
 }
-The "skills" list must contain one entry for EVERY must-have and preferred skill provided."""
+The "skills" list must contain one entry for EVERY must-have and preferred skill provided.
+For each skill marked present, provide a short exact excerpt showing how the candidate used or listed the skill. Do not invent or paraphrase evidence.
+If supporting evidence cannot be provided, leave evidence empty. Missing evidence will earn no skill points, but will not reject the whole resume."""
 
 # API URL
 API_URL = "https://openrouter.ai/api/v1"
@@ -110,6 +112,20 @@ def validate_ai_result(data):
  
     if not isinstance(data["skills"], list):
         raise ValueError("'skills' must be a list")
+
+    # Missing evidence is allowed; malformed skill entries are not.
+    for skill in data["skills"]:
+        if not isinstance(skill, dict):
+            raise ValueError("each skill must be a JSON object")
+        if not isinstance(skill.get("name"), str) or not skill["name"].strip():
+            raise ValueError("each skill must have a nonempty name")
+        if skill.get("category") not in ("must_have", "preferred"):
+            raise ValueError("skill category must be must_have or preferred")
+        if not isinstance(skill.get("present"), bool):
+            raise ValueError("skill present must be true or false")
+        evidence = skill.get("evidence")
+        if evidence is not None and not isinstance(evidence, str):
+            raise ValueError("skill evidence must be text or null")
  
     for field in ("experience_score", "education_score", "overall_score"):
         score = data[field]

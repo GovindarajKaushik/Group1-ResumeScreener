@@ -1,11 +1,13 @@
-import json
-import os
 from datetime import datetime, timezone
 
 # import main function from ai_manager
 from ai_manager import process_resume_ai, create_client
 # import scoring functions from logic_manager
-from logic_manager import evaluate_and_rank
+from logic_manager import evaluate_results, build_ranking_rows
+from data_manager import (
+    save_results_json, save_screening_record, load_all_results,
+    save_job, load_all_jobs, load_job_results, RESULTS_FILE, LOG_FILE
+)
 # import io_manager
 from io_manager import (
     collect_inputs,
@@ -14,7 +16,13 @@ from io_manager import (
     show_progress,
     show_summary,
     question_api_retry,
-    show_rankings
+    show_rankings,
+    get_main_menu_choice,
+    display_saved_results,
+    select_saved_candidate,
+    display_candidate_detail,
+    select_saved_job,
+    display_job_details,
 )
 
 
@@ -105,18 +113,8 @@ def report_summary(results):
     show_summary(success_count, failed_records)
 
 
-# saves results to a JSON file (for debugging)
-def save_results_json(results):
-    # raises ValueError if the file can't be written; main() shows the warning
-    tmp_path = DEBUG_JSON_PATH + ".tmp"
-    try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_path, DEBUG_JSON_PATH)
-    except (OSError, TypeError, ValueError) as e:
-        raise ValueError(f"could not save results to {DEBUG_JSON_PATH}: {e}")
-
-def main():
+def screen_new_batch():
+    # Coordinate one batch of input, AI screening, scoring, display, and storage.
 
     # Fail early if API key is not found
     try:
@@ -131,6 +129,13 @@ def main():
         if not resume_list:
             show_message("No valid resumes to screen.")
             return
+
+        try:
+            job_description["job_id"] = save_job(job_description, preferences)
+        except (OSError, ValueError) as error:
+            show_error(f"Could not finish saving the job and its audit entry: {error}")
+            return
+        show_message(f"\nScreening job: {job_description['job_id']} — {job_description['title']}")
  
         resumes = {r["id"]: r for r in resume_list}
         results = {}
@@ -139,7 +144,7 @@ def main():
             # Runs after every resume: show progress and save the debug json
             show_progress(record)
             try:
-                save_results_json(results)
+                save_results_json(results, DEBUG_JSON_PATH)
             except ValueError as e:
                 show_message(f"Warning: {e}")
  
@@ -159,28 +164,78 @@ def main():
             retry_failed(client, resumes, job_description, results, on_progress)
             report_summary(results)
  
-        show_message(f"\nDebug copy of the results: {DEBUG_JSON_PATH}")
- 
-        # Next: logic_manager scores `results`, io_manager displays them
-        try:
-            # save results after retry
-            save_results_json(results)
-        except ValueError as e:
-            show_error(f"Cannot score the results: {e}")
-            return
-
-        # logic manager
-        try:
-            ranking_rows = evaluate_and_rank(DEBUG_JSON_PATH, job_description, preferences)
-        except ValueError as e:
-            show_error(f"Cannot score the results: {e}")
-            return
+        # Score the in-memory results; the debug file is optional.
+        evaluations = evaluate_results(results, job_description, preferences)
+        ranking_rows = build_ranking_rows(results, evaluations)
         show_rankings(ranking_rows)
 
-        # data_manager.save_to_csv(...) persists them.
+        saved_count = 0
+        for resume_id, record in results.items():
+            try:
+                save_screening_record(
+                    record, resumes[resume_id], evaluations.get(resume_id), job_description
+                )
+            except (OSError, ValueError) as error:
+                show_error(f"Could not finish saving '{record['file_name']}' and its audit entry: {error}")
+            else:
+                saved_count += 1
+        show_message(f"\nSaved {saved_count}/{len(results)} candidate records to {RESULTS_FILE} with audit entries in {LOG_FILE}.")
  
     except (KeyboardInterrupt, EOFError):
-        show_message("\nInterrupted. Unsaved results were discarded.")
+        show_message("\nInterrupted. Any records already saved remain on disk.")
+
+
+def view_saved_results():
+    # Select a saved job before viewing its candidates without changing decisions.
+    try:
+        candidates = load_all_results()
+        jobs = load_all_jobs()
+    except (OSError, ValueError) as error:
+        show_error(f"Could not load saved results: {error}")
+        return
+    if not candidates and not jobs:
+        show_message("No saved results yet. Screen a batch first.")
+        return
+    if any(not candidate["job_id"] for candidate in candidates):
+        jobs.append({"job_id": "", "title": "Older results without a job ID", "created_at": ""})
+    if not jobs:
+        show_error("Candidates have job IDs, but no corresponding saved jobs are available.")
+        return
+    job = select_saved_job(jobs)
+    if job is None:
+        return
+    display_job_details(job)
+    try:
+        candidates = load_job_results(job["job_id"])
+    except (OSError, ValueError) as error:
+        show_error(f"Could not load this job's candidates: {error}")
+        return
+    if not candidates:
+        show_message("No candidates have been saved for this job.")
+        return
+    display_saved_results(candidates)
+    while True:
+        candidate = select_saved_candidate(candidates)
+        if candidate is None:
+            return
+        display_candidate_detail(candidate)
+
+
+def main():
+    # Coordinate menu actions; create an AI client only when screening is selected.
+    show_message("WELCOME TO THE RESUME SCREENING TOOL")
+    try:
+        while True:
+            choice = get_main_menu_choice()
+            if choice == "1":
+                screen_new_batch()
+            elif choice == "2":
+                view_saved_results()
+            else:
+                show_message("Exiting program.")
+                return
+    except (KeyboardInterrupt, EOFError):
+        show_message("\nExiting. Any records already saved remain on disk.")
 
 
 if __name__ == "__main__":
