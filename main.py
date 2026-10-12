@@ -5,7 +5,8 @@ from ai_manager import process_resume_ai, create_client
 # import scoring functions from logic_manager
 from logic_manager import evaluate_results, build_ranking_rows
 from data_manager import (
-    save_results_json, save_screening_record, load_all_results, RESULTS_FILE, LOG_FILE
+    save_results_json, save_screening_record, load_all_results,
+    save_job, load_all_jobs, load_job_results, RESULTS_FILE, LOG_FILE
 )
 # import io_manager
 from io_manager import (
@@ -20,6 +21,8 @@ from io_manager import (
     display_saved_results,
     select_saved_candidate,
     display_candidate_detail,
+    select_saved_job,
+    display_job_details,
 )
 
 
@@ -126,6 +129,13 @@ def screen_new_batch():
         if not resume_list:
             show_message("No valid resumes to screen.")
             return
+
+        try:
+            job_description["job_id"] = save_job(job_description, preferences)
+        except (OSError, ValueError) as error:
+            show_error(f"Could not finish saving the job and its audit entry: {error}")
+            return
+        show_message(f"\nScreening job: {job_description['job_id']} — {job_description['title']}")
  
         resumes = {r["id"]: r for r in resume_list}
         results = {}
@@ -176,14 +186,32 @@ def screen_new_batch():
 
 
 def view_saved_results():
-    # Load saved candidates and let the user view details without changing decisions.
+    # Select a saved job before viewing its candidates without changing decisions.
     try:
         candidates = load_all_results()
+        jobs = load_all_jobs()
     except (OSError, ValueError) as error:
         show_error(f"Could not load saved results: {error}")
         return
-    if not candidates:
+    if not candidates and not jobs:
         show_message("No saved results yet. Screen a batch first.")
+        return
+    if any(not candidate["job_id"] for candidate in candidates):
+        jobs.append({"job_id": "", "title": "Older results without a job ID", "created_at": ""})
+    if not jobs:
+        show_error("Candidates have job IDs, but no corresponding saved jobs are available.")
+        return
+    job = select_saved_job(jobs)
+    if job is None:
+        return
+    display_job_details(job)
+    try:
+        candidates = load_job_results(job["job_id"])
+    except (OSError, ValueError) as error:
+        show_error(f"Could not load this job's candidates: {error}")
+        return
+    if not candidates:
+        show_message("No candidates have been saved for this job.")
         return
     display_saved_results(candidates)
     while True:

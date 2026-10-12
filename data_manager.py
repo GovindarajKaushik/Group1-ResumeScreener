@@ -5,9 +5,16 @@ from datetime import datetime
 
 RESULTS_FILE = "candidate_results.csv"
 LOG_FILE = "audit_log.csv"
+JOBS_FILE = "jobs.csv"
+
+JOB_FIELDS = [
+    "job_id", "title", "required_skills", "preferred", "min_experience",
+    "education", "min_qualifying_score", "created_at",
+]
 
 CANDIDATE_FIELDS = [
     "candidate_id",
+    "job_id",
     "job_title",
     "file_name",
     "file_path",
@@ -149,6 +156,51 @@ def log_action(actions, details="", candidate_id="", log_file=LOG_FILE):
 def load_log(log_file=LOG_FILE):
     return read_csv(log_file, LOG_FIELDS)
 
+
+def save_job(job_description, preferences, jobs_file=JOBS_FILE, log_file=LOG_FILE):
+    # Save one screening job and return its ID, keeping identical titles separate.
+    rows = read_csv(jobs_file, JOB_FIELDS)
+    highest = 0
+    for row in rows:
+        job_id = row.get("job_id", "")
+        if job_id.startswith("J") and job_id[1:].isdigit():
+            highest = max(highest, int(job_id[1:]))
+    job_id = "J" + str(highest + 1).zfill(3)
+    rows.append({
+        "job_id": job_id,
+        "title": job_description.get("title", ""),
+        "required_skills": list_to_text(job_description.get("required_skills", [])),
+        "preferred": list_to_text(job_description.get("preferred", [])),
+        "min_experience": job_description.get("min_experience", ""),
+        "education": job_description.get("education", ""),
+        "min_qualifying_score": preferences.get("min_qualifying_score", 60),
+        "created_at": get_timestamp(),
+    })
+    write_csv(jobs_file, JOB_FIELDS, rows)
+    log_action("CREATE_JOB", f"{job_id} | {job_description.get('title', '')}", log_file=log_file)
+    return job_id
+
+
+def load_all_jobs(jobs_file=JOBS_FILE):
+    # Return saved jobs with lists/numbers restored; missing storage means no jobs.
+    if not os.path.exists(jobs_file):
+        return []
+    jobs = read_csv(jobs_file, JOB_FIELDS)
+    for job in jobs:
+        if not job.get("job_id") or "title" not in job:
+            raise ValueError("Saved job record is missing its job ID or title column.")
+        for field in ("required_skills", "preferred"):
+            job[field] = text_to_list(job.get(field, ""))
+        for field in ("min_experience", "min_qualifying_score"):
+            job[field] = text_to_number(job.get(field, ""))
+    return jobs
+
+
+def load_job_results(job_id, results_file=RESULTS_FILE):
+    # Return only the selected job's candidates; a blank ID selects older records.
+    candidates = load_all_results(results_file)
+    return [candidate for candidate in candidates if candidate["job_id"] == job_id]
+
 def split_skills(skill_detail):
     present = []
     missing = []
@@ -257,6 +309,8 @@ def save_candidate_result(candidate, job_description=None, results_file=RESULTS_
 
     if job_description and not flat.get("job_title"):
         flat["job_title"] = job_description.get("title") or job_description.get("job_title", "")
+    if job_description and not flat.get("job_id"):
+        flat["job_id"] = job_description.get("job_id", "")
 
     status = str(flat.get("status", "")).upper()
     if status not in VALID_STATUSES:
@@ -286,7 +340,7 @@ def save_candidate_result(candidate, job_description=None, results_file=RESULTS_
         action = "SAVE_RESULT"
     else:
         old_row = rows[existing_index]
-        for field in ["created_at", "recruiter_decision", "feedback_rating"]:
+        for field in ["created_at", "recruiter_decision", "feedback_rating", "job_id"]:
             if new_row[field] == "":
                 new_row[field] = old_row.get(field, "")
         new_row["updated_at"] = get_timestamp()
@@ -318,11 +372,12 @@ def save_all_results(results, resumes=None, job_description=None, results_file=R
         saved_ids.append(candidate_id)
     return saved_ids
 
-def save_failed_resume(file_name, file_path="", job_title="", reason="", results_file=RESULTS_FILE, log_file=LOG_FILE):
+def save_failed_resume(file_name, file_path="", job_title="", reason="", results_file=RESULTS_FILE, log_file=LOG_FILE, job_id=""):
     candidate = {
         "file_name": file_name,
         "file_path": file_path,
         "job_title": job_title,
+        "job_id": job_id,
         "final_score": None,
         "status": "RE_ENTRY",
         "notes": [reason],
@@ -340,7 +395,8 @@ def save_screening_record(record, resume, logic_result=None, job_description=Non
     if record.get("status") != "success" or logic_result is None:
         reason = record.get("error") or "No AI result"
         return save_failed_resume(file_name, file_path, job_title, reason,
-                                  results_file, log_file)
+                                  results_file, log_file,
+                                  job_id=job_description.get("job_id", "") if job_description else "")
 
     candidate = result_to_candidate(file_name, file_path, logic_result)
     return save_candidate_result(candidate, job_description, results_file, log_file)

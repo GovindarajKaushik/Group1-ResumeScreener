@@ -300,6 +300,7 @@ def display_candidate_detail(candidate):
     print(f"Candidate ID: {candidate.get('candidate_id') or 'Not provided'}")
     print(f"Resume: {candidate['file_name']}")
     print(f"Role: {candidate.get('job_title') or 'Not provided'}")
+    print(f"Job ID: {candidate.get('job_id') or 'Not recorded (older result)'}")
     print(f"Final score: {format_saved_score(candidate['final_score'])}")
     print(f"System recommendation: {candidate.get('status') or 'Not provided'}")
     print(f"Fast-track: {'Yes' if candidate.get('fast_track') else 'No'}")
@@ -342,6 +343,43 @@ def display_saved_results(candidates):
             f"| {candidate['file_name']} | {format_saved_score(candidate['final_score'])} "
             f"| {candidate['status']} | Decision: {candidate['recruiter_decision'] or 'pending'}"
         )
+
+
+def select_saved_job(jobs):
+    # Show distinct screening jobs and return the selected record, or None to exit.
+    print("\nSAVED JOBS")
+    for number, job in enumerate(jobs, start=1):
+        print(
+            f"{number}. {job['job_id'] or 'Older results'} | {job['title']} "
+            f"| Created: {job.get('created_at') or 'Not recorded'}"
+        )
+    while True:
+        choice = input("Select a job number, or press Enter for the main menu: ").strip()
+        if not choice:
+            return None
+        try:
+            number = int(choice)
+        except ValueError:
+            print("Enter a job number from the list.")
+            continue
+        if 1 <= number <= len(jobs):
+            return jobs[number - 1]
+        print("Enter a job number from the list.")
+
+
+def display_job_details(job):
+    # Display stored requirements without inventing details for older candidates.
+    print(f"\n--- JOB {job['job_id'] or 'NOT RECORDED'} — {job['title']} ---")
+    if not job["job_id"]:
+        print("Job requirements were not stored for these older results.")
+        return
+    print(f"Required skills: {', '.join(job['required_skills']) or 'None specified'}")
+    print(f"Preferred skills: {', '.join(job['preferred']) or 'None specified'}")
+    experience = job["min_experience"]
+    print(f"Minimum experience: {experience if experience is not None else 'Not provided'} years")
+    print(f"Education: {job.get('education') or 'Not specified'}")
+    threshold = job["min_qualifying_score"]
+    print(f"Qualifying score: {threshold if threshold is not None else 'Not provided'}")
 
 
 def select_saved_candidate(candidates):
