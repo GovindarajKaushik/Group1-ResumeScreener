@@ -416,3 +416,120 @@ def get_candidate(candidate_id, results_file=RESULTS_FILE):
         if row["candidate_id"] == candidate_id:
             return row_to_candidate(row)
     return None
+
+def update_field(candidate_id, field, value, action_name, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    rows = read_csv(results_file, CANDIDATE_FIELDS)
+    for row in rows:
+        if row["candidate_id"] == candidate_id:
+            row[field] = value
+            row["updated_at"] = get_timestamp()
+            write_csv(results_file, CANDIDATE_FIELDS, rows)
+            log_action(action_name, f"{field} -> {value}", candidate_id, log_file)
+            return True
+    return False
+
+def update_recruiter_decision(candidate_id, decision, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    if decision not in VALID_DECISIONS:
+        raise ValueError(f"Invalid decision '{decision}'. Use one of {VALID_DECISIONS}")
+    return update_field(candidate_id, "recruiter_decision", decision, "RECRUITER_DECISION", results_file, log_file)
+
+def save_feedback(candidate_id, rating, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    try:
+        rating = int(rating)
+    except (TypeError, ValueError):
+        raise ValueError("Rating must be a whole number from 1 to 10")
+
+    if rating < 1 or rating > 10:
+        raise ValueError("Rating must be between 1 and 10")
+    return update_field(candidate_id, "feedback_rating", rating, "FEEDBACK", results_file, log_file)
+
+def get_sort_score(candidate):
+    if candidate["final_score"] is None:
+        return -1
+    return candidate["final_score"]
+
+def search_candidates(status=None, decision=None, min_score=None, max_score=None, fast_track=None, job_title=None, keyword=None, sort_by_score=True, results_file=RESULTS_FILE):
+    matches = []
+    for candidate in load_all_results(results_file):
+        score = candidate["final_score"]
+
+        if status and candidate["status"] != status:
+            continue
+        if decision and candidate["recruiter_decision"] != decision:
+            continue
+        if min_score is not None and (score is None or score < min_score):
+            continue
+        if max_score is not None and (score is None or score > max_score):
+            continue
+        if fast_track is not None and candidate["fast_track"] != fast_track:
+            continue
+        if job_title and candidate["job_title"].lower() != job_title.lower():
+            continue
+
+        if keyword:
+            text = " ".join([
+                candidate["file_name"],
+                candidate["summary"],
+                candidate["evidence"],
+                " ".join(candidate["skills_present"]),
+                " ".join(candidate["skills_missing"]),
+                " ".join(candidate["notes"]),
+            ])
+            if keyword.lower() not in text.lower():
+                continue
+
+        matches.append(candidate)
+
+    if sort_by_score:
+        matches.sort(key=get_sort_score, reverse=True)
+    return matches
+
+def count_by_status(results_file=RESULTS_FILE):
+    counts = {}
+    for status in VALID_STATUSES:
+        counts[status] = 0
+    for candidate in load_all_results(results_file):
+        if candidate["status"] in counts:
+            counts[candidate["status"]] += 1
+    return counts
+
+def main():
+    results_file = "demo_results.csv"
+    log_file = "demo_log.csv"
+    job = {"title": "Data Engineer"}
+
+    result = {
+        "final_score": 92.5,
+        "skills_score": 95.0,
+        "experience_score": 90.0,
+        "education_score": 85.0,
+        "ai_overall_score": 91.0,
+        "confidence": "high",
+        "status": "SHORTLIST",
+        "fast_track": True,
+        "missing_must_haves": [],
+        "stale_skills": [],
+        "skill_details": [
+            {"name": "Python", "category": "must_have", "present": True,
+             "last_used_year": 2026, "evidence": "6 years of Python"},
+            {"name": "Airflow", "category": "preferred", "present": False,
+             "last_used_year": None, "evidence": ""},
+        ],
+        "summary": "Strong fit for the role.",
+        "notes": ["Must-have bonus +5", "Fast-track tag"],
+    }
+
+    candidate = result_to_candidate("alice.pdf", "resume/alice.pdf", result)
+    candidate_id = save_candidate_result(candidate, job, results_file, log_file)
+    update_recruiter_decision(candidate_id, "shortlisted", results_file, log_file)
+    save_feedback(candidate_id, 9, results_file, log_file)
+
+    print("Fast-track:")
+    for c in search_candidates(fast_track=True, results_file=results_file):
+        print(" ", c["file_name"], c["final_score"], c["recruiter_decision"])
+    print("Counts:", count_by_status(results_file))
+    print("Audit log entries:", len(load_log(log_file)))
+
+
+if __name__ == "__main__":
+    main()

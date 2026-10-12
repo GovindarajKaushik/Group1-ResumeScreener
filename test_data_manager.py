@@ -83,6 +83,18 @@ def test_candidate_row_round_trip():
     assert loaded["skills_present"] == ["Python"]
     assert loaded["ai_result"]["confidence"] == "high"
 
+def test_save_and_load_one_candidate(files):
+    candidate_id = save_one(files)
+    loaded = dm.get_candidate(candidate_id, files["results_file"])
+    assert loaded["file_name"] == "alice.pdf"
+    assert loaded["file_path"] == "resume/alice.pdf"
+    assert loaded["final_score"] == 80.0
+    assert loaded["status"] == "SHORTLIST"
+    assert loaded["fast_track"] is False
+    assert loaded["recruiter_decision"] == "pending"
+    assert loaded["ai_result"]["skills_present"] == ["Python"]
+    assert loaded["ai_result"]["confidence"] == "high"
+
 def test_ids_count_up(files):
     assert save_one(files, "a.pdf") == "C001"
     assert save_one(files, "b.pdf") == "C002"
@@ -96,6 +108,20 @@ def test_job_title_comes_from_job_description(files):
 def test_invalid_status_is_rejected(files):
     with pytest.raises(ValueError):
         save_one(files, status="MAYBE")
+
+def test_resave_keeps_recruiter_decision(files):
+    candidate_id = save_one(files)
+    dm.update_recruiter_decision(candidate_id, "shortlisted",
+        results_file=files["results_file"],
+        log_file=files["log_file"])
+    candidate = dm.result_to_candidate("alice.pdf", "resume/alice.pdf", make_result(final_score=90.0))
+    candidate["candidate_id"] = candidate_id
+    dm.save_candidate_result(candidate, None,
+        results_file=files["results_file"],
+        log_file=files["log_file"])
+    loaded = dm.get_candidate(candidate_id, files["results_file"])
+    assert loaded["final_score"] == 90.0
+    assert loaded["recruiter_decision"] == "shortlisted"
 
 
 def test_resume_text_and_sensitive_fields_are_not_saved(files):
@@ -118,6 +144,31 @@ def test_notes_with_semicolons_survive_a_round_trip(files):
     candidate_id = save_one(files, notes=notes)
     assert dm.get_candidate(candidate_id, files["results_file"])["notes"] == notes
 
+def test_decision_must_be_valid(files):
+    candidate_id = save_one(files)
+    with pytest.raises(ValueError):
+        dm.update_recruiter_decision(candidate_id, "hired",
+            results_file=files["results_file"],
+            log_file=files["log_file"])
+
+
+def test_unknown_candidate_returns_false(files):
+    assert dm.update_recruiter_decision("C999", "rejected",
+        results_file=files["results_file"],
+        log_file=files["log_file"]) is False
+
+
+def test_feedback_range(files):
+    candidate_id = save_one(files)
+    assert dm.save_feedback(candidate_id, 7,
+        results_file=files["results_file"],
+        log_file=files["log_file"]) is True
+    assert dm.get_candidate(candidate_id, files["results_file"])["feedback_rating"] == 7
+    for bad_rating in [0, 11, "abc"]:
+        with pytest.raises(ValueError):
+            dm.save_feedback(candidate_id, bad_rating,
+                results_file=files["results_file"],
+                log_file=files["log_file"])
 
 def test_save_screening_record_success(files):
     record = {"resume_name": "a.pdf", "status": "success", "error": None}
@@ -147,6 +198,60 @@ def test_save_screening_record_failed_ai_call(files):
     assert loaded["file_path"] == "resume/b.docx"
     assert loaded["notes"] == ["Failed after 3 attempts: timeout"]
 
+def test_failed_resume_is_marked_re_entry(files):
+    dm.save_failed_resume("bad.pdf", "resume/bad.pdf", "Analyst", "invalid JSON",
+        results_file=files["results_file"],
+        log_file=files["log_file"])
+    found = dm.search_candidates(status="RE_ENTRY", results_file=files["results_file"])
+    assert len(found) == 1
+    assert found[0]["file_name"] == "bad.pdf"
+    assert found[0]["notes"] == ["invalid JSON"]
+    assert found[0]["final_score"] == 0.0
+
+
+def test_search_filters_and_sorting(files):
+    save_one(files, "low.pdf", final_score=40.0, status="SECONDARY_REVIEW")
+    save_one(files, "top.pdf", final_score=95.0, fast_track=True)
+    save_one(files, "mid.pdf", final_score=70.0)
+    path = files["results_file"]
+
+    everyone = dm.search_candidates(results_file=path)
+    assert [c["file_name"] for c in everyone] == ["top.pdf", "mid.pdf", "low.pdf"]
+
+    assert [c["file_name"] for c in dm.search_candidates(fast_track=True, results_file=path)] == ["top.pdf"]
+    assert len(dm.search_candidates(fast_track=False, results_file=path)) == 2
+    assert len(dm.search_candidates(status="SECONDARY_REVIEW", results_file=path)) == 1
+    assert len(dm.search_candidates(min_score=60, results_file=path)) == 2
+    assert len(dm.search_candidates(max_score=60, results_file=path)) == 1
+
+
+def test_search_by_keyword(files):
+    save_one(files, "a.pdf")
+    save_one(files, "b.pdf", skill_detail=[
+        {"name": "java", "category": "must_have", "present": True,
+         "last_used_year": 2025, "evidence": "Java services"}])
+    found = dm.search_candidates(keyword="java", results_file=files["results_file"])
+    assert [c["file_name"] for c in found] == ["b.pdf"]
+
+
+def test_count_by_status(files):
+    save_one(files, "a.pdf")
+    save_one(files, "b.pdf")
+    save_one(files, "c.pdf", status="SECONDARY_REVIEW")
+    counts = dm.count_by_status(files["results_file"])
+    assert counts == {"SHORTLIST": 2, "SECONDARY_REVIEW": 1, "RE_ENTRY": 0}
+
+def test_actions_are_logged(files):
+    candidate_id = save_one(files)
+    dm.update_recruiter_decision(candidate_id, "rejected",
+        results_file=files["results_file"],
+        log_file=files["log_file"])
+    dm.save_feedback(candidate_id, 5,
+        results_file=files["results_file"],
+        log_file=files["log_file"])
+    log = dm.load_log(files["log_file"])
+    assert [entry["action"] for entry in log] == ["SAVE_RESULT", "RECRUITER_DECISION", "FEEDBACK"]
+    assert log[0]["timestamp"] != ""
 
 def test_save_all_results_uses_resume_paths(files):
     results = {"a.pdf": make_result(), "b.pdf": make_result(final_score=50.0, status="SECONDARY_REVIEW")}
