@@ -358,5 +358,15 @@ def update_field(candidate_id, field, value, action_name,
 def update_recruiter_decision(candidate_id, decision, results_file=RESULTS_FILE, log_file=LOG_FILE):
     if decision not in VALID_DECISIONS:
         raise ValueError(f"Invalid decision '{decision}'. Use one of {VALID_DECISIONS}")
-    return update_field(candidate_id, "recruiter_decision", decision,
-                        "RECRUITER_DECISION", results_file, log_file)
+    return update_field(candidate_id, "recruiter_decision", decision, "RECRUITER_DECISION", results_file, log_file)
+
+def save_feedback(candidate_id, rating, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    try:
+        rating = int(rating)
+    except (TypeError, ValueError):
+        raise ValueError("Rating must be a whole number from 1 to 10")
+
+    if rating < 1 or rating > 10:
+        raise ValueError("Rating must be between 1 and 10")
+    return update_field(candidate_id, "feedback_rating", rating, "FEEDBACK", results_file, log_file)
+
