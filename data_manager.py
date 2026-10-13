@@ -1,7 +1,7 @@
 import csv
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 
 # Keep generated files beside the application, regardless of the launch directory.
@@ -103,7 +103,8 @@ def save_results_json(results, path=DEBUG_JSON_PATH):
                 print(f"Could not remove temporary JSON '{temporary_path}': {error}")
 
 def get_timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Use an explicit UTC offset so local and Docker records share a time basis.
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 def list_to_text(items):
     texts = []

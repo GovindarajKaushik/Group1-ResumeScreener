@@ -2,6 +2,7 @@ import uuid
 import os
 import math
 import re
+from datetime import datetime, timezone
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
@@ -326,9 +327,22 @@ def display_candidate_detail(candidate):
         print(f"- {note}")
     if not candidate.get("notes"):
         print("None recorded")
-    print(f"\nSaved: {candidate.get('created_at') or 'Not provided'}")
+    print(f"\nSaved: {format_timestamp(candidate.get('created_at'))}")
     print("System recommendations do not change the recruiter decision.")
     print("=" * 60)
+
+
+def format_timestamp(timestamp):
+    # Display ISO dates readably without changing stored data or guessing old timezones.
+    if not timestamp:
+        return "Not provided"
+    try:
+        saved_time = datetime.fromisoformat(timestamp)
+    except ValueError:
+        return timestamp
+    if saved_time.tzinfo is not None:
+        return saved_time.astimezone(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC")
+    return saved_time.strftime("%d %b %Y, %H:%M:%S")
 
 
 def format_saved_score(score):
@@ -355,7 +369,7 @@ def select_saved_job(jobs):
     for number, job in enumerate(jobs, start=1):
         print(
             f"{number}. {job['job_id'] or 'Older results'} | {job['title']} "
-            f"| Created: {job.get('created_at') or 'Not recorded'}"
+            f"| Created: {format_timestamp(job.get('created_at'))}"
         )
     while True:
         choice = input("Select a job number, or press Enter for the main menu: ").strip()

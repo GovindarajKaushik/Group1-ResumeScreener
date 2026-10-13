@@ -95,7 +95,7 @@ resume or proves the qualification. Recruiters should review the evidence.
 | AI Score Comparison | If the AI overall score differs from the weighted score before bonus/cap by at least 25 points, add a note recommending human review. Low confidence also adds a review note. |
 | Privacy Processing | Send only processed text, not the original document or its images. Remove labelled personal-detail lines and replace recognised emails and phone numbers. Unlabelled names, addresses, and other identifying details may remain; complete anonymisation is not guaranteed. |
 | Human Confirmation | Store system recommendations separately from recruiter decisions. New candidates default to `pending`; only an explicit review action sets `shortlisted` or `rejected`. Skipping preserves the existing decision. Failed or unscored records cannot receive a decision through the review menu. |
-| Audit Logging | Record timestamps for job creation, candidate result saving/updating, and recruiter decision changes. Viewing, skipped decisions, cancellations, and technical retries are not logged. |
+| Audit Logging | Record UTC timestamps with an explicit `+00:00` offset for job creation, candidate result saving/updating, and recruiter decision changes. Viewing, skipped decisions, cancellations, and technical retries are not logged. |
 | Input Validation | Accept only regular, nonempty PDF/DOCX files with readable text remaining after processing. Report rejected files and allow folder re-entry during collection while retaining accepted resumes. Validate minimum experience as finite and nonnegative, and the qualifying score within 0 to 100. No maximum file-size limit is configured. |
 | API Failure Handling | Allow immediate retries during the active batch for connection, timeout, rate-limit, and server failures. Invalid responses and unresolved failures are stored as `RE_ENTRY` with blank scores and a reason. `RE_ENTRY` is a failure status, not a later-resume feature. |
 | Batch Cancellation | Ctrl+C or EOF during screening or retry choices cancels the whole batch before job, candidate, audit, or debug data is written. Start a new batch to screen the folder again. Choosing not to retry instead finishes the batch and saves its successes and failures. |
@@ -110,6 +110,13 @@ Results are stored in `data/jobs.csv`, `data/candidate_results.csv`, and
 the batch finishes; scoring does not depend on that file, and debug write failures
 produce a warning. With Docker, the mounted `data/` folder keeps these files on
 the host computer.
+
+New storage timestamps use ISO 8601 UTC, for example `2026-10-13T08:00:00+00:00`.
+Older stored timestamps are preserved as recorded; they are not converted or
+assigned a timezone retrospectively.
+The menu displays recognised dates readably, such as `13 Oct 2026, 08:00:00 UTC`.
+Historical dates without a timezone are displayed without a timezone label;
+unrecognised date text remains visible as recorded.
 
 ---
 
