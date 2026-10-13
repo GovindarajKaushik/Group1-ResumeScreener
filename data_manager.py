@@ -80,14 +80,27 @@ def ensure_storage_folder(path):
 
 def save_results_json(results, path=DEBUG_JSON_PATH):
     # Save screening records as debug JSON; raise ValueError on write failure.
-    temporary_path = os.fspath(path) + ".tmp"
+    temporary_path = None
     try:
         ensure_storage_folder(path)
-        with open(temporary_path, "w", encoding="utf-8") as file:
+        with NamedTemporaryFile(
+            mode="w", encoding="utf-8",
+            dir=os.path.dirname(os.path.abspath(path)),
+            prefix="json_update_", suffix=".tmp", delete=False,
+        ) as file:
+            temporary_path = file.name
             json.dump(results, file, indent=2, ensure_ascii=False)
         os.replace(temporary_path, path)
+        temporary_path = None
     except (OSError, TypeError, ValueError) as error:
         raise ValueError(f"Could not save results to {path}: {error}") from error
+    finally:
+        # Remove partial output without hiding the original saving error.
+        if temporary_path is not None:
+            try:
+                os.remove(temporary_path)
+            except OSError as error:
+                print(f"Could not remove temporary JSON '{temporary_path}': {error}")
 
 def get_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
