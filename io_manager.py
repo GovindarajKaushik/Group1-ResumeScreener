@@ -229,7 +229,11 @@ def parse_skill_list(text):
 
 def collect_job_description():
     """Collect job description details from user input."""
-    title = input("Job Title: ")
+    while True:
+        title = input("Job Title: ").strip()
+        if title:
+            break
+        print("Job title cannot be empty. Please enter a job title.")
 
     skills_input = input("Required skills (comma-separated): ")
     skills = parse_skill_list(skills_input)
