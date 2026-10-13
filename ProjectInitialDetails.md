@@ -1,5 +1,8 @@
-# Project Initial Details
+# Project Details
 ## AI-powered Resume Screener
+
+This document describes the final agreed scope and the behaviour implemented in
+the application. The README contains the commands for running the project and tests.
 
 **Lab-P2 GROUP 2**
 
@@ -32,33 +35,48 @@ Our application solves this by allowing users to quickly extract relevant inform
 
 Recruiters, hiring managers, and talent acquisition teams.
 
-The primary users for this application are corporate recruiters, hiring managers, and talent acquisition teams who are responsible for incoming applications for one or more open roles. These users typically work with a high volume of resumes per posting and need to make fast but defensible shortlisting decisions. The tool is designed to fit into their existing workflow: they upload what they already have (job description and the batch of resumes) and receive an organized, ranked, explainable output in return.
+The primary users for this application are corporate recruiters, hiring managers, and talent acquisition teams who are responsible for incoming applications for one or more open roles. These users typically work with a high volume of resumes per posting and need to make fast but defensible shortlisting decisions. They enter job requirements through the terminal, select a folder of resumes, and receive ranked results with evidence and scoring notes. Saved CSV files can be opened in Excel before optional review through the application.
 
 ---
 
 ## 2. User Inputs
 
-- **Job Description:** job title, required skills, minimum years of experience, education requirements, and preferred qualifications — entered as text or uploaded as a document.
-- **Candidate Resumes:** batch of resumes in a folder, uploaded as PDF or DOCX files.
-- **Screening Preferences:** optional weighting across criteria and a minimum qualifying score.
-- **Feedback to AI:** recruiter marks an AI-generated ranking on a range (e.g. 1–10). This is logged to refine the approach over time.
+- **Job Description:** job title, required skills, minimum years of experience, education requirements, and preferred skills, entered through terminal prompts.
+- **Candidate Resumes:** a selected folder containing PDF or DOCX files. Additional folders can be entered during input collection to add resumes or retry failed extraction.
+- **Screening Preference:** minimum qualifying score from 0 to 100, with a default of 60. Criterion weights are fixed at 50% skills, 30% experience, and 20% education.
+- **Optional Human Review:** shortlist, reject, or skip a scored candidate after the batch is saved. Review proceeds in CSV order, with an optional jump to a candidate ID before returning to the paused position.
+
+The current menu does not provide job-description document uploads, adjustable
+criterion weights, feedback ratings, or later re-entry of saved failed candidates.
+There is no configured maximum resume file size.
 
 ---
 
 ## 3. Use of AI
 
-Every applicant's record passes through the AI API (OpenRouter), which receives all user input and screening preferences. The AI then performs resume understanding and semantic comparison, recognizing that equivalent skills may be described with different terminology rather than relying on exact keyword matching. A structured prompt is sent to the AI API, combining:
+Each readable resume accepted during input collection is sent as processed text
+to OpenRouter. The prompt asks the model to compare resume qualifications with
+the job requirements semantically, including equivalent wording. It combines:
 
-- **Job Description:** from user input.
-- **Extracted resume content:** from each specific candidate (plain text pulled from the PDF or DOCX file, processed in the input/output manager).
-- **Set of screening instructions:** screening preferences from user inputs and prompts that tell the AI exactly what to evaluate and what output format to return.
+- **Job Requirements:** title, required/preferred skills, minimum experience, and education requirements entered by the user.
+- **Processed Resume Text:** plain text extracted and cleaned by the input/output manager, with the supported personal-information redactions applied.
+- **Screening Instructions:** a system prompt specifying resume-based assessment, skill evidence, and a structured JSON response.
+
+The minimum qualifying score and fixed scoring weights are applied locally by
+`logic_manager.py`; they are not sent to the model. The AI's overall score is
+stored for comparison, while the application calculates its own final score.
 
 ### AI-Generated Outputs
 
-- **Overall match assessment:** strong match, partial match, weak match (in terms of percentage).
-- **Skill and experience comparison:** which required/preferred skills are present, which are missing, and how the candidate's experience lines up against what the role needs.
-- **Evidence:** short explanation from the resume that justifies the assessment, so HR can see why the AI reached its conclusion, not just a number.
-- **Overall assessment and confidence:** a summary label plus how confident the AI is in the result.
+- **Skills:** required/preferred skill entries with presence flags, last-used years when available, and evidence text.
+- **Criterion Scores:** experience and education scores from 0 to 100.
+- **Overall AI Score:** a separate model-generated score from 0 to 100.
+- **Assessment:** an overall summary and low, medium, or high confidence.
+
+The model is instructed to provide short exact resume excerpts as evidence.
+The application checks evidence types and awards skill points only when evidence
+is nonempty; it does not independently verify that each excerpt occurs in the
+resume or proves the qualification. Recruiters should review the evidence.
 
 ---
 
@@ -66,15 +84,32 @@ Every applicant's record passes through the AI API (OpenRouter), which receives 
 
 | Business Rule | Description |
 |---|---|
-| Score Routing | If a candidate's AI-generated score is below the minimum threshold set by the recruiter, the candidate will be placed in a secondary list for review instead of being discarded completely. |
-| Fast-Track | Scores above a certain percentage (e.g. 90%+) receive a special tag. |
-| Keyword Weightage | Resumes that contain must-have skills receive extra points to boost their AI match score. |
-| Recency of Experience | Skills not used within a certain number of years (e.g. 5+ years) have their weightage reduced by a certain percentage. |
-| Fairness Safeguard | Before any resume data is transmitted to the third-party AI API, the system will strip all sensitive and identifying information (e.g. candidate photo, age, gender, race, marital status). This ensures fairness and prevents sensitive data from being sent to third parties. |
-| Human Confirmation | AI-generated rankings will not be treated as the final decision. The user must explicitly choose shortlisted candidates, as the AI will only rank, label, and separate candidates according to their scores. |
-| Audit Logging | The system will create logs and timestamps for every action performed by the user, creating a traceable screening history. This ensures greater transparency. |
-| Input Validation | Uploaded resume files will be validated for file format, size limits, and empty contents before submission to the AI service. Files that fail validation will be rejected, and the user will be prompted again with a clear, descriptive error message. |
-| API Call Failure Handling | If the AI API request/response fails or returns invalid data, that specific resume is marked for re-entry. |
+| Final Score | Combine the calculated skills score (50%), AI experience score (30%), and AI education score (20%), then apply the must-have bonus or missing-skill cap. Keep the result between 0 and 100 and round it to one decimal place. |
+| Score Routing | A final score at or above the user's threshold receives `SHORTLIST`; a lower score receives `SECONDARY_REVIEW`. Both remain available for human review. Routing uses the calculated final score, not the AI overall score. |
+| Skill Weighting | Each required skill has weight 1 and each preferred skill has weight 0.5 in the skills calculation. A present skill earns points only with nonempty evidence. |
+| Must-Have Bonus | Add 5 points when at least one required skill is specified and all required skills are reported present with nonempty evidence. |
+| Missing Required Skills | A required skill reported absent, omitted, or not matched by name is treated as missing. If any required skill is missing, cap the final score at 59. Routing still uses the user's chosen threshold. |
+| Missing Evidence | A skill reported present without evidence earns no skill points. For a required skill, this also prevents the must-have bonus and fast-track tag, but does not by itself reject the response or apply the missing-skill cap. |
+| Recency of Experience | Halve a supported skill's earned points when its last-used year is at least 5 years before the current year. Unknown dates receive no recency penalty and are noted for review. |
+| Fast-Track | Tag candidates with a final score of at least 90, each criterion score of at least 80, no missing or unsupported required skills, and medium or high AI confidence. |
+| AI Score Comparison | If the AI overall score differs from the weighted score before bonus/cap by at least 25 points, add a note recommending human review. Low confidence also adds a review note. |
+| Privacy Processing | Send only processed text, not the original document or its images. Remove labelled personal-detail lines and replace recognised emails and phone numbers. Unlabelled names, addresses, and other identifying details may remain; complete anonymisation is not guaranteed. |
+| Human Confirmation | Store system recommendations separately from recruiter decisions. New candidates default to `pending`; only an explicit review action sets `shortlisted` or `rejected`. Skipping preserves the existing decision. Failed or unscored records cannot receive a decision through the review menu. |
+| Audit Logging | Record timestamps for job creation, candidate result saving/updating, and recruiter decision changes. Viewing, skipped decisions, cancellations, and technical retries are not logged. |
+| Input Validation | Accept only regular, nonempty PDF/DOCX files with readable text remaining after processing. Report rejected files and allow folder re-entry during collection while retaining accepted resumes. Validate minimum experience as finite and nonnegative, and the qualifying score within 0 to 100. No maximum file-size limit is configured. |
+| API Failure Handling | Allow immediate retries during the active batch for connection, timeout, rate-limit, and server failures. Invalid responses and unresolved failures are stored as `RE_ENTRY` with blank scores and a reason. `RE_ENTRY` is a failure status, not a later-resume feature. |
+| Batch Cancellation | Ctrl+C or EOF during screening or retry choices cancels the whole batch before job, candidate, audit, or debug data is written. Start a new batch to screen the folder again. Choosing not to retry instead finishes the batch and saves its successes and failures. |
+
+Cancellation applies before saving begins. Once the saving phase starts, files
+already written are not rolled back. CSV storage and audit logging are separate
+operations; errors are reported, but a CSV write can succeed before its audit
+entry fails.
+
+Results are stored in `data/jobs.csv`, `data/candidate_results.csv`, and
+`data/audit_log.csv`. `data/resume_results.json` is debug output written after
+the batch finishes; scoring does not depend on that file, and debug write failures
+produce a warning. With Docker, the mounted `data/` folder keeps these files on
+the host computer.
 
 ---
 
