@@ -1,4 +1,4 @@
-# Send only the application source and dependency list to Docker.
+# Include the application and its offline logic test script.
 *
 !Dockerfile
 !requirements.txt
@@ -7,3 +7,4 @@
 !ai_manager.py
 !logic_manager.py
 !data_manager.py
+!test_logic.py

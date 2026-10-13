@@ -9,5 +9,6 @@ COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY main.py io_manager.py ai_manager.py logic_manager.py data_manager.py ./
+COPY test_logic.py ./
 
 CMD ["python", "main.py"]
