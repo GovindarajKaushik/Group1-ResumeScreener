@@ -3,7 +3,6 @@
 # python cache files
 __pycache__/
 *.py[cod]
-AGENTS.md
 
 # Generated application data
 /data/
