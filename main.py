@@ -129,48 +129,44 @@ def screen_new_batch():
             show_message("No valid resumes to screen.")
             return
 
-        show_message(f"\nScreening role: {job_description['title']}")
- 
-        resumes = {r["id"]: r for r in resume_list}
-        results = {}
- 
-        def on_progress(record):
-            # Show progress while keeping this batch's results in memory.
-            show_progress(record)
- 
-        try:
-            show_message("\nScreening...")
-            screen_all_resumes(client, resumes, job_description, results, on_progress)
-            report_summary(results)
-
-            # Ask only about failures a retry could fix (connection, timeout,
-            # rate limit, server error). Repeat until none are left or the user says no.
-            while True:
-                retryable_ids = get_retryable_ids(results)
-                if not retryable_ids:
-                    break
-                if not question_api_retry(len(retryable_ids)):
-                    break
-                show_message("\nRetrying...")
-                retry_failed(client, resumes, job_description, results, on_progress)
-                report_summary(results)
-        except (KeyboardInterrupt, EOFError):
-            # Cancel the batch before any job, candidate, or debug data is saved.
-            show_message("\nBatch cancelled. No data from this batch was saved. Start a new batch to try again.")
-            return
-
-        # Score the in-memory results; the debug file is optional.
-        evaluations = evaluate_results(results, job_description, preferences)
-        ranking_rows = build_ranking_rows(results, evaluations)
-        show_rankings(ranking_rows)
-
-        # Save only after screening and the retry choices have finished.
         try:
             job_description["job_id"] = save_job(job_description, preferences)
         except (OSError, ValueError) as error:
             show_error(f"Could not finish saving the job and its audit entry: {error}")
             return
         show_message(f"\nScreening job: {job_description['job_id']} — {job_description['title']}")
+ 
+        resumes = {r["id"]: r for r in resume_list}
+        results = {}
+ 
+        def on_progress(record):
+            # Runs after every resume: show progress and save the debug json
+            show_progress(record)
+            try:
+                save_results_json(results, DEBUG_JSON_PATH)
+            except ValueError as e:
+                show_message(f"Warning: {e}")
+ 
+        show_message("\nScreening...")
+        screen_all_resumes(client, resumes, job_description, results, on_progress)
+        report_summary(results)
+ 
+        # Ask only about failures a retry could fix (connection, timeout,
+        # rate limit, server error). Repeat until none are left or the user says no.
+        while True:
+            retryable_ids = get_retryable_ids(results)
+            if not retryable_ids:
+                break
+            if not question_api_retry(len(retryable_ids)):
+                break
+            show_message("\nRetrying...")
+            retry_failed(client, resumes, job_description, results, on_progress)
+            report_summary(results)
+ 
+        # Score the in-memory results; the debug file is optional.
+        evaluations = evaluate_results(results, job_description, preferences)
+        ranking_rows = build_ranking_rows(results, evaluations)
+        show_rankings(ranking_rows)
 
         saved_count = 0
         for resume_id, record in results.items():
@@ -183,12 +179,6 @@ def screen_new_batch():
             else:
                 saved_count += 1
         show_message(f"\nSaved {saved_count}/{len(results)} candidate records to {RESULTS_FILE} with audit entries in {LOG_FILE}.")
-
-        # Debug output is optional and belongs only to a completed batch.
-        try:
-            save_results_json(results, DEBUG_JSON_PATH)
-        except ValueError as error:
-            show_message(f"Warning: {error}")
  
     except (KeyboardInterrupt, EOFError):
         show_message("\nInterrupted. Any records already saved remain on disk.")
