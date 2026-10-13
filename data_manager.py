@@ -134,7 +134,12 @@ def read_csv(path, fields):
     rows = []
     with open(path, "r", newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file)
+        # Candidate IDs are needed for viewing, updates, and generating new IDs.
+        if fields == CANDIDATE_FIELDS and "candidate_id" not in (reader.fieldnames or []):
+            raise ValueError(f"Saved candidates in '{path}' are missing the candidate_id column.")
         for row in reader:
+            if fields == CANDIDATE_FIELDS and not (row.get("candidate_id") or "").strip():
+                raise ValueError(f"Saved candidate in '{path}' has an empty candidate ID at CSV line {reader.line_num}.")
             rows.append(row)
     return rows
 
