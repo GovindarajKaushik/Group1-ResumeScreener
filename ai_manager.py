@@ -89,8 +89,8 @@ def parse_response(response):
             raise ValueError("response was empty")
         # JSONDecodeError is a kind of ValueError, so it is caught below too
         return validate_ai_result(json.loads(content))
-    except ValueError as e:
-        raise ValueError(f"Malformed API response: {e}")
+    except (AttributeError, IndexError, TypeError, ValueError) as e:
+        raise ValueError(f"Malformed API response: {e}") from e
 
 
 # validate json data and check right values
