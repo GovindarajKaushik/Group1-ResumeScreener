@@ -21,3 +21,8 @@ Generated data is excluded from Git. If upgrading an older checkout, move its
 existing files listed above from the project root into `data/` before starting.
 Do not overwrite files if the destination already contains saved data.
 When Docker support is added, this folder can be mounted as persistent storage.
+
+Pressing Ctrl+C during screening or retries cancels the entire batch and returns
+to the main menu. Its job, candidate results, and debug JSON are saved only after
+screening and retry choices finish. Cancellation leaves previous batches untouched.
+To try again, select a new batch and screen the folder from the beginning.

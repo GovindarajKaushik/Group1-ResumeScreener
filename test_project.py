@@ -599,18 +599,25 @@ def test_older_csv_rows_survive_new_job_column():
         assert old_candidate["notes"] == ["Existing notes"]
         assert len(data_manager.load_job_results("J001", results_file)) == 1
 
-def test_job_save_failure_stops_screening():
-    # A failed job write must be reported before any API screening request.
+def test_job_save_failure_stops_result_storage():
+    # A failed job write must stop candidate/debug storage after screening finishes.
     orchestrator, simulated_ai = load_test_orchestrator()
+    simulated_ai.process_resume_ai.return_value = make_ai_response()
     with patch.multiple(
         orchestrator,
-        collect_inputs=Mock(return_value=([{"id": "one"}], {"title": "Developer"}, {})),
+        collect_inputs=Mock(return_value=(
+            [{"id": "one", "file_name": "sample.pdf", "text": "Python"}],
+            {"title": "Developer", "required_skills": ["Python"], "preferred": []}, {},
+        )),
         save_job=Mock(side_effect=PermissionError("Jobs file is locked")),
+        save_screening_record=Mock(), save_results_json=Mock(),
         show_error=Mock(),
-    ):
+    ), redirect_stdout(StringIO()):
         orchestrator.screen_new_batch()
         assert "Could not finish saving the job" in orchestrator.show_error.call_args.args[0]
-    simulated_ai.process_resume_ai.assert_not_called()
+        orchestrator.save_screening_record.assert_not_called()
+        orchestrator.save_results_json.assert_not_called()
+    simulated_ai.process_resume_ai.assert_called_once()
 
 
 # Skill evidence
@@ -1286,22 +1293,104 @@ def test_invalid_logic_result_is_saved_without_score():
         assert saved["final_score"] is None, "Unscorable AI output was stored as a zero score"
 
 
-def test_interrupted_batch_preserves_completed_candidate():
-    # Regression: a later interruption should not lose an already-screened candidate.
+def test_cancelled_batch_preserves_previous_data_and_can_restart():
+    # Cancellation leaves older files untouched; starting again screens every resume.
+    for interruption in [KeyboardInterrupt(), EOFError()]:
+        orchestrator, ai = load_test_orchestrator()
+        ai.process_resume_ai.side_effect = [make_ai_response(), interruption]
+        resumes = [{"id": str(i), "file_name": f"{i}.pdf", "text": "Python"} for i in range(2)]
+        with TemporaryDirectory() as folder:
+            directory = Path(folder)
+            results, audit, jobs = [directory / name for name in ["results.csv", "audit.csv", "jobs.csv"]]
+            debug = directory / "debug.json"
+            previous_job = {"title": "Previous role"}
+            previous_job["job_id"] = data_manager.save_job(previous_job, {}, jobs, audit)
+            data_manager.save_candidate_result(
+                {"file_name": "previous.pdf", "final_score": 80, "status": "SHORTLIST"},
+                previous_job, results, audit,
+            )
+            data_manager.save_results_json({"previous": "completed batch"}, debug)
+            original_files = {path.name: path.read_bytes() for path in directory.iterdir()}
+            with patch.multiple(
+                orchestrator,
+                collect_inputs=lambda: (resumes, {"title": "Developer", "required_skills": ["Python"], "preferred": []}, {}),
+                DEBUG_JSON_PATH=str(debug),
+                save_job=lambda job, prefs: data_manager.save_job(job, prefs, jobs, audit),
+                save_screening_record=lambda record, resume, score, job: data_manager.save_screening_record(record, resume, score, job, results, audit),
+            ), redirect_stdout(StringIO()) as output:
+                orchestrator.screen_new_batch()
+                assert {path.name: path.read_bytes() for path in directory.iterdir()} == original_files
+                assert "Batch cancelled" in output.getvalue()
+                ai.process_resume_ai.side_effect = None
+                ai.process_resume_ai.return_value = make_ai_response()
+                orchestrator.screen_new_batch()
+            saved = data_manager.load_all_results(results)
+            assert [candidate["file_name"] for candidate in saved] == ["previous.pdf", "0.pdf", "1.pdf"]
+            assert [candidate["job_id"] for candidate in saved] == ["J001", "J002", "J002"]
+            assert len(data_manager.load_all_jobs(jobs)) == 2
+            assert ai.process_resume_ai.call_count == 4
+
+
+def test_cancelled_retry_does_not_save_any_batch_data():
+    # Cancel the whole batch even if earlier initial requests and retries succeeded.
+    for interruption in [KeyboardInterrupt(), EOFError()]:
+        orchestrator, ai = load_test_orchestrator()
+        ai.process_resume_ai.side_effect = [
+            ConnectionError("First timeout"), ConnectionError("Second timeout"),
+            make_ai_response(), make_ai_response(), interruption,
+        ]
+        resumes = [{"id": str(i), "file_name": f"{i}.pdf", "text": "Python"} for i in range(3)]
+        with TemporaryDirectory() as folder:
+            results, audit, jobs = [Path(folder) / name for name in ["results.csv", "audit.csv", "jobs.csv"]]
+            with patch.multiple(
+                orchestrator,
+                collect_inputs=lambda: (resumes, {"title": "Developer", "required_skills": ["Python"], "preferred": []}, {}),
+                DEBUG_JSON_PATH=str(Path(folder) / "debug.json"),
+                save_job=lambda job, prefs: data_manager.save_job(job, prefs, jobs, audit),
+                save_screening_record=lambda record, resume, score, job: data_manager.save_screening_record(record, resume, score, job, results, audit),
+            ), patch("builtins.input", return_value="yes"), redirect_stdout(StringIO()) as output:
+                orchestrator.screen_new_batch()
+            assert list(Path(folder).iterdir()) == []
+            assert ai.process_resume_ai.call_count == 5
+            assert "Batch cancelled. No data from this batch was saved" in output.getvalue()
+
+
+def test_interruption_before_first_result_does_not_create_candidate():
+    # A request that never finishes must not produce a candidate record or score.
     orchestrator, ai = load_test_orchestrator()
-    ai.process_resume_ai.side_effect = [make_ai_response(), KeyboardInterrupt()]
-    resumes = [{"id": str(i), "file_name": f"{i}.pdf", "text": "Built Python tools"} for i in range(2)]
+    ai.process_resume_ai.side_effect = KeyboardInterrupt()
     with TemporaryDirectory() as folder:
         results, audit, jobs = [Path(folder) / name for name in ["results.csv", "audit.csv", "jobs.csv"]]
         with patch.multiple(
             orchestrator,
-            collect_inputs=lambda: (resumes, {"title": "Developer", "required_skills": ["Python"], "preferred": []}, {}),
-            DEBUG_JSON_PATH=str(Path(folder) / "debug.json"),
+            collect_inputs=lambda: ([{"id": "one", "file_name": "sample.pdf", "text": "Python"}], {"title": "Developer"}, {}),
             save_job=lambda job, prefs: data_manager.save_job(job, prefs, jobs, audit),
-            save_screening_record=lambda record, resume, score, job: data_manager.save_screening_record(record, resume, score, job, results, audit),
+            save_results_json=Mock(),
+            save_screening_record=Mock(),
         ), redirect_stdout(StringIO()):
             orchestrator.screen_new_batch()
-        assert len(data_manager.load_all_results(results)) == 1, "Completed candidate lost when next request was interrupted"
+            orchestrator.save_screening_record.assert_not_called()
+            orchestrator.save_results_json.assert_not_called()
+        assert list(Path(folder).iterdir()) == []
+
+
+def test_cancelled_retry_prompt_does_not_save_batch():
+    # Cancellation while answering the retry question also discards the batch.
+    for interruption in [KeyboardInterrupt(), EOFError()]:
+        orchestrator, ai = load_test_orchestrator()
+        ai.process_resume_ai.side_effect = [make_ai_response(), ConnectionError("Timeout")]
+        resumes = [{"id": str(i), "file_name": f"{i}.pdf", "text": "Python"} for i in range(2)]
+        with patch.multiple(
+            orchestrator,
+            collect_inputs=lambda: (resumes, {"title": "Developer", "required_skills": ["Python"], "preferred": []}, {}),
+            save_job=Mock(), save_screening_record=Mock(), save_results_json=Mock(),
+        ), patch("builtins.input", side_effect=interruption), redirect_stdout(StringIO()) as output:
+            orchestrator.screen_new_batch()
+            orchestrator.save_job.assert_not_called()
+            orchestrator.save_screening_record.assert_not_called()
+            orchestrator.save_results_json.assert_not_called()
+            assert "Batch cancelled" in output.getvalue()
+        assert ai.process_resume_ai.call_count == 2
 
 
 def test_debug_write_failure_cleans_temporary_file():
@@ -1402,7 +1491,7 @@ def run_tests():
         test_empty_results_and_read_errors_return_to_menu,
         test_jobs_keep_identical_titles_separate,
         test_older_csv_rows_survive_new_job_column,
-        test_job_save_failure_stops_screening,
+        test_job_save_failure_stops_result_storage,
         test_skill_evidence_flow,
         test_resume_validation_and_folder_reentry,
         test_job_inputs_reject_invalid_experience_and_clean_skills,
@@ -1427,7 +1516,10 @@ def run_tests():
         test_saved_jobs_without_candidates_and_missing_jobs,
         test_syntax_of_application_modules,
         test_invalid_logic_result_is_saved_without_score,
-        test_interrupted_batch_preserves_completed_candidate,
+        test_cancelled_batch_preserves_previous_data_and_can_restart,
+        test_cancelled_retry_does_not_save_any_batch_data,
+        test_interruption_before_first_result_does_not_create_candidate,
+        test_cancelled_retry_prompt_does_not_save_batch,
         test_debug_write_failure_cleans_temporary_file,
         test_invalid_candidate_csv_has_clear_error,
         test_audit_failure_reports_partial_save,
