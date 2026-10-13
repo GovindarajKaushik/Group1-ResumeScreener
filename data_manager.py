@@ -417,8 +417,12 @@ def save_screening_record(record, resume, logic_result=None, job_description=Non
     if job_description:
         job_title = job_description.get("title") or job_description.get("job_title", "")
 
-    if record.get("status") != "success" or logic_result is None:
+    # A successful API request can still produce a result that cannot be scored.
+    scoring_failed = logic_result is not None and logic_result.get("status") == "RE_ENTRY"
+    if record.get("status") != "success" or logic_result is None or scoring_failed:
         reason = record.get("error") or "No AI result"
+        if scoring_failed:
+            reason = "; ".join(logic_result.get("notes", [])) or "AI result could not be scored."
         return save_failed_resume(file_name, file_path, job_title, reason,
                                   results_file, log_file,
                                   job_id=job_description.get("job_id", "") if job_description else "")
