@@ -45,6 +45,7 @@ The primary users for this application are corporate recruiters, hiring managers
 - **Candidate Resumes:** a selected folder containing PDF or DOCX files. Additional folders can be entered during input collection to add resumes or retry failed extraction.
 - **Screening Preference:** minimum qualifying score from 0 to 100, with a default of 60. Criterion weights are fixed at 50% skills, 30% experience, and 20% education.
 - **Optional Human Review:** shortlist, reject, or skip a scored candidate after the batch is saved. Review proceeds in CSV order, with an optional jump to a candidate ID before returning to the paused position.
+- **Job Deletion:** select a saved job and explicitly confirm deletion of the job and all its linked candidate CSV records.
 
 The current menu does not provide job-description document uploads, adjustable
 criterion weights, feedback ratings, or later re-entry of saved failed candidates.
@@ -95,15 +96,22 @@ resume or proves the qualification. Recruiters should review the evidence.
 | AI Score Comparison | If the AI overall score differs from the weighted score before bonus/cap by at least 25 points, add a note recommending human review. Low confidence also adds a review note. |
 | Privacy Processing | Send only processed text, not the original document or its images. Remove labelled personal-detail lines and replace recognised emails and phone numbers. Unlabelled names, addresses, and other identifying details may remain; complete anonymisation is not guaranteed. |
 | Human Confirmation | Store system recommendations separately from recruiter decisions. New candidates default to `pending`; only an explicit review action sets `shortlisted` or `rejected`. Skipping preserves the existing decision. Failed or unscored records cannot receive a decision through the review menu. |
-| Audit Logging | Record UTC timestamps with an explicit `+00:00` offset for job creation, candidate result saving/updating, and recruiter decision changes. Viewing, skipped decisions, cancellations, and technical retries are not logged. |
+| Audit Logging | Record UTC timestamps with an explicit `+00:00` offset for job creation, candidate result saving/updating, recruiter decision changes, and confirmed job deletion. A deletion entry records the job ID and affected candidate IDs. Viewing, skipped decisions, cancellations, and technical retries are not logged. |
+| Job Deletion | Delete only the selected job ID and candidate CSV records linked to that ID, including failed records. Confirmation is required. Other jobs, original resume files, audit history, and optional debug JSON remain. Older candidate records without a job ID are not assigned to or deleted with another job. |
+| ID Allocation | New job and candidate IDs use the highest ID in current storage and retained audit history, so IDs from deleted records are not reused. Keep the audit history to preserve this behaviour. |
 | Input Validation | Accept only regular, nonempty PDF/DOCX files with readable text remaining after processing. Report rejected files and allow folder re-entry during collection while retaining accepted resumes. Validate minimum experience as finite and nonnegative, and the qualifying score within 0 to 100. No maximum file-size limit is configured. |
 | API Failure Handling | Allow immediate retries during the active batch for connection, timeout, rate-limit, and server failures. Invalid responses and unresolved failures are stored as `RE_ENTRY` with blank scores and a reason. `RE_ENTRY` is a failure status, not a later-resume feature. |
 | Batch Cancellation | Ctrl+C or EOF during screening or retry choices cancels the whole batch before job, candidate, audit, or debug data is written. Start a new batch to screen the folder again. Choosing not to retry instead finishes the batch and saves its successes and failures. |
 
-Cancellation applies before saving begins. Once the saving phase starts, files
+For screening batches, cancellation applies before saving begins. Once the saving phase starts, files
 already written are not rolled back. CSV storage and audit logging are separate
 operations; errors are reported, but a CSV write can succeed before its audit
 entry fails.
+
+Job deletion writes the filtered candidate CSV before the jobs CSV. If writing
+the jobs CSV fails, the application attempts to restore the original candidate
+rows. A restoration failure or an audit failure is reported so the user can check
+the saved files; the two CSVs and audit log are not a single atomic transaction.
 
 Results are stored in `data/jobs.csv`, `data/candidate_results.csv`, and
 `data/audit_log.csv`. `data/resume_results.json` is debug output written after

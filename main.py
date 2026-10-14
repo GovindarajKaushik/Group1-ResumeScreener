@@ -6,7 +6,7 @@ from ai_manager import process_resume_ai, create_client
 from logic_manager import evaluate_results, build_ranking_rows
 from data_manager import (
     save_results_json, save_screening_record, load_all_results,
-    save_job, load_all_jobs, load_job_results, update_recruiter_decision,
+    save_job, load_all_jobs, load_job_results, update_recruiter_decision, delete_job,
     RESULTS_FILE, LOG_FILE, DEBUG_JSON_PATH
 )
 # import io_manager
@@ -25,6 +25,7 @@ from io_manager import (
     select_saved_job,
     display_job_details,
     collect_recruiter_decision,
+    confirm_job_delete,
 )
 
 
@@ -229,6 +230,40 @@ def view_saved_results(review=False):
         display_candidate_detail(candidate)
 
 
+def delete_saved_job():
+    # Coordinate job selection and confirmation before deleting its saved records.
+    try:
+        jobs = load_all_jobs()
+    except (OSError, ValueError) as error:
+        show_error(f"Could not load saved jobs: {error}")
+        return
+    if not jobs:
+        show_message("No saved jobs to delete.")
+        return
+    job = select_saved_job(jobs)
+    if job is None:
+        return
+    try:
+        candidates = load_job_results(job["job_id"])
+    except (OSError, ValueError) as error:
+        show_error(f"Could not load this job's candidates: {error}")
+        return
+    display_job_details(job)
+    if not confirm_job_delete(job, len(candidates)):
+        show_message("Deletion cancelled. No records were removed.")
+        return
+    try:
+        deleted_count = delete_job(job["job_id"])
+    except (OSError, ValueError) as error:
+        show_error(f"Could not finish deleting the job and its audit entry: {error}")
+        show_message("Reload saved jobs and results to check their current state.")
+        return
+    if deleted_count is None:
+        show_error("Job no longer exists. Reload saved jobs.")
+        return
+    show_message(f"Deleted job {job['job_id']} and {deleted_count} candidate record(s).")
+
+
 def review_candidate(candidate):
     # Review one candidate and save explicit decisions; return the next navigation action.
     display_candidate_detail(candidate)
@@ -296,6 +331,8 @@ def main():
                 view_saved_results()
             elif choice == "3":
                 view_saved_results(review=True)
+            elif choice == "4":
+                delete_saved_job()
             else:
                 show_message("Exiting program.")
                 return

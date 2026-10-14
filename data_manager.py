@@ -209,6 +209,13 @@ def save_job(job_description, preferences, jobs_file=JOBS_FILE, log_file=LOG_FIL
         job_id = row.get("job_id", "")
         if job_id.startswith("J") and job_id[1:].isdigit():
             highest = max(highest, int(job_id[1:]))
+    # Retained audit entries prevent a deleted job ID from being reused.
+    if os.path.exists(log_file):
+        for entry in load_log(log_file):
+            if entry.get("action") in ("CREATE_JOB", "DELETE_JOB"):
+                old_id = (entry.get("details") or "").split(" | ", 1)[0]
+                if old_id.startswith("J") and old_id[1:].isdigit():
+                    highest = max(highest, int(old_id[1:]))
     job_id = "J" + str(highest + 1).zfill(3)
     rows.append({
         "job_id": job_id,
@@ -244,6 +251,56 @@ def load_job_results(job_id, results_file=RESULTS_FILE):
     # Return only the selected job's candidates; a blank ID selects older records.
     candidates = load_all_results(results_file)
     return [candidate for candidate in candidates if candidate["job_id"] == job_id]
+
+
+def delete_job(job_id, jobs_file=JOBS_FILE, results_file=RESULTS_FILE, log_file=LOG_FILE):
+    # Delete one saved job and its candidate rows; return the count, or None if absent.
+    if not job_id:
+        raise ValueError("A saved job ID is required for deletion.")
+    if not os.path.exists(jobs_file):
+        return None
+    jobs = read_csv(jobs_file, JOB_FIELDS)
+    remaining_jobs = []
+    selected_job = None
+    for job in jobs:
+        if job.get("job_id") == job_id:
+            selected_job = job
+        else:
+            remaining_jobs.append(job)
+    if selected_job is None:
+        return None
+
+    candidates = read_csv(results_file, CANDIDATE_FIELDS) if os.path.exists(results_file) else []
+    remaining_candidates = []
+    deleted_ids = []
+    for candidate in candidates:
+        if candidate.get("job_id", "") == job_id:
+            deleted_ids.append(candidate["candidate_id"])
+        else:
+            remaining_candidates.append(candidate)
+
+    if deleted_ids:
+        write_csv(results_file, CANDIDATE_FIELDS, remaining_candidates)
+    try:
+        write_csv(jobs_file, JOB_FIELDS, remaining_jobs)
+    except (OSError, ValueError) as error:
+        # Restore candidate rows if the second CSV write fails.
+        if deleted_ids:
+            try:
+                write_csv(results_file, CANDIDATE_FIELDS, candidates)
+            except (OSError, ValueError) as restore_error:
+                raise ValueError(
+                    f"Job deletion failed: {error}. Candidate restoration also failed: "
+                    f"{restore_error}. Check the saved files before continuing."
+                ) from restore_error
+        raise
+
+    # One deletion entry keeps the job ID and every removed candidate ID in history.
+    log_action(
+        "DELETE_JOB", f"{job_id} | {selected_job.get('title', '')} | removed {len(deleted_ids)} candidate(s)",
+        ",".join(deleted_ids), log_file,
+    )
+    return len(deleted_ids)
 
 def split_skills(skill_detail):
     present = []
@@ -337,11 +394,15 @@ def row_to_candidate(row):
     candidate["ai_result"] = ai_result
     return candidate
 
-def generate_candidate_id(results_file=RESULTS_FILE):
+def generate_candidate_id(results_file=RESULTS_FILE, log_file=LOG_FILE):
     rows = read_csv(results_file, CANDIDATE_FIELDS)
+    candidate_ids = [row["candidate_id"] for row in rows]
+    if os.path.exists(log_file):
+        for entry in load_log(log_file):
+            # DELETE_JOB can list several candidate IDs in a single audit entry.
+            candidate_ids.extend((entry.get("candidate_id") or "").split(","))
     highest = 0
-    for row in rows:
-        candidate_id = row["candidate_id"]
+    for candidate_id in candidate_ids:
         if candidate_id.startswith("C") and candidate_id[1:].isdigit():
             number = int(candidate_id[1:])
             if number > highest:
@@ -362,7 +423,7 @@ def save_candidate_result(candidate, job_description=None, results_file=RESULTS_
     flat["status"] = status
 
     if not flat.get("candidate_id"):
-        flat["candidate_id"] = generate_candidate_id(results_file)
+        flat["candidate_id"] = generate_candidate_id(results_file, log_file)
     candidate_id = flat["candidate_id"]
 
     rows = read_csv(results_file, CANDIDATE_FIELDS)

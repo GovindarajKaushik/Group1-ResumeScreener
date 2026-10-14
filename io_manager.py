@@ -385,6 +385,19 @@ def select_saved_job(jobs):
         print("Enter a job number from the list.")
 
 
+def confirm_job_delete(job, candidate_count):
+    # Require an explicit yes before deleting a job and its saved candidate records.
+    print(f"\nDelete {job['job_id']} — {job['title']} and {candidate_count} candidate record(s)?")
+    print("This cannot be undone. Original resume files and audit history are kept.")
+    while True:
+        answer = input("Type 'yes' to delete, or press Enter to cancel: ").strip().lower()
+        if answer == "yes":
+            return True
+        if answer in ("", "no"):
+            return False
+        print("Enter 'yes' to delete, or press Enter to cancel.")
+
+
 def display_job_details(job):
     # Display stored requirements without inventing details for older candidates.
     print(f"\n--- JOB {job['job_id'] or 'NOT RECORDED'} — {job['title']} ---")
@@ -530,11 +543,12 @@ def get_main_menu_choice():
         print("1. Screen a new batch of resumes")
         print("2. View saved screening results")
         print("3. Review saved candidates")
-        print("4. Exit")
-        choice = input("Choose an option (1-4): ").strip()
-        if choice in ("1", "2", "3", "4"):
+        print("4. Delete a saved job")
+        print("5. Exit")
+        choice = input("Choose an option (1-5): ").strip()
+        if choice in ("1", "2", "3", "4", "5"):
             return choice
-        print("Invalid choice. Enter 1, 2, 3, or 4.")
+        print("Invalid choice. Enter 1, 2, 3, 4, or 5.")
 
 
 if __name__ == "__main__":
