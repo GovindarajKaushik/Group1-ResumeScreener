@@ -209,13 +209,7 @@ def save_job(job_description, preferences, jobs_file=JOBS_FILE, log_file=LOG_FIL
         job_id = row.get("job_id", "")
         if job_id.startswith("J") and job_id[1:].isdigit():
             highest = max(highest, int(job_id[1:]))
-    # Retained audit entries prevent a deleted job ID from being reused.
-    if os.path.exists(log_file):
-        for entry in load_log(log_file):
-            if entry.get("action") in ("CREATE_JOB", "DELETE_JOB"):
-                old_id = (entry.get("details") or "").split(" | ", 1)[0]
-                if old_id.startswith("J") and old_id[1:].isdigit():
-                    highest = max(highest, int(old_id[1:]))
+    # Choose the next ID from jobs currently saved, ignoring deleted jobs.
     job_id = "J" + str(highest + 1).zfill(3)
     rows.append({
         "job_id": job_id,

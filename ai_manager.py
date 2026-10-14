@@ -34,7 +34,7 @@ If supporting evidence cannot be provided, leave evidence empty. Missing evidenc
 # API URL
 API_URL = "https://openrouter.ai/api/v1"
 # Model Name
-MODEL_NAME = "apodex/apodex-1.1-mini:free"
+MODEL_NAME = "nvidia/nemotron-3-ultra-550b-a55b:free"
 
 load_dotenv()
 
