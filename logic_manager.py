@@ -226,7 +226,6 @@ def evaluate_candidate(ai_response, job_description, preferences=None):
                         f"job description says {category}"
                     )
             else:
-                # NEW: make a skill the AI left out (or renamed) visible
                 result["notes"].append(
                     f"AI did not report '{name}'; treated as not present"
                 )

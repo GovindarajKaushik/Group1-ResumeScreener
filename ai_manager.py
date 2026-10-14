@@ -93,7 +93,7 @@ def parse_response(response):
 
 # validate json data and check right values
 def validate_ai_result(data):
-    # check the data has all teh fields the logic manager needs
+    # check the data has all the fields the logic manager needs
     if not isinstance(data, dict):
         raise ValueError("reply must be a JSON object")
  
@@ -186,7 +186,6 @@ def ai_processing(client, system_prompt, user_prompt):
 
         # check if error can be retried
         if can_retry_error(e):
-            # Log the error and retry logic would go here
             raise ConnectionError(error_msg)
         raise ValueError(f"API request failed: {error_msg}")
  

@@ -1,7 +1,4 @@
-﻿# Run with: python -B test_logic.py
-# Hardcoded samples test the logic without an API key or connection.
-
-import json
+﻿import json
 import sys
 from datetime import date
 from pathlib import Path
