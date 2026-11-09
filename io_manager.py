@@ -146,6 +146,22 @@ class IOManager:
 
         return "\n".join(text_parts)
 
+    def extract_resume_text(self, file_path):
+        """Extract and clean text from a resume file, based on its extension."""
+        extension = os.path.splitext(file_path)[1].lower()
+
+        if extension == ".pdf":
+            raw_text = self.extract_pdf_text(file_path)
+
+        elif extension == ".docx":
+            raw_text = self.extract_docx_text(file_path)
+
+        else:
+            print(f"Unsupported resume type: {file_path}")
+            return ""
+
+        return self.clean_resume_text(raw_text)
+
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
