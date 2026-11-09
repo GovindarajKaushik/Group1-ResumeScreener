@@ -32,4 +32,45 @@ class Resume:
 
         self.__text = self.__clean_text(self.__text)
         return self.__text
-    
+
+    def __extract_pdf_text(self):
+        text_parts = ""
+
+        try:
+            reader = PdfReader(self.__file_path)
+
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text_parts.append(page_text)
+
+        except Exception as e:
+            print(f"Error reading PDF '{self.__file_path}': {e}")
+            return ""
+
+        return "\n".join(text_parts)
+
+    def __extract_docx_text(self):
+        """Extract plain text from a DOCX file, including table cells."""
+
+        text_parts = ""
+        try:
+            document = Document(self.__file_path)
+            for paragraph in document.paragraphs:
+                if paragraph.text.strip():
+                    text_parts.append(paragraph.text)
+
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = []
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            row_text.append(cell.text.strip())
+                    if row_text:
+                        text_parts.append(" | ".join(row_text))
+
+        except Exception as e:
+            print(f"Error reading DOCX '{self.__file_path}': {e}")
+            return ""
+
+        return "\n".join(text_parts)
