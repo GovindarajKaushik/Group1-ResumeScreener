@@ -120,6 +120,32 @@ class IOManager:
 
         return "\n".join(text_parts)
 
+    def extract_docx_text(self, file_path):
+        """Extract plain text from a DOCX file, including table cells."""
+        from docx import Document
+
+        text_parts = []
+        try:
+            document = Document(file_path)
+            for paragraph in document.paragraphs:
+                if paragraph.text.strip():
+                    text_parts.append(paragraph.text)
+
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = []
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            row_text.append(cell.text.strip())
+                    if row_text:
+                        text_parts.append(" | ".join(row_text))
+
+        except Exception as e:
+            print(f"Error reading DOCX '{file_path}': {e}")
+            return ""
+
+        return "\n".join(text_parts)
+
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
