@@ -35,6 +35,26 @@ class IOManager:
             else:
                 print("Invalid folder path. Please try again.")
 
+    def collect_resume_batch(self, folder):
+        # Return files passing basic validation; report rejected paths clearly.
+        try:
+            names = sorted(os.listdir(folder))
+        except OSError as error:
+            print(f"Could not read folder '{folder}': {error}")
+            return []
+        valid_files = []
+        for name in names:
+            file_path = os.path.join(folder, name)
+            try:
+                self.validate_resume_file(file_path)
+            except ValueError as error:
+                print(f"Rejected '{name}': {error}")
+            else:
+                valid_files.append(file_path)
+
+        print(f"Found {len(valid_files)} nonempty PDF/DOCX file(s).")
+        return valid_files
+
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
 
