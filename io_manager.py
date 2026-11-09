@@ -1,8 +1,8 @@
-import uuid
 import os
 import math
-import re
 from datetime import datetime, timezone
+
+from resume import Resume
 
 class IOManager:
 
@@ -54,148 +54,7 @@ class IOManager:
 
         print(f"Found {len(valid_files)} nonempty PDF/DOCX file(s).")
         return valid_files
-
-    def clean_resume_text(self, text):
-        """Normalize line endings and strip blank/whitespace-only lines."""
-        if not text:
-            return ""
-
-        text = text.replace("\r\n", "\n")
-        text = text.replace("\r", "\n")
-
-        lines = []
-        for line in text.split("\n"):
-            line = line.strip()
-            if line:
-                lines.append(line)
-
-        return "\n".join(lines)
-
-    def anonymize_resume_text(self, text):
-        # Remove labelled personal details and replace recognizable contact details.
-        # Unlabelled names and personal details inside sentences may remain.
-        personal_label = (
-            r"^\s*(?:[-*•]\s*)?(?:full name|candidate name|name|"
-            r"home address|postal address|address|date of birth|dob|age|"
-            r"gender|sex|race|ethnicity|marital status|nationality|"
-            r"e-?mail|phone(?: number)?|telephone|mobile(?: number)?|contact number)\s*[:：-]"
-        )
-        email_pattern = r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}"
-        # Recognize international numbers, Singapore numbers, and US-style numbers.
-        # Avoid broad digit matching so employment year ranges remain unchanged.
-        phone_pattern = (
-            r"(?<!\w)(?:"
-            r"(?:\+65[ .-]?)?[689]\d{3}[ .-]?\d{4}|"
-            r"(?:\+1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]?\d{3}[ .-]\d{4}|"
-            r"\+\d{1,3}[ .-]\d{1,4}[ .-]\d{3,4}[ .-]\d{4}"
-            r")(?!\w)"
-        )
-        lines = []
-        for line in text.splitlines():
-            if re.match(personal_label, line, flags=re.IGNORECASE):
-                continue
-            line = re.sub(email_pattern, "[EMAIL REMOVED]", line)
-            line = re.sub(phone_pattern, "[PHONE REMOVED]", line)
-            remaining_text = line.replace("[EMAIL REMOVED]", "").replace("[PHONE REMOVED]", "")
-            # Omit lines containing only removed contacts or punctuation.
-            if re.search(r"\w", remaining_text):
-                lines.append(line.strip())
-        return "\n".join(lines)
-
-    def extract_pdf_text(self, file_path):
-        """Extract plain text from a PDF file, page by page."""
-        from pypdf import PdfReader
-
-        text_parts = []
-        try:
-            reader = PdfReader(file_path)
-            for page in reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text_parts.append(page_text)
-
-        except Exception as e:
-            print(f"Error reading PDF '{file_path}': {e}")
-            return ""
-
-        return "\n".join(text_parts)
-
-    def extract_docx_text(self, file_path):
-        """Extract plain text from a DOCX file, including table cells."""
-        from docx import Document
-
-        text_parts = []
-        try:
-            document = Document(file_path)
-            for paragraph in document.paragraphs:
-                if paragraph.text.strip():
-                    text_parts.append(paragraph.text)
-
-            for table in document.tables:
-                for row in table.rows:
-                    row_text = []
-                    for cell in row.cells:
-                        if cell.text.strip():
-                            row_text.append(cell.text.strip())
-                    if row_text:
-                        text_parts.append(" | ".join(row_text))
-
-        except Exception as e:
-            print(f"Error reading DOCX '{file_path}': {e}")
-            return ""
-
-        return "\n".join(text_parts)
-
-    def extract_resume_text(self, file_path):
-        """Extract and clean text from a resume file, based on its extension."""
-        extension = os.path.splitext(file_path)[1].lower()
-
-        if extension == ".pdf":
-            raw_text = self.extract_pdf_text(file_path)
-
-        elif extension == ".docx":
-            raw_text = self.extract_docx_text(file_path)
-
-        else:
-            print(f"Unsupported resume type: {file_path}")
-            return ""
-
-        return self.clean_resume_text(raw_text)
-
-    def prepare_resumes_for_ai(self, files):
-        """Extract text from each resume file, skipping any that fail."""
-        resumes = []
-
-        for file_path in files:
-            try:
-                self.validate_resume_file(file_path)
-            except ValueError as error:
-                print(f"Rejected '{os.path.basename(file_path)}': {error}")
-                continue
-            text = self.extract_resume_text(file_path)
-
-            if not text:
-                print(
-                    f"Skipping '{os.path.basename(file_path)}': "
-                    "No readable text found. Use a readable PDF or DOCX file."
-                )
-                continue
-            text = self.anonymize_resume_text(text)
-            if not text:
-                print(
-                    f"Skipping '{os.path.basename(file_path)}': "
-                    "No resume content remains after removing personal details."
-                )
-                continue
-            resume = {
-                "id": uuid.uuid4().hex,
-                "file_name": os.path.basename(file_path),
-                "file_path": file_path,
-                "text": text
-            }
-            resumes.append(resume)
-
-        return resumes
+    
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
