@@ -55,6 +55,23 @@ class IOManager:
         print(f"Found {len(valid_files)} nonempty PDF/DOCX file(s).")
         return valid_files
 
+    def clean_resume_text(self, text):
+        """Normalize line endings and strip blank/whitespace-only lines."""
+        if not text:
+            return ""
+
+        text = text.replace("\r\n", "\n")
+        text = text.replace("\r", "\n")
+
+        lines = []
+        for line in text.split("\n"):
+            line = line.strip()
+            if line:
+                lines.append(line)
+
+        return "\n".join(lines)
+
+
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
 
