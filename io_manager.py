@@ -162,6 +162,40 @@ class IOManager:
 
         return self.clean_resume_text(raw_text)
 
+    def prepare_resumes_for_ai(self, files):
+        """Extract text from each resume file, skipping any that fail."""
+        resumes = []
+
+        for file_path in files:
+            try:
+                self.validate_resume_file(file_path)
+            except ValueError as error:
+                print(f"Rejected '{os.path.basename(file_path)}': {error}")
+                continue
+            text = self.extract_resume_text(file_path)
+
+            if not text:
+                print(
+                    f"Skipping '{os.path.basename(file_path)}': "
+                    "No readable text found. Use a readable PDF or DOCX file."
+                )
+                continue
+            text = self.anonymize_resume_text(text)
+            if not text:
+                print(
+                    f"Skipping '{os.path.basename(file_path)}': "
+                    "No resume content remains after removing personal details."
+                )
+                continue
+            resume = {
+                "id": uuid.uuid4().hex,
+                "file_name": os.path.basename(file_path),
+                "file_path": file_path,
+                "text": text
+            }
+            resumes.append(resume)
+
+        return resumes
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
