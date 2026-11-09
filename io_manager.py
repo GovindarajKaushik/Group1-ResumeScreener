@@ -102,6 +102,24 @@ class IOManager:
                 lines.append(line.strip())
         return "\n".join(lines)
 
+    def extract_pdf_text(self, file_path):
+        """Extract plain text from a PDF file, page by page."""
+        from pypdf import PdfReader
+
+        text_parts = []
+        try:
+            reader = PdfReader(file_path)
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text_parts.append(page_text)
+
+        except Exception as e:
+            print(f"Error reading PDF '{file_path}': {e}")
+            return ""
+
+        return "\n".join(text_parts)
+
 
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
