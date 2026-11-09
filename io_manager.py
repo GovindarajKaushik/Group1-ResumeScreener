@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 class IOManager:
 
     def __init__(self):
-        self.vaild_resume_extensions = (".pdf", ".docx")
+        self.__vaild_resume_extensions = (".pdf", ".docx")
 
     def validate_resume_file(self, file_path):
         # Check the file format and reject empty files with a clear reason.
