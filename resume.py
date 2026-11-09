@@ -18,4 +18,18 @@ class Resume:
     def get_text(self):
         return self.__text
 
+    def extract_text(self):
+        extension = os.path.splitext(self.__file_path)[1].lower()
+
+        if extension == ".pdf":
+            self.__text = self.__extract_pdf_text()
+
+        elif extension == ".docx":
+            self.__text = self.__extract_docx_text()
+
+        else:
+            raise ValueError("Unsupported resume file format.")
+
+        self.__text = self.__clean_text(self.__text)
+        return self.__text
     
