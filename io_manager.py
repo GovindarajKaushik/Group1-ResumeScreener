@@ -4,6 +4,37 @@ import math
 import re
 from datetime import datetime, timezone
 
+class IOManager:
+
+    def __init__(self):
+        self.vaild_resume_extensions = (".pdf", ".docx")
+
+    def validate_resume_file(self, file_path):
+        # Check the file format and reject empty files with a clear reason.
+        if not os.path.isfile(file_path):
+            raise ValueError("Path must point to a regular file.")
+
+        extension = os.path.splitext(file_path)[1].lower()
+
+        if extension not in self.__valid_resume_extensions:
+            raise ValueError("Unsupported file type. Use .pdf or .docx.")
+
+        try:
+            size = os.path.getsize(file_path)
+        except OSError as error:
+            raise ValueError(f"Could not check file size: {error}") from error
+        if size == 0:
+            raise ValueError("File is empty.")
+
+    def get_valid_folder(self, prompt_text):
+        """Check for a valid folder path and return it; re-prompt if invalid."""
+        while True:
+            path = input(prompt_text).strip()
+            if os.path.isdir(path):
+                return path
+            else:
+                print("Invalid folder path. Please try again.")
+
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
 
