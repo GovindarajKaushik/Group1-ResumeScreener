@@ -1,0 +1,338 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" agent="Codex" version="24.7.17" type="device">
+  <diagram id="page-1" name="1 - Application classes">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1740" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;Resume screening - proposed OOP application design&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:14px&quot;&gt;Design only | All application behavior becomes instance methods; main.py only constructs objects and calls Application.run().&lt;/font&gt;" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;strokeColor=none;fillColor=none;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1800" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="app" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;controller | main.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;Application&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- ui: ConsoleUI&lt;br&gt;- screening: ScreeningService&lt;br&gt;- review: ReviewSession&lt;br&gt;- store: ScreeningStore&lt;hr&gt;+ run(): None&lt;br&gt;+ screen_new_batch(): None&lt;br&gt;+ view_saved_results(review=False): None&lt;br&gt;+ delete_saved_job(): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="700" y="120" width="470" height="239" as="geometry" />
+        </mxCell>
+        <mxCell id="ui" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;boundary | io_manager.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ConsoleUI&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ get_main_menu_choice(): str&lt;br&gt;+ collect_resumes(importer): list[Resume]&lt;br&gt;+ collect_job(): Job&lt;br&gt;+ collect_preferences(): ScreeningPreferences&lt;br&gt;+ select_saved_job(jobs): Job?&lt;br&gt;+ select_saved_candidate(candidates): CandidateRecord?&lt;br&gt;+ collect_decision(): decision / navigation&lt;br&gt;+ confirm_delete(job, count): bool&lt;br&gt;+ question_api_retry(count): bool&lt;br&gt;+ show_progress(record): None&lt;br&gt;+ show_summary(success_count, failures): None&lt;br&gt;+ show_rankings(rows): None&lt;br&gt;+ show_saved_results(candidates): None&lt;br&gt;+ show_candidate_detail(candidate): None&lt;br&gt;+ show_job_details(job): None&lt;br&gt;+ show_message(text) / show_error(text): None&lt;br&gt;- format_timestamp(value): str&lt;br&gt;- format_score(value): str" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="530" width="500" height="417" as="geometry" />
+        </mxCell>
+        <mxCell id="screen" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;service | main.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ScreeningService&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- ai: OpenRouterClient&lt;br&gt;- scorer: ScoringEngine&lt;br&gt;- ranker: RankingService&lt;hr&gt;+ start_batch(job, preferences, resumes): ScreeningBatch&lt;br&gt;+ screen_one(resume, job): ScreeningRecord&lt;br&gt;+ screen_all(batch, on_progress): None&lt;br&gt;+ retry_failed(batch, on_progress): int&lt;br&gt;+ evaluate(batch): None&lt;br&gt;+ build_rankings(batch): list[RankingRow]" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="700" y="530" width="470" height="258" as="geometry" />
+        </mxCell>
+        <mxCell id="review" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;controller | main.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ReviewSession&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- ui: ConsoleUI&lt;br&gt;- store: ScreeningStore&lt;br&gt;- candidates: list[CandidateRecord]&lt;br&gt;- position: int&lt;br&gt;- jumped_candidate: CandidateRecord?&lt;hr&gt;+ start(candidates): None&lt;br&gt;+ review_candidate(candidate): navigation&lt;br&gt;+ jump_to(candidate_id): None&lt;br&gt;+ resume_sequence(): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="530" width="500" height="258" as="geometry" />
+        </mxCell>
+        <mxCell id="import" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;service | io_manager.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ResumeImporter&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- supported_extensions = PDF, DOCX&lt;hr&gt;+ collect_batch(folder): list[Path]&lt;br&gt;+ prepare(files): list[Resume]&lt;br&gt;- validate_file(path): None&lt;br&gt;- extract_text(path): str&lt;br&gt;- extract_pdf(path): str&lt;br&gt;- extract_docx(path): str&lt;br&gt;- clean_text(text): str&lt;br&gt;- anonymize_text(text): str" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1130" width="500" height="258" as="geometry" />
+        </mxCell>
+        <mxCell id="ai" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;gateway | ai_manager.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;OpenRouterClient&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- client: OpenAI&lt;br&gt;- api_url: str&lt;br&gt;- model_name: str&lt;br&gt;- system_prompt: str&lt;br&gt;- timeout_seconds = 60&lt;br&gt;- sdk_max_retries = 3&lt;hr&gt;+ screen(job, resume_text): AIResult&lt;br&gt;- load_api_key(): str&lt;br&gt;- build_prompt(job, text): str&lt;br&gt;- request(prompt): AIResult&lt;br&gt;- parse_response(response): AIResult&lt;br&gt;- validate_result(data): AIResult&lt;br&gt;- describe_error(error): str&lt;br&gt;- is_retryable(error): bool" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1130" width="470" height="353" as="geometry" />
+        </mxCell>
+        <mxCell id="score" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;service | logic_manager.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ScoringEngine&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- rules: ScoringRules&lt;hr&gt;+ evaluate(ai_result, job, preferences): Evaluation&lt;br&gt;+ evaluate_records(records, job, preferences): map&lt;br&gt;- normalize_ai_fields(raw): AIResult?&lt;br&gt;- match_job_skills(ai_result, job): list[SkillEvidence]&lt;br&gt;- score_skills(skills): float&lt;br&gt;- apply_rules(scores, skills): Evaluation" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="1130" width="500" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="rank" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;service | logic_manager.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;RankingService&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- debug_store: DebugResultStore&lt;hr&gt;+ rank(evaluations): list[resume_id]&lt;br&gt;+ build_rows(records, evaluations): list[RankingRow]&lt;br&gt;+ evaluate_and_rank(path, job, preferences): list" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="1430" width="500" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=0;exitY=0.6;entryX=0.5;entryY=0;" edge="1" parent="1" source="app" target="ui">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="app" target="screen">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=1;exitY=0.6;entryX=0.5;entryY=0;" edge="1" parent="1" source="app" target="review">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a4" value="imports / adds folders / retries rejected files" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="ui" target="import">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a5" value="requests anonymized text only" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="screen" target="ai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a6" value="evaluates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=1;exitY=0.7;entryX=0;entryY=0.3;" edge="1" parent="1" source="screen" target="score">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a7" value="ranks" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=1;exitY=0.9;entryX=0;entryY=0.5;" edge="1" parent="1" source="screen" target="rank">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="&lt;b&gt;Reading this UML&lt;/b&gt;&lt;br&gt;&lt;br&gt;+ public method; - private state/helper; ? optional (0..1).&lt;br&gt;Dashed open arrow = dependency; solid line = association.&lt;br&gt;Filled diamond = composition; owner is at diamond end.&lt;br&gt;Classes referenced across tabs are the same types.&lt;br&gt;No inheritance is required: use collaborating objects." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="500" height="245" as="geometry" />
+        </mxCell>
+        <mxCell id="scope" value="&lt;b&gt;Feature and migration constraints&lt;/b&gt;&lt;br&gt;&lt;br&gt;ConsoleUI validates input, de-duplicates skills and keeps folder re-entry.&lt;br&gt;ResumeImporter de-duplicates accepted paths, cleans text, reads DOCX tables,&lt;br&gt;reports invalid/unreadable files, and assigns temporary UUIDs.&lt;br&gt;Anonymization removes labelled personal data and recognized contacts;&lt;br&gt;unlabelled personal details may remain (existing limitation).&lt;br&gt;OpenRouterClient uses environment/.env credentials and JSON validation.&lt;br&gt;Temporary API failures raise ConnectionError; permanent/malformed output&lt;br&gt;raises ValueError. ScreeningService records failures and continues the batch.&lt;br&gt;Create the API client only when screening is selected.&lt;br&gt;ReviewSession preserves sequential position across jumps and supports&lt;br&gt;skip / exit; unscored and RE_ENTRY candidates cannot receive decisions.&lt;br&gt;Storage classes and persistence behavior are detailed on tab 3." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="120" width="620" height="330" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page-2" name="2 - Domain model">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1940" pageHeight="1640" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;Domain objects and value types&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:14px&quot;&gt;Transient AI evidence is separate from deterministic evaluation and the saved candidate projection.&lt;/font&gt;" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;strokeColor=none;fillColor=none;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1840" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="batch" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;transient aggregate&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ScreeningBatch&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- job: Job&lt;br&gt;- preferences: ScreeningPreferences&lt;br&gt;- resumes: map[id, Resume]&lt;br&gt;- records: map[id, ScreeningRecord]&lt;br&gt;- evaluations: map[id, Evaluation]&lt;hr&gt;+ failed_ids(): list[str]&lt;br&gt;+ retryable_ids(): list[str]&lt;br&gt;+ success_count(): int&lt;br&gt;+ replace_record(record): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="470" height="258" as="geometry" />
+        </mxCell>
+        <mxCell id="job" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;entity&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;Job&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ job_id: str?&lt;br&gt;+ title: str&lt;br&gt;+ required_skills: list[str]&lt;br&gt;+ preferred: list[str]&lt;br&gt;+ min_experience: float&lt;br&gt;+ education: str&lt;br&gt;+ created_at: datetime?&lt;hr&gt;+ validate(): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="680" y="120" width="430" height="239" as="geometry" />
+        </mxCell>
+        <mxCell id="prefs" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;value object&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ScreeningPreferences&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ min_qualifying_score: float = 60&lt;hr&gt;+ validate(): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="120" width="550" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="resume" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;transient entity&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;Resume&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ id: str (UUID)&lt;br&gt;+ file_name: str&lt;br&gt;+ file_path: str&lt;br&gt;- anonymized_text: str&lt;hr&gt;+ has_readable_text(): bool" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="570" width="470" height="182" as="geometry" />
+        </mxCell>
+        <mxCell id="record" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;transient result&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ScreeningRecord&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ resume_id: str&lt;br&gt;+ file_name: str&lt;br&gt;+ status: success | error&lt;br&gt;+ retryable: bool&lt;br&gt;+ screening_result: AIResult?&lt;br&gt;+ error: str?&lt;br&gt;+ timestamp: datetime (UTC)&lt;hr&gt;+ can_retry(): bool" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="680" y="570" width="430" height="239" as="geometry" />
+        </mxCell>
+        <mxCell id="airesult" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;AI evidence&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;AIResult&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ skills: list[SkillEvidence]&lt;br&gt;+ experience_score: float&lt;br&gt;+ experience_summary: str&lt;br&gt;+ education_score: float&lt;br&gt;+ education_summary: str&lt;br&gt;+ overall_score: float&lt;br&gt;+ confidence: low | medium | high&lt;br&gt;+ summary: str&lt;hr&gt;+ is_usable(): bool" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="570" width="550" height="258" as="geometry" />
+        </mxCell>
+        <mxCell id="eval" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;deterministic result&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;Evaluation&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ final_score: float?&lt;br&gt;+ skills_score: float?&lt;br&gt;+ experience_score: float?&lt;br&gt;+ education_score: float?&lt;br&gt;+ ai_overall_score: float?&lt;br&gt;+ confidence: str&lt;br&gt;+ status: Recommendation&lt;br&gt;+ fast_track: bool&lt;br&gt;+ missing_must_haves: list[str]&lt;br&gt;+ stale_skills: list[str]&lt;br&gt;+ skill_details: list[SkillEvidence]&lt;br&gt;+ experience_summary: str&lt;br&gt;+ education_summary: str&lt;br&gt;+ summary: str&lt;br&gt;+ notes: list[str]&lt;hr&gt;+ is_scored(): bool" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1020" width="470" height="391" as="geometry" />
+        </mxCell>
+        <mxCell id="skill" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;value object&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;SkillEvidence&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ name: str&lt;br&gt;+ category: must_have | preferred&lt;br&gt;+ present: bool&lt;br&gt;+ last_used_year: int?&lt;br&gt;+ evidence: str&lt;hr&gt;+ has_evidence(): bool&lt;br&gt;+ is_stale(current_year, recency_years): bool" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1020" width="430" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="rules" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;configuration value object&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ScoringRules&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ skills_weight = 0.50&lt;br&gt;+ experience_weight = 0.30&lt;br&gt;+ education_weight = 0.20&lt;br&gt;+ preferred_weight = 0.50&lt;br&gt;+ must_have_bonus = 5&lt;br&gt;+ must_have_missing_cap = 59&lt;br&gt;+ recency_years = 5&lt;br&gt;+ recency_factor = 0.50&lt;br&gt;+ ai_disagree_gap = 25&lt;br&gt;+ fast_track_score = 90&lt;br&gt;+ fast_track_min_criterion = 80" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="1020" width="550" height="284" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" value="0..* batches / 1 job" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=none;exitX=1;exitY=0.2;entryX=0;entryY=0.2;" edge="1" parent="1" source="batch" target="job">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="1 job / 1 preferences" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;startArrow=diamond;startFill=1;endArrow=none;" edge="1" parent="1" source="job" target="prefs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" value="1 batch / 0..* resumes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;startArrow=diamond;startFill=1;endArrow=none;" edge="1" parent="1" source="batch" target="resume">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d4" value="1 batch / 0..* records" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;startArrow=diamond;startFill=1;endArrow=none;exitX=1;exitY=0.8;entryX=0;entryY=0.1;" edge="1" parent="1" source="batch" target="record">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5" value="1 record / 0..1 AI result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;startArrow=diamond;startFill=1;endArrow=none;" edge="1" parent="1" source="record" target="airesult">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6" value="1 batch / 0..* evaluations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;startArrow=diamond;startFill=1;endArrow=none;exitX=0;exitY=0.8;entryX=0;entryY=0.2;" edge="1" parent="1" source="batch" target="eval">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d7" value="1 evaluation / 0..* matched skills" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;startArrow=diamond;startFill=1;endArrow=none;" edge="1" parent="1" source="eval" target="skill">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d8" value="1 AI result / 0..* reported skills" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;startArrow=diamond;startFill=1;endArrow=none;exitX=0;exitY=0.8;entryX=1;entryY=0.2;" edge="1" parent="1" source="airesult" target="skill">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="types" value="&lt;b&gt;Value constraints and ranking row&lt;/b&gt;&lt;br&gt;&lt;br&gt;Recommendation = SHORTLIST | SECONDARY_REVIEW | RE_ENTRY.&lt;br&gt;RecruiterDecision = pending | shortlisted | rejected (separate from recommendation).&lt;br&gt;RankingRow is a value object: file_name: str, evaluation: Evaluation.&lt;br&gt;Nullable score means unscored; a valid score of 0 must stay numeric 0.&lt;br&gt;Missing/invalid AI data produces RE_ENTRY; its saved score is null.&lt;br&gt;Skill lists in AIResult and Evaluation are separate snapshots: matching follows&lt;br&gt;the job requirement category, even if the AI labels a skill differently." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1390" width="1170" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="row" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;RankingRow&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ file_name: str&lt;br&gt;+ evaluation: Evaluation" vertex="1" parent="1" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;fillColor=#e1d5e7;strokeColor=#9673a6;">
+          <mxGeometry x="40" y="1510" width="470" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="d9" value="0..* ranking rows / 1 evaluation" edge="1" parent="1" source="row" target="eval" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=12;labelBackgroundColor=#ffffff;endArrow=none;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page-3" name="3 - Persistence and saved records">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1940" pageHeight="1790" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;Persistence objects and saved candidate records&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:14px&quot;&gt;Retain data/*.csv and data/resume_results.json formats; no database or new dependencies are required.&lt;/font&gt;" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;strokeColor=none;fillColor=none;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1840" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="store" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;persistence facade | data_manager.py&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ScreeningStore&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- jobs: JobRepository&lt;br&gt;- candidates: CandidateRepository&lt;br&gt;- audit: AuditLog&lt;br&gt;- debug: DebugResultStore&lt;hr&gt;+ save_job(job, preferences): str&lt;br&gt;+ save_record(record, resume, evaluation, job): str&lt;br&gt;+ save_all(evaluations, resumes, job): list[str]&lt;br&gt;+ load_jobs(): list[Job]&lt;br&gt;+ load_results(job_id?): list[CandidateRecord]&lt;br&gt;+ update_decision(candidate_id, decision): bool&lt;br&gt;+ save_feedback(candidate_id, rating): bool&lt;br&gt;+ delete_job(job_id): int?&lt;br&gt;+ save_debug(batch): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="700" y="120" width="480" height="334" as="geometry" />
+        </mxCell>
+        <mxCell id="jobs" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;repository&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;JobRepository&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- csv: CsvFile&lt;br&gt;- path = data/jobs.csv&lt;hr&gt;+ save(job, preferences): str&lt;br&gt;+ load_all(): list[Job]&lt;br&gt;+ find(job_id): Job?&lt;br&gt;+ delete(job_id): bool&lt;br&gt;- next_id(): str&lt;br&gt;- to_row(job, preferences): row&lt;br&gt;- from_row(row): Job" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="620" width="490" height="258" as="geometry" />
+        </mxCell>
+        <mxCell id="candidates" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;repository&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;CandidateRepository&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- csv: CsvFile&lt;br&gt;- mapper: CandidateMapper&lt;br&gt;- audit: AuditLog&lt;br&gt;- path = data/candidate_results.csv&lt;hr&gt;+ save(candidate): str&lt;br&gt;+ load_all(): list[CandidateRecord]&lt;br&gt;+ load_job_results(job_id): list[CandidateRecord]&lt;br&gt;+ get(candidate_id): CandidateRecord?&lt;br&gt;+ update_field(id, field, value): bool&lt;br&gt;+ delete_for_job(job_id): list[str]&lt;br&gt;+ search(status?, decision?, min_score?, max_score?,&lt;br&gt;    fast_track?, job_title?, keyword?, sort=True): list&lt;br&gt;+ count_by_status(): map&lt;br&gt;- generate_id(): str" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="700" y="620" width="480" height="353" as="geometry" />
+        </mxCell>
+        <mxCell id="audit" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;repository&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;AuditLog&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- csv: CsvFile&lt;br&gt;- path = data/audit_log.csv&lt;hr&gt;+ append(action, details, candidate_ids): None&lt;br&gt;+ load(): list[AuditEntry]&lt;br&gt;+ historical_candidate_ids(): list[str]" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="620" width="500" height="182" as="geometry" />
+        </mxCell>
+        <mxCell id="debug" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;repository&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;DebugResultStore&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;- path = data/resume_results.json&lt;hr&gt;+ save(records): None&lt;br&gt;+ load(): map[id, ScreeningRecord]&lt;br&gt;- validate_shape(data): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="910" width="500" height="163" as="geometry" />
+        </mxCell>
+        <mxCell id="csv" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;file adapter&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;CsvFile&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ read(path, fields): list[row]&lt;br&gt;+ write_atomic(path, fields, rows): None&lt;br&gt;+ append(path, fields, row): None&lt;br&gt;- ensure_folder(path): None&lt;br&gt;- create_if_missing(path, fields): None&lt;br&gt;- validate_candidate_ids(rows): None&lt;br&gt;- cleanup_temp(path): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1080" width="490" height="208" as="geometry" />
+        </mxCell>
+        <mxCell id="mapper" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;serialization&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;CandidateMapper&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ from_screening(record, resume, evaluation, job): CandidateRecord&lt;br&gt;+ to_row(candidate): row&lt;br&gt;+ from_row(row): CandidateRecord&lt;br&gt;- split_skills(details): present, missing, evidence&lt;br&gt;- list_to_text(values) / text_to_list(text)&lt;br&gt;- text_to_number(text) / bool_to_text(value)" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1080" width="480" height="189" as="geometry" />
+        </mxCell>
+        <mxCell id="candidate" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&amp;laquo;saved projection | one job-specific screening&amp;raquo;&lt;/font&gt;&lt;br&gt;&lt;b&gt;CandidateRecord&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ candidate_id: str&lt;br&gt;+ job_id: str?; job_title: str&lt;br&gt;+ file_name: str; file_path: str&lt;br&gt;+ final_score: float?; skills_score: float?&lt;br&gt;+ experience_score: float?; education_score: float?&lt;br&gt;+ ai_overall_score: float?; confidence: str&lt;br&gt;+ status: Recommendation; fast_track: bool&lt;br&gt;+ skills_present, skills_missing: list[str]&lt;br&gt;+ missing_must_haves, stale_skills: list[str]&lt;br&gt;+ evidence: str; summary: str; notes: list[str]&lt;br&gt;+ recruiter_decision: RecruiterDecision = pending&lt;br&gt;+ feedback_rating: int?&lt;br&gt;+ created_at, updated_at: datetime (UTC)&lt;hr&gt;+ can_record_decision(): bool&lt;br&gt;+ set_decision(decision): None&lt;br&gt;+ set_feedback(rating): None" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;fillColor=#dae8fc;strokeColor=#52657a;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="1130" width="500" height="391" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="store" target="jobs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="store" target="candidates">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" value="records mutations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="store" target="audit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" value="optional debug output" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=1;exitY=0.9;entryX=0;entryY=0.3;" edge="1" parent="1" source="store" target="debug">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="jobs" target="csv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=0;exitY=0.7;entryX=1;entryY=0.4;" edge="1" parent="1" source="candidates" target="csv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p7" value="serializes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="candidates" target="mapper">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p8" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=1;exitY=0.1;entryX=0.5;entryY=0;" edge="1" parent="1" source="audit" target="csv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p9" value="creates / restores" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="mapper" target="candidate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p10" value="reads historical IDs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;dashed=1;endArrow=open;endFill=0;exitX=1;exitY=0.2;entryX=0;entryY=0.5;" edge="1" parent="1" source="candidates" target="audit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="compat" value="&lt;b&gt;Storage and compatibility rules&lt;/b&gt;&lt;br&gt;&lt;br&gt;Job IDs: next Jnnn from currently saved jobs; identical titles remain separate.&lt;br&gt;Candidate IDs: next Cnnn from current rows AND audit history; never reuse deleted IDs.&lt;br&gt;Legacy candidate rows may have a blank job_id; show them under an older-results group.&lt;br&gt;Save failed API calls or invalid evaluations as RE_ENTRY with null score and error notes.&lt;br&gt;Candidate projection excludes raw/anonymized resume text and sensitive input fields.&lt;br&gt;Evidence, confidence, criterion scores, notes, decisions and feedback survive CSV round trips.&lt;br&gt;Updates preserve created_at and existing decision/feedback/job ID when omitted.&lt;br&gt;Feedback accepts whole numbers 1..10; search filters and status counts remain API methods.&lt;br&gt;Feedback/search/count helpers have no new CLI menu entries (same as current code)." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="560" height="370" as="geometry" />
+        </mxCell>
+        <mxCell id="safety" value="&lt;b&gt;Write, delete and error behavior&lt;/b&gt;&lt;br&gt;&lt;br&gt;CSV/JSON writes use a temporary file then replacement; report cleanup failures.&lt;br&gt;Load missing saved data as an empty list; report corrupt rows and missing IDs.&lt;br&gt;Each mutation is audited: CREATE_JOB, SAVE_RESULT, UPDATE_RESULT,&lt;br&gt;RECRUITER_DECISION, FEEDBACK, DELETE_JOB. AuditEntry fields are&lt;br&gt;timestamp: UTC datetime, action: str, candidate_id: str, details: str.&lt;br&gt;Deletion requires UI confirmation, removes only the selected job and linked rows,&lt;br&gt;keeps original resumes and audit history, and logs all removed candidate IDs.&lt;br&gt;Restore candidates if the job-file write fails; report restoration failures explicitly.&lt;br&gt;Writes across CSV files and audit are NOT one transaction: report partial saves&lt;br&gt;and ask users to reload. One candidate save failure does not stop later saves.&lt;br&gt;Debug JSON failure is a warning; it must not block scoring or CSV results.&lt;br&gt;ScoringRules defaults live in configuration; per-job threshold is saved in jobs.csv." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1430" width="1150" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="auditentry" value="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;AuditEntry&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;+ timestamp: datetime (UTC)&lt;br&gt;+ action: str&lt;br&gt;+ candidate_id: str (may list deleted IDs)&lt;br&gt;+ details: str" vertex="1" parent="1" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;fillColor=#e1d5e7;strokeColor=#9673a6;">
+          <mxGeometry x="1350" y="120" width="500" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="p11" value="1 audit log / 0..* entries" edge="1" parent="1" source="audit" target="auditentry" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=12;labelBackgroundColor=#ffffff;endArrow=none;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page-4" name="4 - Screening activity and scoring rules">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="2070" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;Screening workflow - UML activity&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:14px&quot;&gt;Responsibility labels show which object performs each action. Guard labels show the preserved branches.&lt;/font&gt;" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;strokeColor=none;fillColor=none;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1800" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="770" y="110" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="input" value="Application + ConsoleUI + ResumeImporter&lt;br&gt;Collect readable anonymized resumes, job and threshold" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="175" width="480" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="valid" value="Resumes ready?" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=rhombus;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="710" y="290" width="160" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="exit" value="ConsoleUI: return to menu&lt;br&gt;Missing API key / no readable resumes / cancelled batch" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="290" width="430" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="client" value="OpenRouterClient&lt;br&gt;Initialize from environment; reuse client for this batch" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="425" width="480" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="request" value="ScreeningService + OpenRouterClient&lt;br&gt;Screen next resume; validate JSON; capture status/error/time" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="555" width="480" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="more" value="More resumes?" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=rhombus;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="710" y="680" width="160" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="summary" value="ConsoleUI + ScreeningBatch&lt;br&gt;Display successes and failures" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="815" width="480" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="retry" value="Retryable failures?" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=rhombus;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="710" y="940" width="160" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="prompt" value="ConsoleUI&lt;br&gt;Ask whether to retry temporary failures" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="945" width="450" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="yes" value="Retry chosen?" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=rhombus;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="1080" width="160" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rerun" value="ScreeningService&lt;br&gt;Retry only retryable failed records; replace records; show summary" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="1220" width="450" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="score" value="ScoringEngine + RankingService&lt;br&gt;Evaluate usable AI results; rank fast-track first, then score,&lt;br&gt;then descending resume ID for ties; display evidence and notes" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="1220" width="480" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="save" value="ScreeningStore&lt;br&gt;Save job + audit first; then each candidate + audit;&lt;br&gt;failed/invalid records are saved unscored as RE_ENTRY" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="1400" width="480" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="json" value="DebugResultStore&lt;br&gt;Write optional JSON once; warn on failure; return to menu" style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;rounded=1;arcSize=18;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="1580" width="480" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="" style="shape=doubleEllipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="770" y="1720" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="start" target="input">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="input" target="valid">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f3" value="[no]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="valid" target="exit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4" value="[yes]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="valid" target="client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="client" target="request">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="request" target="more">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f7" value="[yes]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="more" target="request">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f8" value="[no]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="more" target="summary">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="summary" target="retry">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f10" value="[yes]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="retry" target="prompt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="prompt" target="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f12" value="[yes]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="yes" target="rerun">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="rerun" target="retry">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f14" value="[none]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="retry" target="score">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f15" value="[no]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="yes" target="score">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="score" target="save">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f17" value="[job saved]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="save" target="json">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#52657a;endArrow=block;endFill=1;" edge="1" parent="1" source="json" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="scoring" value="&lt;b&gt;Deterministic scoring contract&lt;/b&gt;&lt;br&gt;&lt;br&gt;Match skills case-insensitively against the job; job categories take precedence.&lt;br&gt;Missing skill report = not demonstrated. Present without evidence earns no points;&lt;br&gt;it is not treated as missing, but blocks the must-have bonus and fast-track.&lt;br&gt;Must-have weight 1; preferred weight 0.5. Supported skills last used &amp;gt;=5 years&lt;br&gt;ago earn half points. Unknown dates receive no recency penalty.&lt;br&gt;Skill score = 100 x earned weighted points / available weighted points.&lt;br&gt;Computed score = 50% skills + 30% experience + 20% education.&lt;br&gt;All must-haves supported: +5. Missing must-haves: cap at 59.&lt;br&gt;Clamp final score to 0..100, round to 1 decimal; shortlist at job threshold.&lt;br&gt;Fast-track: final &amp;gt;=90, no missing/unsupported must-haves, each criterion&lt;br&gt;&amp;gt;=80, and confidence medium/high. Otherwise keep normal recommendation.&lt;br&gt;AI overall differs from computed score by &amp;gt;=25: add a human-review note.&lt;br&gt;Low confidence, stale skills, unknown dates and category mismatches add notes.&lt;br&gt;AI scores are validated; normalization rejects non-finite data and handles&lt;br&gt;legacy inputs. The AI overall score never replaces the computed score." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="530" width="430" height="535" as="geometry" />
+        </mxCell>
+        <mxCell id="cancel" value="&lt;b&gt;Cancellation and save behavior&lt;/b&gt;&lt;br&gt;&lt;br&gt;During screening/retry: KeyboardInterrupt or EOF cancels the entire in-memory&lt;br&gt;batch; no job/candidate/debug data from the batch has been saved.&lt;br&gt;After persistence starts: keep any records already written and report interruption.&lt;br&gt;Job-save failure stops candidate storage. Individual candidate-save failures&lt;br&gt;are reported and later candidates are still attempted.&lt;br&gt;The failed AI record is never assigned a fabricated score.&lt;br&gt;Malformed/permanent errors are not offered for manual retry." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1190" width="430" height="285" as="geometry" />
+        </mxCell>
+        <mxCell id="reviewflow" value="&lt;b&gt;Saved-result and review workflow&lt;/b&gt;&lt;br&gt;&lt;br&gt;Application -&amp;gt; ScreeningStore: load jobs/results without initializing AI.&lt;br&gt;ConsoleUI: select job, display requirements, list candidates in saved CSV order.&lt;br&gt;View mode: choose candidate IDs repeatedly; blank returns to the main menu.&lt;br&gt;ReviewSession: sequential review; shortlist/reject is explicit and audited.&lt;br&gt;Skip keeps decision; jump pauses the sequence and returns to that position;&lt;br&gt;exit returns to menu; unscored/RE_ENTRY cannot receive a decision.&lt;br&gt;Recommendation and recruiter decision remain independent.&lt;br&gt;Deletion uses a separate confirmed Application -&amp;gt; ScreeningStore operation." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="1400" width="650" height="275" as="geometry" />
+        </mxCell>
+        <mxCell id="mapping" value="&lt;b&gt;Module ownership for the future conversion&lt;/b&gt;&lt;br&gt;&lt;br&gt;main.py -&amp;gt; Application, ScreeningService, ReviewSession, ScreeningBatch.&lt;br&gt;io_manager.py -&amp;gt; ConsoleUI, ResumeImporter, Resume, Job, ScreeningPreferences.&lt;br&gt;ai_manager.py -&amp;gt; OpenRouterClient, AIResult, SkillEvidence.&lt;br&gt;logic_manager.py -&amp;gt; ScoringEngine, ScoringRules, RankingService, Evaluation, RankingRow.&lt;br&gt;data_manager.py -&amp;gt; ScreeningStore, repositories, CsvFile, CandidateMapper,&lt;br&gt;CandidateRecord, AuditEntry, DebugResultStore.&lt;br&gt;Domain classes may live in a shared models module to avoid circular imports.&lt;br&gt;No standalone business functions remain in the proposed design; constructors,&lt;br&gt;instance methods and object collaboration replace the procedural functions." style="html=1;whiteSpace=wrap;rounded=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=13;spacing=10;strokeWidth=1.5;shape=note;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1800" width="1720" height="220" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
