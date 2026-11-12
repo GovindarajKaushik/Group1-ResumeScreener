@@ -27,8 +27,41 @@ class ResumeImporter:
 
         return files
 
-    def get_file_name(self):
-        return self.__file_name
+    def prepare(self, files: list[Path]) -> list[dict]:
+        resumes = []
+
+        for path in files:
+            try:
+                self.__validate_file(path)
+
+                text = self.__extract_text(path)
+                text = self.__clean_text(text)
+                text = self.__anonymize_text(text)
+
+                if not text.strip():
+                    raise ValueError("Resume contains no readable text.")
+
+                resume = {
+                    "file_path": str(path),
+                    "file_name": path.name,
+                    "text": text
+                }
+
+                resumes.append(resume)
+            except (ValueError, OSError) as error:
+                print(f"Unable to prepare {path}: {error}")
+
+        return resumes
+
+    def __validate_file(self, path: Path) -> None:
+        if not path.is_file():
+            raise ValueError("File does not exist.")
+
+        if path.suffix.lower() not in self.__supported_extensions:
+            raise ValueError("Unsupported file extension.")
+
+        if path.stat().st_size == 0:
+            raise ValueError("File is empty.")
 
     def get_text(self):
         return self.__text
