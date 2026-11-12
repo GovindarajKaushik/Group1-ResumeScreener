@@ -110,7 +110,7 @@ class ResumeImporter:
 
         return text
 
-    def clean_resume_text(self, text):
+    def __clean_text(self, text: str) -> str:
         """Normalize line endings and strip blank/whitespace-only lines."""
         if not self.__text:
             return ""
@@ -126,7 +126,7 @@ class ResumeImporter:
 
         return "\n".join(lines)
 
-    def anonymize_resume_text(self):
+    def __anonymize_text(self, text: str) -> str:
         if not self.__text:
             return ""
         # Remove labelled personal details and replace recognizable contact details.
@@ -148,7 +148,8 @@ class ResumeImporter:
             r")(?!\w)"
         )
         lines = []
-        for line in self.__text.splitlines():
+        for line in text.split("\n"):
+            line = line.lower()
             if re.match(personal_label, line, flags=re.IGNORECASE):
                 continue
             line = re.sub(email_pattern, "[EMAIL REMOVED]", line)
