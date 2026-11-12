@@ -3,12 +3,29 @@ from pathlib import Path
 from pypdf import PdfReader
 from docx import Document
 
-class Resume:
+class ResumeImporter:
     def __init__(self):
         self.__supported_extensions = (".pdf", ".docx")
 
-    def get_file_path(self):
-        return self.__file_path
+    def collect_batch(self, folder: str) -> list[Path]:
+        folder_path = Path(folder)
+
+        if not folder_path.is_dir():
+            raise ValueError("Invalid folder.")
+
+        files = []
+
+        for path in folder_path.iterdir():
+            if not path.is_file():
+                continue
+
+            try:
+                self.__validate_file(path)
+                files.append(path)
+            except (ValueError, OSError) as error:
+                print(f"Skipped {path.name}: {error}")
+
+        return files
 
     def get_file_name(self):
         return self.__file_name
