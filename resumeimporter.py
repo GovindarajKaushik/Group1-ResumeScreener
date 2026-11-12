@@ -75,22 +75,21 @@ class ResumeImporter:
         else:
             raise ValueError("Unsupported resume file format.")
 
-    def __extract_pdf_text(self):
-        text_parts = ""
+    def __extract_pdf(self, path: Path) -> str:
+        text = ""
 
         try:
-            reader = PdfReader(self.__file_path)
+            reader = PdfReader(str(path))
 
             for page in reader.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    text_parts.append(page_text)
+                    text += page_text + "\n"
 
-        except Exception as e:
-            print(f"Error reading PDF '{self.__file_path}': {e}")
-            return ""
+        except Exception as error:
+            raise ValueError(f"Unable to read PDF: {error}")
 
-        return "\n".join(text_parts)
+        return text
 
     def __extract_docx_text(self):
         """Extract plain text from a DOCX file, including table cells."""
