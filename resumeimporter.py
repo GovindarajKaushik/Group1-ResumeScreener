@@ -63,23 +63,17 @@ class ResumeImporter:
         if path.stat().st_size == 0:
             raise ValueError("File is empty.")
 
-    def get_text(self):
-        return self.__text
-
-    def extract_text(self):
-        extension = os.path.splitext(self.__file_path)[1].lower()
+    def __extract_text(self, path: Path) -> str:
+        extension = path.suffix.lower()
 
         if extension == ".pdf":
-            self.__text = self.__extract_pdf_text()
+            return self.__extract_pdf(path)
 
         elif extension == ".docx":
-            self.__text = self.__extract_docx_text()
+            return self.__extract_docx(path)
 
         else:
             raise ValueError("Unsupported resume file format.")
-
-        self.__text = self.__clean_text(self.__text)
-        return self.__text
 
     def __extract_pdf_text(self):
         text_parts = ""
