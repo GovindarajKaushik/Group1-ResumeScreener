@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    container_name: resume_screener_ui
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - .:/app

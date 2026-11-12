@@ -1,10 +1,9 @@
-# Include the application and its offline logic test script.
-*
-!Dockerfile
-!requirements.txt
-!main.py
-!io_manager.py
-!ai_manager.py
-!logic_manager.py
-!data_manager.py
-!test_logic.py
+# Exclude git and environment directories
+.git/
+.venv/
+__pycache__/
+*.pyc
+
+# Exclude temporary data or raw outputs if needed (can be volume mounted)
+data/
+resume/

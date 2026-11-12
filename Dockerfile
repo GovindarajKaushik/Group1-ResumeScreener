@@ -8,7 +8,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
-COPY main.py io_manager.py ai_manager.py logic_manager.py data_manager.py ./
-COPY test_logic.py ./
+# Copy source files and modules
+COPY . .
 
-CMD ["python", "main.py"]
+# Expose Streamlit default port
+EXPOSE 8501
+
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
+
+# Launch Streamlit app
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
