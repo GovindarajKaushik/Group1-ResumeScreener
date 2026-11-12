@@ -91,30 +91,24 @@ class ResumeImporter:
 
         return text
 
-    def __extract_docx_text(self):
+    def __extract_docx(self, path : Path) -> str:
         """Extract plain text from a DOCX file, including table cells."""
 
         text_parts = ""
         try:
-            document = Document(self.__file_path)
+            document = Document(str(path))
             for paragraph in document.paragraphs:
-                if paragraph.text.strip():
-                    text_parts.append(paragraph.text)
+                text += paragraph.text + "\n"
 
             for table in document.tables:
                 for row in table.rows:
-                    row_text = []
                     for cell in row.cells:
-                        if cell.text.strip():
-                            row_text.append(cell.text.strip())
-                    if row_text:
-                        text_parts.append(" | ".join(row_text))
+                        text += cell.text + "\n"
 
-        except Exception as e:
-            print(f"Error reading DOCX '{self.__file_path}': {e}")
-            return ""
+        except Exception as error:
+            raise ValueError(f"Error reading DOCX: {error}")
 
-        return "\n".join(text_parts)
+        return text
 
     def clean_resume_text(self, text):
         """Normalize line endings and strip blank/whitespace-only lines."""
