@@ -114,6 +114,54 @@ class TextExtractor(ABC):
         """Extract raw plain text from the given document path."""
         raise NotImplementedError
 
+class PdfTextExtractor(TextExtractor):
+    """Concrete extractor for PDF resume files."""
+
+    def extract(self, path: str | Path) -> str:
+        from pypdf import PdfReader
+
+        text_parts = []
+        try:
+            reader = PdfReader(str(path))
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text_parts.append(page_text)
+
+        except Exception as error:
+            print(f"Error reading PDF '{path}': {error}")
+            return ""
+
+        return "\n".join(text_parts)
+
+class DocxTextExtractor(TextExtractor):
+    """Concrete extractor for DOCX resume files, including paragraphs and table cells."""
+
+    def extract(self, path: str | Path) -> str:
+        from docx import Document
+
+        text_parts = []
+        try:
+            document = Document(path)
+            for paragraph in document.paragraphs:
+                if paragraph.text.strip():
+                    text_parts.append(paragraph.text)
+
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = []
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            row_text.append(cell.text.strip())
+                    if row_text:
+                        text_parts.append(" | ".join(row_text))
+
+        except Exception as error:
+            print(f"Error reading DOCX '{path}': {error}")
+            return ""
+
+        return "\n".join(text_parts)
+
 class ConsoleUI:
     """Boundary class handling all terminal input and output responsibilities."""
 
