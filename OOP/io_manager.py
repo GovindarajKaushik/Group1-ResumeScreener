@@ -2,8 +2,108 @@ import math
 import os
 import re
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+@dataclass
+class ScreeningPreferences:
+    """Value object representing screening configuration thresholds."""
+
+    min_qualifying_score: float = 60.0
+
+    def validate(self) -> None:
+        """Validate that the qualifying score is a finite number between 0 and 100."""
+        if (
+            not isinstance(self.min_qualifying_score, (int, float))
+            or not math.isfinite(self.min_qualifying_score)
+            or not (0 <= float(self.min_qualifying_score) <= 100)
+        ):
+            raise ValueError("Minimum qualifying score must be between 0 and 100.")
+        self.min_qualifying_score = float(self.min_qualifying_score)
+
+    def __getitem__(self, key: str):
+        return getattr(self, key)
+
+    def get(self, key: str, default=None):
+        return getattr(self, key, default)
+
+
+@dataclass
+class Job:
+    """Entity representing a job description and its screening requirements."""
+
+    title: str
+    required_skills: list[str] = field(default_factory=list)
+    preferred: list[str] = field(default_factory=list)
+    min_experience: float = 0.0
+    education: str = ""
+    job_id: str | None = None
+    created_at: datetime | str | None = None
+    min_qualifying_score: float | None = None
+
+    def validate(self) -> None:
+        """Validate job fields according to domain rules."""
+        if not self.title or not self.title.strip():
+            raise ValueError("Job title cannot be empty.")
+        self.title = self.title.strip()
+
+        if (
+            not isinstance(self.min_experience, (int, float))
+            or not math.isfinite(self.min_experience)
+            or self.min_experience < 0
+        ):
+            raise ValueError(
+                "Minimum experience must be a finite, nonnegative number."
+            )
+        self.min_experience = float(self.min_experience)
+
+    def __getitem__(self, key: str):
+        return getattr(self, key)
+
+    def get(self, key: str, default=None):
+        return getattr(self, key, default)
+
+
+class Resume:
+    """Transient entity representing an imported and anonymized candidate resume."""
+
+    def __init__(
+        self,
+        file_name: str,
+        file_path: str,
+        anonymized_text: str = "",
+        resume_id: str | None = None,
+    ):
+        self.id: str = resume_id or uuid.uuid4().hex
+        self.file_name: str = file_name
+        self.file_path: str = str(file_path)
+        self._anonymized_text: str = anonymized_text
+
+    @property
+    def anonymized_text(self) -> str:
+        """Return the anonymized resume text."""
+        return self._anonymized_text
+
+    @property
+    def text(self) -> str:
+        """Alias for anonymized_text for backward compatibility."""
+        return self._anonymized_text
+
+    def has_readable_text(self) -> bool:
+        """Return True if non-empty readable text remains after cleaning and anonymization."""
+        return bool(self._anonymized_text and self._anonymized_text.strip())
+
+    def __getitem__(self, key: str):
+        if key == "text":
+            return self._anonymized_text
+        return getattr(self, key)
+
+    def get(self, key: str, default=None):
+        if key == "text":
+            return self._anonymized_text
+        return getattr(self, key, default)
 
 
 class ConsoleUI:
@@ -31,14 +131,14 @@ class ConsoleUI:
                 return path
             print("Invalid folder path. Please try again.")
 
-    def collect_resumes(self, importer: "ResumeImporter | None" = None) -> list[dict]:
+    def collect_resumes(self, importer: "ResumeImporter | None" = None) -> list[Resume]:
         """Collect readable resumes, allowing folder re-entry while keeping accepted files."""
         if importer is None:
             importer = ResumeImporter()
 
         folder = self._get_valid_folder("Folder containing resumes: ")
-        resumes = []
-        accepted_paths = set()
+        resumes: list[Resume] = []
+        accepted_paths: set[str] = set()
 
         while True:
             files = importer.collect_batch(folder)
@@ -51,7 +151,7 @@ class ConsoleUI:
             for resume in importer.prepare(new_files):
                 resumes.append(resume)
                 accepted_paths.add(
-                    os.path.normcase(os.path.abspath(str(resume["file_path"])))
+                    os.path.normcase(os.path.abspath(resume.file_path))
                 )
 
             print(f"{len(resumes)} readable resume(s) ready to screen.")
@@ -72,7 +172,7 @@ class ConsoleUI:
                 seen.add(skill.lower())
         return skills
 
-    def collect_job(self) -> dict:
+    def collect_job(self) -> Job:
         """Collect and validate job description details from user input."""
         while True:
             title = input("Job Title: ").strip()
@@ -105,15 +205,17 @@ class ConsoleUI:
             if skill.lower() not in required_names
         ]
 
-        return {
-            "title": title,
-            "required_skills": skills,
-            "min_experience": min_experience,
-            "education": education,
-            "preferred": preferred_qualifications,
-        }
+        job = Job(
+            title=title,
+            required_skills=skills,
+            preferred=preferred_qualifications,
+            min_experience=min_experience,
+            education=education,
+        )
+        job.validate()
+        return job
 
-    def collect_preferences(self) -> dict:
+    def collect_preferences(self) -> ScreeningPreferences:
         """Collect screening preferences (minimum qualifying score) from user input."""
         while True:
             min_score_input = input(
@@ -130,13 +232,13 @@ class ConsoleUI:
             except ValueError:
                 print("Invalid input. Please enter a number.")
 
-        return {
-            "min_qualifying_score": min_score,
-        }
+        preferences = ScreeningPreferences(min_qualifying_score=min_score)
+        preferences.validate()
+        return preferences
 
     def collect_inputs(
         self, importer: "ResumeImporter | None" = None
-    ) -> tuple[list[dict], dict, dict]:
+    ) -> tuple[list[Resume], Job | dict, ScreeningPreferences | dict]:
         """Return validated resumes, job requirements, and screening preferences."""
         resumes = self.collect_resumes(importer)
         if not resumes:
@@ -146,7 +248,7 @@ class ConsoleUI:
         preferences = self.collect_preferences()
         return resumes, job_description, preferences
 
-    def select_saved_job(self, jobs: list) -> dict | None:
+    def select_saved_job(self, jobs: list) -> Job | dict | None:
         """Show distinct screening jobs and return the selected record, or None to exit."""
         print("\nSAVED JOBS")
         for number, job in enumerate(jobs, start=1):
@@ -214,7 +316,7 @@ class ConsoleUI:
                 return "exit"
             print("Invalid choice. Enter 1, 2, 3, 4, or 5.")
 
-    def confirm_delete(self, job, count: int) -> bool:
+    def confirm_delete(self, job: Job | dict, count: int) -> bool:
         """Ask the user to confirm deleting a saved job and its linked candidate records."""
         job_id = job.get("job_id") if isinstance(job, dict) else getattr(job, "job_id", None)
         title = job.get("title") if isinstance(job, dict) else getattr(job, "title", "")
@@ -239,7 +341,7 @@ class ConsoleUI:
         )
         return self._ask_yes_no(question)
 
-    def show_progress(self, record: dict) -> None:
+    def show_progress(self, record) -> None:
         """Print progress information for a single resume screening record."""
         file_name = (
             record["file_name"]
@@ -377,47 +479,75 @@ class ConsoleUI:
                 f"| {status} | Decision: {decision or 'pending'}"
             )
 
-    def show_candidate_detail(self, candidate: dict) -> None:
+    def show_candidate_detail(self, candidate) -> None:
         """Display detailed information about a single saved candidate."""
+        is_dict = isinstance(candidate, dict)
+        cid = candidate.get("candidate_id") if is_dict else getattr(candidate, "candidate_id", None)
+        file_name = candidate["file_name"] if is_dict else getattr(candidate, "file_name", "")
+        job_title = candidate.get("job_title") if is_dict else getattr(candidate, "job_title", None)
+        job_id = candidate.get("job_id") if is_dict else getattr(candidate, "job_id", None)
+        final_score = candidate["final_score"] if is_dict else getattr(candidate, "final_score", None)
+        status = candidate.get("status") if is_dict else getattr(candidate, "status", None)
+        fast_track = candidate.get("fast_track") if is_dict else getattr(candidate, "fast_track", False)
+        decision = candidate.get("recruiter_decision") if is_dict else getattr(candidate, "recruiter_decision", "pending")
+        skills_score = candidate.get("skills_score") if is_dict else getattr(candidate, "skills_score", None)
+        notes = candidate.get("notes", []) if is_dict else getattr(candidate, "notes", [])
+        created_at = candidate.get("created_at") if is_dict else getattr(candidate, "created_at", None)
+
+        if is_dict and "ai_result" in candidate:
+            ai_result = candidate["ai_result"]
+            confidence = ai_result.get("confidence")
+            exp_score = ai_result.get("experience_score")
+            edu_score = ai_result.get("education_score")
+            skills_present = ai_result.get("skills_present", [])
+            skills_missing = ai_result.get("skills_missing", [])
+            evidence = ai_result.get("evidence", "")
+            summary = ai_result.get("summary")
+        else:
+            confidence = getattr(candidate, "confidence", None)
+            exp_score = getattr(candidate, "experience_score", None)
+            edu_score = getattr(candidate, "education_score", None)
+            skills_present = getattr(candidate, "skills_present", [])
+            skills_missing = getattr(candidate, "skills_missing", [])
+            evidence = getattr(candidate, "evidence", "")
+            summary = getattr(candidate, "summary", None)
+
         print("\n" + "=" * 60)
         print("SAVED CANDIDATE DETAILS")
         print("=" * 60)
-        print(f"Candidate ID: {candidate.get('candidate_id') or 'Not provided'}")
-        print(f"Resume: {candidate['file_name']}")
-        print(f"Role: {candidate.get('job_title') or 'Not provided'}")
-        print(f"Job ID: {candidate.get('job_id') or 'Not recorded (older result)'}")
-        print(f"Final score: {self._format_score(candidate['final_score'])}")
-        print(f"System recommendation: {candidate.get('status') or 'Not provided'}")
-        print(f"Fast-track: {'Yes' if candidate.get('fast_track') else 'No'}")
-        print(
-            f"Recruiter decision: {candidate.get('recruiter_decision') or 'pending'}"
-        )
-        ai_result = candidate["ai_result"]
-        print(f"AI confidence: {ai_result.get('confidence') or 'Not provided'}")
+        print(f"Candidate ID: {cid or 'Not provided'}")
+        print(f"Resume: {file_name}")
+        print(f"Role: {job_title or 'Not provided'}")
+        print(f"Job ID: {job_id or 'Not recorded (older result)'}")
+        print(f"Final score: {self._format_score(final_score)}")
+        print(f"System recommendation: {status or 'Not provided'}")
+        print(f"Fast-track: {'Yes' if fast_track else 'No'}")
+        print(f"Recruiter decision: {decision or 'pending'}")
+        print(f"AI confidence: {confidence or 'Not provided'}")
         print("\nCRITERION SCORES")
-        print(f"Skills: {self._format_score(candidate.get('skills_score'))}")
-        print(f"Experience: {self._format_score(ai_result.get('experience_score'))}")
-        print(f"Education: {self._format_score(ai_result.get('education_score'))}")
+        print(f"Skills: {self._format_score(skills_score)}")
+        print(f"Experience: {self._format_score(exp_score)}")
+        print(f"Education: {self._format_score(edu_score)}")
         print("\nSKILLS AND EVIDENCE")
         print(
-            f"AI-reported present: {', '.join(ai_result['skills_present']) or 'None reported'}"
+            f"AI-reported present: {', '.join(skills_present) or 'None reported'}"
         )
         print(
-            f"Not demonstrated: {', '.join(ai_result['skills_missing']) or 'None reported'}"
+            f"Not demonstrated: {', '.join(skills_missing) or 'None reported'}"
         )
-        print(f"Evidence: {ai_result['evidence'] or 'Not provided'}")
+        print(f"Evidence: {evidence or 'Not provided'}")
         print("\nAI SUMMARY")
-        print(ai_result.get("summary") or "Not provided")
+        print(summary or "Not provided")
         print("\nSCORING NOTES / PROCESSING ERRORS")
-        for note in candidate.get("notes", []):
+        for note in notes:
             print(f"- {note}")
-        if not candidate.get("notes"):
+        if not notes:
             print("None recorded")
-        print(f"\nSaved: {self._format_timestamp(candidate.get('created_at'))}")
+        print(f"\nSaved: {self._format_timestamp(created_at)}")
         print("System recommendations do not change the recruiter decision.")
         print("=" * 60)
 
-    def show_job_details(self, job: dict) -> None:
+    def show_job_details(self, job: Job | dict) -> None:
         """Display stored requirements without inventing details for older candidates."""
         job_id = job.get("job_id") if isinstance(job, dict) else getattr(job, "job_id", None)
         title = job.get("title") if isinstance(job, dict) else getattr(job, "title", "")
@@ -512,9 +642,9 @@ class ResumeImporter:
         print(f"Found {len(valid_files)} nonempty PDF/DOCX file(s).")
         return valid_files
 
-    def prepare(self, files: list[str | Path]) -> list[dict]:
-        """Extract and anonymize text from each resume file, skipping any that fail."""
-        resumes = []
+    def prepare(self, files: list[str | Path]) -> list[Resume]:
+        """Extract and anonymize text from each resume file, returning Resume domain objects."""
+        resumes: list[Resume] = []
 
         for file_path in files:
             path_obj = Path(file_path)
@@ -533,19 +663,18 @@ class ResumeImporter:
                 continue
 
             text = self._anonymize_text(text)
-            if not text:
+            resume = Resume(
+                file_name=path_obj.name,
+                file_path=str(path_obj),
+                anonymized_text=text,
+            )
+            if not resume.has_readable_text():
                 print(
                     f"Skipping '{path_obj.name}': "
                     "No resume content remains after removing personal details."
                 )
                 continue
 
-            resume = {
-                "id": uuid.uuid4().hex,
-                "file_name": path_obj.name,
-                "file_path": str(path_obj),
-                "text": text,
-            }
             resumes.append(resume)
 
         return resumes
