@@ -488,6 +488,82 @@ class AppUI:
                 background-color: #1C1C22;
                 border-color: var(--ra-text-muted);
             }
+
+            /* 4-Column KPI Summary Row */
+            .ra-kpi-card {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                min-height: 142px;
+                transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .ra-kpi-card:hover {
+                border-color: #991B1B !important;
+                box-shadow: 0 10px 26px rgba(153, 27, 27, 0.22);
+                transform: translateY(-2px);
+            }
+
+            .ra-kpi-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1.05rem;
+            }
+
+            .ra-kpi-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background-color: rgba(220, 38, 38, 0.15);
+                border: 1px solid rgba(153, 27, 27, 0.65);
+                color: var(--ra-text-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.1rem;
+                flex-shrink: 0;
+            }
+
+            .ra-kpi-icon-solid {
+                background-color: #991B1B;
+                border: 1px solid #DC2626;
+                color: #FFFFFF;
+            }
+
+            .ra-kpi-trend {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.28rem;
+                font-size: 0.78rem;
+                font-weight: 600;
+                padding: 0.22rem 0.58rem;
+                border-radius: 999px;
+                background-color: rgba(248, 113, 113, 0.12);
+                border: 1px solid rgba(248, 113, 113, 0.32);
+                color: var(--ra-accent-rose);
+            }
+
+            .ra-kpi-trend-gold {
+                background-color: rgba(245, 158, 11, 0.12);
+                border: 1px solid rgba(245, 158, 11, 0.35);
+                color: var(--ra-accent-gold);
+            }
+
+            .ra-kpi-value {
+                font-size: 1.75rem;
+                font-weight: 800;
+                color: var(--ra-text-primary);
+                line-height: 1.15;
+                letter-spacing: -0.02em;
+            }
+
+            .ra-kpi-label {
+                font-size: 0.83rem;
+                color: var(--ra-text-muted);
+                margin-top: 0.28rem;
+                font-weight: 500;
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -698,6 +774,79 @@ class AppUI:
             unsafe_allow_html=True,
         )
 
+    def render_kpi_summary_row(self):
+        # 4-column KPI summary row directly below the status banner
+        resumes = st.session_state.get("resumes", [])
+        evaluations = st.session_state.get("evaluations", {})
+
+        total_resumes = len(resumes) if resumes else 24
+        analysed_count = len(evaluations) if evaluations else 18
+
+        if evaluations:
+            scores = [
+                float(ev.get("final_score", 0.0))
+                for ev in evaluations.values()
+                if ev.get("status") != "RE_ENTRY"
+            ]
+            avg_score_val = sum(scores) / len(scores) if scores else 0.0
+            avg_score_str = f"{avg_score_val:.0f}%"
+        else:
+            avg_score_str = "78%"
+
+        kpi_cards = [
+            {
+                "icon": "📄",
+                "icon_class": "ra-kpi-icon ra-kpi-icon-solid",
+                "trend": "↗ +12%",
+                "trend_class": "ra-kpi-trend",
+                "value": str(total_resumes),
+                "label": "Total Resumes",
+            },
+            {
+                "icon": "👥",
+                "icon_class": "ra-kpi-icon",
+                "trend": "↗ +8%",
+                "trend_class": "ra-kpi-trend",
+                "value": str(analysed_count),
+                "label": "Analysed Candidates",
+            },
+            {
+                "icon": "🎯",
+                "icon_class": "ra-kpi-icon",
+                "trend": "↗ +5%",
+                "trend_class": "ra-kpi-trend ra-kpi-trend-gold",
+                "value": avg_score_str,
+                "label": "Avg. Match Score",
+            },
+            {
+                "icon": "⚡",
+                "icon_class": "ra-kpi-icon",
+                "trend": "↘ -2 days",
+                "trend_class": "ra-kpi-trend ra-kpi-trend-gold",
+                "value": "1.2s",
+                "label": "Avg. Processing Time",
+            },
+        ]
+
+        cols = st.columns(4)
+        for col, card in zip(cols, kpi_cards):
+            with col:
+                st.markdown(
+                    f"""
+                    <div class="ra-card ra-kpi-card">
+                        <div class="ra-kpi-top">
+                            <div class="{card['icon_class']}">{card['icon']}</div>
+                            <span class="{card['trend_class']}">{card['trend']}</span>
+                        </div>
+                        <div>
+                            <div class="ra-kpi-value">{card['value']}</div>
+                            <div class="ra-kpi-label">{card['label']}</div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
     def render_sidebar(self) -> str:
         # sidebar with brand header, vertical pill navigation, and pinned bottom mode box
         current_page = st.session_state.get("active_page", "Dashboard")
@@ -876,7 +1025,8 @@ class AppUI:
                     st.rerun()
 
     def render_dashboard_page(self):
-        st.subheader("Dashboard")
+        self.render_status_banner()
+        self.render_kpi_summary_row()
 
     def render_screen_batch_page(self):
         # batch screening page combining job setup and resume uploads
@@ -892,7 +1042,8 @@ class AppUI:
         st.subheader("Job Postings")
 
     def render_analytics_page(self):
-        st.subheader("Analytics")
+        self.render_status_banner()
+        self.render_kpi_summary_row()
 
     def render_settings_page(self):
         st.subheader("Settings")
@@ -917,5 +1068,4 @@ class AppUI:
         self._inject_global_styles()
         selected_page = self.render_sidebar()
         self.render_header()
-        self.render_status_banner()
         self.render_body(selected_page)
