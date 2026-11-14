@@ -621,6 +621,199 @@ class AppUI:
                 border-radius: 3px;
                 flex-shrink: 0;
             }
+
+            /* Bottom 2-Column Operational Row (Processing Queue & Recent Resumes) */
+            .ra-op-card {
+                min-height: 295px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .ra-op-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.9rem;
+            }
+
+            .ra-op-title {
+                font-size: 1.02rem;
+                font-weight: 700;
+                color: var(--ra-text-primary);
+                margin: 0;
+            }
+
+            .ra-active-counter {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.2rem 0.65rem;
+                border-radius: 999px;
+                background-color: rgba(161, 161, 170, 0.1);
+                border: 1px solid var(--ra-border);
+                font-size: 0.76rem;
+                font-weight: 600;
+                color: var(--ra-text-muted);
+            }
+
+            .ra-view-all-link {
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--ra-accent-rose);
+                text-decoration: none;
+            }
+
+            .ra-view-all-link:hover {
+                text-decoration: underline;
+            }
+
+            .ra-queue-empty {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 2.2rem 1rem;
+            }
+
+            .ra-queue-clock {
+                width: 52px;
+                height: 52px;
+                border-radius: 50%;
+                background-color: rgba(153, 27, 27, 0.16);
+                border: 1px solid rgba(153, 27, 27, 0.55);
+                color: var(--ra-accent-rose);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.35rem;
+                margin-bottom: 0.8rem;
+            }
+
+            .ra-queue-empty-title {
+                font-size: 0.92rem;
+                font-weight: 600;
+                color: var(--ra-text-primary);
+                margin-bottom: 0.25rem;
+            }
+
+            .ra-queue-empty-sub {
+                font-size: 0.8rem;
+                color: var(--ra-text-muted);
+                max-width: 280px;
+            }
+
+            .ra-candidate-list {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .ra-candidate-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.85rem;
+                padding: 0.72rem 0;
+                border-bottom: 1px solid var(--ra-border);
+            }
+
+            .ra-candidate-row:last-child {
+                border-bottom: none;
+                padding-bottom: 0.2rem;
+            }
+
+            .ra-candidate-left {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                min-width: 0;
+            }
+
+            .ra-avatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background-color: #991B1B;
+                border: 1px solid #DC2626;
+                color: #F4F4F5;
+                font-size: 0.82rem;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .ra-candidate-meta {
+                min-width: 0;
+            }
+
+            .ra-candidate-file {
+                font-size: 0.88rem;
+                font-weight: 700;
+                color: #F4F4F5;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 210px;
+            }
+
+            .ra-candidate-date {
+                font-size: 0.75rem;
+                color: #A1A1AA;
+                margin-top: 0.12rem;
+            }
+
+            .ra-candidate-right {
+                display: flex;
+                align-items: center;
+                gap: 0.55rem;
+                flex-shrink: 0;
+            }
+
+            .ra-score-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.25rem;
+                font-size: 0.8rem;
+                font-weight: 700;
+                color: #F59E0B;
+                padding: 0.2rem 0.55rem;
+                border-radius: 999px;
+                background-color: rgba(245, 158, 11, 0.14);
+                border: 1px solid rgba(245, 158, 11, 0.4);
+            }
+
+            .ra-completed-pill {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.2rem 0.62rem;
+                border-radius: 999px;
+                font-size: 0.74rem;
+                font-weight: 600;
+                background-color: rgba(16, 185, 129, 0.14);
+                border: 1px solid rgba(16, 185, 129, 0.4);
+                color: #34D399;
+            }
+
+            .ra-eye-btn {
+                width: 28px;
+                height: 28px;
+                border-radius: 7px;
+                background-color: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--ra-border);
+                color: var(--ra-text-muted);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.82rem;
+                cursor: pointer;
+            }
+
+            .ra-eye-btn:hover {
+                border-color: #991B1B;
+                color: #F4F4F5;
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -1075,6 +1268,156 @@ class AppUI:
                     unsafe_allow_html=True,
                 )
 
+    @staticmethod
+    def _extract_initials(file_name: str) -> str:
+        # build 2-letter uppercase initials from a resume filename
+        stem = os.path.splitext(os.path.basename(file_name))[0]
+        parts = [p for p in stem.replace("-", "_").split("_") if p and p.lower() != "resume"]
+        if len(parts) >= 2:
+            return (parts[0][0] + parts[1][0]).upper()
+        if parts:
+            return parts[0][:2].upper()
+        return "CA"
+
+    def _get_recent_resumes_rows(self) -> list[dict]:
+        # build recent resume rows from session evaluations or fall back to realistic demo entries
+        ranking_rows = st.session_state.get("ranking_rows", [])
+        today_label = datetime.now().strftime("%b %d, %Y")
+
+        if ranking_rows:
+            rows = []
+            for row in ranking_rows[:4]:
+                fname = row.get("file_name", "candidate_resume.pdf")
+                ev = row.get("evaluation", {})
+                score = int(round(float(ev.get("final_score", 0.0))))
+                rows.append(
+                    {
+                        "initials": self._extract_initials(fname),
+                        "file_name": fname,
+                        "date": today_label,
+                        "score": f"{score}%",
+                        "status": "completed",
+                    }
+                )
+            return rows
+
+        return [
+            {
+                "initials": "AT",
+                "file_name": "alex_tan_backend_resume.pdf",
+                "date": "Nov 14, 2026",
+                "score": "92%",
+                "status": "completed",
+            },
+            {
+                "initials": "SL",
+                "file_name": "sarah_lim_fullstack_cv.pdf",
+                "date": "Nov 14, 2026",
+                "score": "86%",
+                "status": "completed",
+            },
+            {
+                "initials": "RK",
+                "file_name": "ryan_kumar_devops_resume.docx",
+                "date": "Nov 13, 2026",
+                "score": "79%",
+                "status": "completed",
+            },
+            {
+                "initials": "MC",
+                "file_name": "michelle_chua_data_eng.pdf",
+                "date": "Nov 12, 2026",
+                "score": "74%",
+                "status": "completed",
+            },
+        ]
+
+    def render_operational_row(self):
+        # bottom 2-column operational row with Processing Queue on the left and Recent Resumes on the right
+        resumes = st.session_state.get("resumes", [])
+        results = st.session_state.get("results", {})
+        pending_resumes = [r for r in resumes if r.get("id") not in results]
+        active_count = len(pending_resumes)
+
+        col_left, col_right = st.columns(2)
+
+        with col_left:
+            if active_count == 0:
+                queue_body_html = (
+                    '<div class="ra-queue-empty">'
+                    '<div class="ra-queue-clock">🕒</div>'
+                    '<div class="ra-queue-empty-title">No resumes currently processing</div>'
+                    '<div class="ra-queue-empty-sub">'
+                    'Upload candidate PDF or DOCX files in Resume Analyser to queue them for AI screening.'
+                    '</div>'
+                    '</div>'
+                )
+            else:
+                queued_items = "".join(
+                    f'<div class="ra-candidate-row">'
+                    f'<div class="ra-candidate-left">'
+                    f'<div class="ra-avatar">{self._extract_initials(r["file_name"])}</div>'
+                    f'<div class="ra-candidate-meta">'
+                    f'<div class="ra-candidate-file">{r["file_name"]}</div>'
+                    f'<div class="ra-candidate-date">Queued for AI screening</div>'
+                    f'</div>'
+                    f'</div>'
+                    f'<div class="ra-candidate-right">'
+                    f'<span class="ra-pill">queued</span>'
+                    f'</div>'
+                    f'</div>'
+                    for r in pending_resumes[:4]
+                )
+                queue_body_html = f'<div class="ra-candidate-list">{queued_items}</div>'
+
+            st.markdown(
+                f"""
+                <div class="ra-card ra-op-card">
+                    <div class="ra-op-header">
+                        <h3 class="ra-op-title">Processing Queue</h3>
+                        <span class="ra-active-counter">{active_count} active</span>
+                    </div>
+                    {queue_body_html}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with col_right:
+            recent_rows = self._get_recent_resumes_rows()
+            candidate_rows_html = "".join(
+                f'<div class="ra-candidate-row">'
+                f'<div class="ra-candidate-left">'
+                f'<div class="ra-avatar">{row["initials"]}</div>'
+                f'<div class="ra-candidate-meta">'
+                f'<div class="ra-candidate-file" title="{row["file_name"]}">{row["file_name"]}</div>'
+                f'<div class="ra-candidate-date">{row["date"]}</div>'
+                f'</div>'
+                f'</div>'
+                f'<div class="ra-candidate-right">'
+                f'<span class="ra-score-badge">★ {row["score"]}</span>'
+                f'<span class="ra-completed-pill">{row["status"]}</span>'
+                f'<span class="ra-eye-btn" title="Quick view candidate">👁</span>'
+                f'</div>'
+                f'</div>'
+                for row in recent_rows
+            )
+
+            st.markdown(
+                f"""
+                <div class="ra-card ra-op-card">
+                    <div class="ra-op-header">
+                        <h3 class="ra-op-title">Recent Resumes</h3>
+                        <a class="ra-view-all-link" href="#candidates">View All →</a>
+                    </div>
+                    <div class="ra-candidate-list">
+                        {candidate_rows_html}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
     def render_sidebar(self) -> str:
         # sidebar with brand header, vertical pill navigation, and pinned bottom mode box
         current_page = st.session_state.get("active_page", "Dashboard")
@@ -1256,6 +1599,7 @@ class AppUI:
         self.render_status_banner()
         self.render_kpi_summary_row()
         self.render_charts_row()
+        self.render_operational_row()
 
     def render_screen_batch_page(self):
         # batch screening page combining job setup and resume uploads
