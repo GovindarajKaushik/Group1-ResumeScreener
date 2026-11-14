@@ -45,16 +45,29 @@ Open the CSV files in Excel. Close them before saving updates in the application
 
 ## Run tests
 
-The logic tests use fixed sample AI responses and require no API key or connection.
+The OOP test suite in `tests/` uses fixed sample AI responses and a mocked API
+client, so it needs no API key or internet connection.
 
 Locally:
 
 ```powershell
-python -B test_logic.py
+python -B -m unittest discover -s tests -t . -v
 ```
 
 Inside the built Docker image, with networking disabled:
 
 ```powershell
-docker run --rm --network none resume-screener python -B test_logic.py
+docker build -t resume-screener-ui .
+docker run --rm --network none --entrypoint python resume-screener-ui -B -m unittest discover -s tests -t . -v
 ```
+
+## Continuous Integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs automatically on every push to
+any branch and on every pull request into `main`. It has two jobs:
+
+1. **Unit tests**: installs `requirements.txt` on Python 3.12 and runs the test suite.
+2. **Docker build and tests**: builds the Docker image and runs the same tests
+   inside the container with networking disabled.
+
+Results appear in the repository's **Actions** tab and as checks on pull requests.
