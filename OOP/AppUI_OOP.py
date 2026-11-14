@@ -5,9 +5,12 @@ import os
 from tempfile import TemporaryDirectory
 import uuid
 import streamlit as st
+from pathlib import Path
 
 from OOP.io_manager import IOManager
 from OOP.logic_manager import Job, ScreeningPreferences
+from modular.data_manager import RESULTS_FILE, load_all_results
+from OOP.candidate_report import CandidateReport
 
 
 # main Streamlit UI class handling layout and user inputs
@@ -318,7 +321,31 @@ class AppUI:
     def render_saved_results_page(self):
         # placeholder until DataManager is ready
         st.subheader("View Saved Results")
-        st.info("Will connect to DataManager once completed.")
+
+        project_folder = Path(__file__).resolve().parent.parent
+        csv_path = project_folder / "data" / "candidate_results.csv"
+        if not csv_path.is_file():
+            csv_path = Path(RESULTS_FILE)
+
+        candidates = load_all_results(str(csv_path))
+        if not candidates:
+            st.info("No saved screening results found.")
+            return
+
+        candidate = st.selectbox(
+            "Select a candidate",
+            candidates,
+            format_func=lambda row: f"{row['candidate_id']} | {row['file_name']}",
+        )
+
+        report = CandidateReport(candidate)
+        st.markdown(report.to_markdown())
+        st.download_button(
+            label="Download candidate report (PDF)",
+            data=report.to_pdf(),
+            file_name=f"{candidate['candidate_id']}-screening-report.pdf",
+            mime="application/pdf",
+        )
 
     def render_review_candidates_page(self):
         # placeholder until DataManager is ready
