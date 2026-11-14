@@ -1,5 +1,6 @@
 # UI module for the Streamlit web app
 
+from datetime import datetime
 import math
 import os
 from tempfile import TemporaryDirectory
@@ -253,6 +254,240 @@ class AppUI:
                 color: var(--ra-text-muted);
                 margin-top: 0.2rem;
             }
+
+            /* Top split header bar */
+            .ra-top-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 1.25rem;
+                flex-wrap: wrap;
+                padding-bottom: 1.15rem;
+                margin-bottom: 1.25rem;
+                border-bottom: 1px solid var(--ra-border);
+            }
+
+            .ra-header-title {
+                font-size: 1.75rem;
+                font-weight: 800;
+                color: var(--ra-text-primary);
+                letter-spacing: -0.02em;
+                line-height: 1.2;
+                margin: 0;
+            }
+
+            .ra-header-title-accent {
+                color: var(--ra-accent-rose);
+            }
+
+            .ra-header-subtitle {
+                font-size: 0.9rem;
+                color: var(--ra-text-muted);
+                margin-top: 0.28rem;
+            }
+
+            .ra-header-controls {
+                display: flex;
+                align-items: center;
+                gap: 0.65rem;
+                flex-wrap: wrap;
+            }
+
+            .ra-status-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.55rem;
+                padding: 0.32rem 0.4rem 0.32rem 0.75rem;
+                background-color: var(--ra-bg-surface);
+                border: 1px solid var(--ra-border);
+                border-radius: 999px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: var(--ra-text-primary);
+            }
+
+            .ra-status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background-color: var(--ra-accent-rose);
+                box-shadow: 0 0 8px var(--ra-accent-rose);
+            }
+
+            .ra-inline-connect-btn {
+                background-color: var(--ra-accent-primary);
+                border: 1px solid var(--ra-accent-hover);
+                color: var(--ra-text-primary);
+                padding: 0.2rem 0.65rem;
+                border-radius: 999px;
+                font-size: 0.74rem;
+                font-weight: 600;
+                cursor: pointer;
+                text-decoration: none;
+            }
+
+            .ra-inline-connect-btn:hover {
+                background-color: var(--ra-accent-hover);
+            }
+
+            .ra-refresh-btn {
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                background-color: var(--ra-bg-surface);
+                border: 1px solid var(--ra-border);
+                color: var(--ra-text-muted);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.9rem;
+                cursor: pointer;
+            }
+
+            .ra-refresh-btn:hover {
+                border-color: var(--ra-accent-hover);
+                color: var(--ra-text-primary);
+            }
+
+            .ra-updated-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0.36rem 0.78rem;
+                border-radius: 999px;
+                background-color: var(--ra-bg-surface);
+                border: 1px solid var(--ra-border);
+                font-size: 0.78rem;
+                color: var(--ra-text-muted);
+            }
+
+            /* Full-width status / onboarding banner card */
+            .ra-status-banner {
+                background:
+                    radial-gradient(circle at top left, rgba(153, 27, 27, 0.22), transparent 52%),
+                    var(--ra-bg-surface);
+                border: 1px solid var(--ra-border);
+                border-top: 1px solid rgba(220, 38, 38, 0.55);
+                border-left: 3px solid var(--ra-accent-hover);
+                border-radius: 14px;
+                padding: 1.35rem 1.5rem;
+                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+                margin-bottom: 1.5rem;
+            }
+
+            .ra-banner-top {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.85rem;
+            }
+
+            .ra-banner-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background-color: rgba(153, 27, 27, 0.22);
+                border: 1px solid var(--ra-accent-primary);
+                color: var(--ra-accent-rose);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1rem;
+                flex-shrink: 0;
+            }
+
+            .ra-banner-heading {
+                font-size: 1.02rem;
+                font-weight: 700;
+                color: var(--ra-text-primary);
+                margin: 0;
+            }
+
+            .ra-banner-desc {
+                font-size: 0.86rem;
+                color: var(--ra-text-muted);
+                margin-top: 0.25rem;
+                line-height: 1.45;
+            }
+
+            .ra-capability-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.65rem;
+                margin-top: 0.95rem;
+            }
+
+            .ra-capability-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.42rem;
+                padding: 0.3rem 0.75rem;
+                border-radius: 999px;
+                background-color: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--ra-border);
+                font-size: 0.79rem;
+                color: var(--ra-text-primary);
+            }
+
+            .ra-capability-check {
+                color: var(--ra-accent-rose);
+                font-weight: 700;
+            }
+
+            .ra-banner-footer {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+
+            .ra-setup-link {
+                font-size: 0.82rem;
+                color: var(--ra-accent-rose);
+                text-decoration: none;
+                font-weight: 500;
+            }
+
+            .ra-setup-link:hover {
+                text-decoration: underline;
+            }
+
+            .ra-banner-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+            }
+
+            .ra-btn-crimson {
+                background-color: var(--ra-accent-hover);
+                border: 1px solid var(--ra-accent-rose);
+                color: #FFFFFF;
+                padding: 0.42rem 0.95rem;
+                border-radius: 9px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .ra-btn-crimson:hover {
+                background-color: var(--ra-accent-primary);
+            }
+
+            .ra-btn-outline {
+                background-color: transparent;
+                border: 1px solid var(--ra-border);
+                color: var(--ra-text-primary);
+                padding: 0.42rem 0.95rem;
+                border-radius: 9px;
+                font-size: 0.82rem;
+                font-weight: 500;
+                cursor: pointer;
+            }
+
+            .ra-btn-outline:hover {
+                background-color: #1C1C22;
+                border-color: var(--ra-text-muted);
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -377,9 +612,91 @@ class AppUI:
         return added_count, rejected
 
     def render_header(self):
-        # show app title at the top of the page
-        st.title(f"📄 {self._title}")
-        st.caption("INF1103 Phase 2 - Object-Oriented Streamlit Interface")
+        # top split header bar with title/subtitle on the left and utility controls on the right
+        has_api_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
+        mode_text = "Live Backend" if has_api_key else "Demo Mode"
+        action_text = "Connected" if has_api_key else "Connect"
+        last_updated = st.session_state.get("last_updated") or datetime.now().strftime("%H:%M:%S")
+        st.session_state["last_updated"] = last_updated
+
+        st.markdown(
+            f"""
+            <div class="ra-top-header">
+                <div>
+                    <h1 class="ra-header-title">
+                        Resume <span class="ra-header-title-accent">Analyser</span>
+                    </h1>
+                    <div class="ra-header-subtitle">
+                        AI-powered recruitment insights and candidate analysis.
+                    </div>
+                </div>
+                <div class="ra-header-controls">
+                    <div class="ra-status-pill">
+                        <span class="ra-status-dot"></span>
+                        <span>{mode_text}</span>
+                        <span class="ra-inline-connect-btn">{action_text}</span>
+                    </div>
+                    <div class="ra-refresh-btn" title="Refresh workspace">↻</div>
+                    <div class="ra-updated-pill">
+                        <span>🕒</span>
+                        <span>Last Updated: {last_updated}</span>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    def render_status_banner(self):
+        # full-width onboarding and system status banner card directly below the top header
+        has_api_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
+        heading = "Backend Connected" if has_api_key else "Demo Mode Active"
+        description = (
+            "Connected to the live AI evaluation service for real-time resume extraction, "
+            "evidence verification, and candidate ranking."
+            if has_api_key
+            else "Explore the Resume Analyser interface with interactive candidate scoring, "
+            "anonymized file ingestion, and recruitment analytics."
+        )
+
+        st.markdown(
+            f"""
+            <div class="ra-card ra-status-banner">
+                <div class="ra-banner-top">
+                    <div class="ra-banner-icon">ℹ️</div>
+                    <div style="flex: 1;">
+                        <h3 class="ra-banner-heading">{heading}</h3>
+                        <div class="ra-banner-desc">{description}</div>
+                        <div class="ra-capability-row">
+                            <span class="ra-capability-badge">
+                                <span class="ra-capability-check">✓</span> Interactive UI demonstration
+                            </span>
+                            <span class="ra-capability-badge">
+                                <span class="ra-capability-check">✓</span> Realistic mock analysis results
+                            </span>
+                            <span class="ra-capability-badge">
+                                <span class="ra-capability-check">✓</span> File upload simulation
+                            </span>
+                            <span class="ra-capability-badge">
+                                <span class="ra-capability-check">✓</span> Chart visualisations
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <hr class="ra-divider" />
+                <div class="ra-banner-footer">
+                    <a class="ra-setup-link" href="#settings">
+                        Configure live OpenAI API credentials &amp; screening rules →
+                    </a>
+                    <div class="ra-banner-actions">
+                        <span class="ra-btn-crimson">Try Connect</span>
+                        <span class="ra-btn-outline">Setup Guide</span>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     def render_sidebar(self) -> str:
         # sidebar with brand header, vertical pill navigation, and pinned bottom mode box
@@ -600,4 +917,5 @@ class AppUI:
         self._inject_global_styles()
         selected_page = self.render_sidebar()
         self.render_header()
+        self.render_status_banner()
         self.render_body(selected_page)
