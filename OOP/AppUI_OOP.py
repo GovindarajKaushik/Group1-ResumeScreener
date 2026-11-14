@@ -125,13 +125,14 @@ class AppUI:
             }
 
             /* Reusable base card, pill, and divider classes */
-            .ra-card {
-                background-color: var(--ra-bg-surface);
-                border: 1px solid var(--ra-border);
-                border-radius: 14px;
-                padding: 1.35rem 1.5rem;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-                margin-bottom: 1rem;
+            .ra-card,
+            div[data-testid="stVerticalBlockBorderWrapper"] {
+                background-color: var(--ra-bg-surface) !important;
+                border: 1px solid var(--ra-border) !important;
+                border-radius: 14px !important;
+                padding: 1.35rem 1.5rem !important;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+                margin-bottom: 1rem !important;
             }
 
             .ra-pill {
@@ -564,6 +565,62 @@ class AppUI:
                 margin-top: 0.28rem;
                 font-weight: 500;
             }
+
+            /* Middle 2-Column Data Visualisation Row */
+            .ra-chart-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.65rem;
+            }
+
+            .ra-chart-title {
+                font-size: 1.02rem;
+                font-weight: 700;
+                color: var(--ra-text-primary);
+                margin: 0;
+            }
+
+            .ra-chart-options {
+                color: var(--ra-text-muted);
+                font-size: 1.15rem;
+                font-weight: 700;
+                line-height: 1;
+                cursor: pointer;
+                padding: 0.15rem 0.35rem;
+                border-radius: 6px;
+            }
+
+            .ra-chart-options:hover {
+                background-color: #1C1C22;
+                color: var(--ra-text-primary);
+            }
+
+            .ra-skill-legend {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.55rem 1.15rem;
+                margin-top: 0.55rem;
+                padding-top: 0.65rem;
+                border-top: 1px solid var(--ra-border);
+            }
+
+            .ra-skill-legend-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.42rem;
+                font-size: 0.8rem;
+                font-weight: 500;
+                color: #E4E4E7;
+            }
+
+            .ra-skill-swatch {
+                width: 10px;
+                height: 10px;
+                border-radius: 3px;
+                flex-shrink: 0;
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -847,6 +904,177 @@ class AppUI:
                     unsafe_allow_html=True,
                 )
 
+    def _get_top_skills_data(self) -> list[tuple[str, int]]:
+        # aggregate detected skills from current session evaluations or fall back to realistic demo counts
+        evaluations = st.session_state.get("evaluations", {})
+        counts: dict[str, int] = {}
+        for ev in evaluations.values():
+            for skill in ev.get("skill_details", []):
+                if skill.get("present"):
+                    name = str(skill.get("name", "")).strip()
+                    if name:
+                        counts[name] = counts.get(name, 0) + 1
+
+        if counts:
+            sorted_skills = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+            return sorted_skills[:5]
+
+        return [
+            ("Python", 2),
+            ("Django", 1),
+            ("PostgreSQL", 1),
+            ("Docker", 1),
+            ("REST APIs", 1),
+        ]
+
+    def render_charts_row(self):
+        # middle 2-column data visualisation row directly below the KPI cards
+        import altair as alt
+        import pandas as pd
+
+        col_left, col_right = st.columns(2)
+
+        with col_left:
+            with st.container(border=True):
+                st.markdown(
+                    """
+                    <div class="ra-chart-header">
+                        <h3 class="ra-chart-title">Monthly Applications</h3>
+                        <span class="ra-chart-options" title="Chart options">⋮</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                months_df = pd.DataFrame(
+                    {
+                        "Month": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                        "Order": [1, 2, 3, 4, 5, 6],
+                        "Applications": [8, 14, 11, 19, 16, 24],
+                    }
+                )
+
+                area_gradient = alt.Gradient(
+                    gradient="linear",
+                    stops=[
+                        alt.GradientStop(color="rgba(220, 38, 38, 0.0)", offset=0),
+                        alt.GradientStop(color="rgba(220, 38, 38, 0.35)", offset=1),
+                    ],
+                    x1=1,
+                    x2=1,
+                    y1=1,
+                    y2=0,
+                )
+
+                base = alt.Chart(months_df).encode(
+                    x=alt.X(
+                        "Month:N",
+                        sort=alt.EncodingSortField(field="Order", order="ascending"),
+                        axis=alt.Axis(
+                            title=None,
+                            labelColor="#A1A1AA",
+                            labelAngle=0,
+                            tickColor="#24242B",
+                            domainColor="#24242B",
+                            grid=False,
+                        ),
+                    ),
+                    y=alt.Y(
+                        "Applications:Q",
+                        axis=alt.Axis(
+                            title=None,
+                            labelColor="#A1A1AA",
+                            tickColor="#24242B",
+                            domainColor="transparent",
+                            grid=True,
+                            gridColor="#24242B",
+                        ),
+                    ),
+                    tooltip=[
+                        alt.Tooltip("Month:N", title="Month"),
+                        alt.Tooltip("Applications:Q", title="Applications"),
+                    ],
+                )
+
+                area = base.mark_area(
+                    interpolate="monotone",
+                    color=area_gradient,
+                )
+                line = base.mark_line(
+                    interpolate="monotone",
+                    color="#DC2626",
+                    strokeWidth=2.5,
+                )
+                points = base.mark_circle(
+                    color="#F87171",
+                    size=52,
+                )
+
+                spline_chart = (
+                    (area + line + points)
+                    .properties(height=235, background="transparent")
+                    .configure_view(strokeWidth=0)
+                )
+                st.altair_chart(spline_chart, use_container_width=True)
+
+        with col_right:
+            with st.container(border=True):
+                st.markdown(
+                    """
+                    <div class="ra-chart-header">
+                        <h3 class="ra-chart-title">Top Skills Detected</h3>
+                        <span class="ra-chart-options" title="Chart options">⋮</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                palette = ["#DC2626", "#7F1D1D", "#F87171", "#F59E0B", "#64748B"]
+                skills_data = self._get_top_skills_data()
+                skill_names = [item[0] for item in skills_data]
+                skill_counts = [item[1] for item in skills_data]
+                skill_colors = [palette[i % len(palette)] for i in range(len(skills_data))]
+
+                skills_df = pd.DataFrame(
+                    {
+                        "Skill": skill_names,
+                        "Count": skill_counts,
+                    }
+                )
+
+                donut_chart = (
+                    alt.Chart(skills_df)
+                    .mark_arc(innerRadius=58, outerRadius=92, stroke="#121216", strokeWidth=3)
+                    .encode(
+                        theta=alt.Theta(field="Count", type="quantitative"),
+                        color=alt.Color(
+                            field="Skill",
+                            type="nominal",
+                            scale=alt.Scale(domain=skill_names, range=skill_colors),
+                            legend=None,
+                        ),
+                        tooltip=[
+                            alt.Tooltip("Skill:N", title="Skill"),
+                            alt.Tooltip("Count:Q", title="Detected Count"),
+                        ],
+                    )
+                    .properties(height=195, background="transparent")
+                    .configure_view(strokeWidth=0)
+                )
+                st.altair_chart(donut_chart, use_container_width=True)
+
+                legend_items_html = "".join(
+                    f'<span class="ra-skill-legend-item">'
+                    f'<span class="ra-skill-swatch" style="background-color: {color};"></span>'
+                    f'<span>{name} ({count})</span>'
+                    f'</span>'
+                    for (name, count), color in zip(skills_data, skill_colors)
+                )
+                st.markdown(
+                    f'<div class="ra-skill-legend">{legend_items_html}</div>',
+                    unsafe_allow_html=True,
+                )
+
     def render_sidebar(self) -> str:
         # sidebar with brand header, vertical pill navigation, and pinned bottom mode box
         current_page = st.session_state.get("active_page", "Dashboard")
@@ -1027,6 +1255,7 @@ class AppUI:
     def render_dashboard_page(self):
         self.render_status_banner()
         self.render_kpi_summary_row()
+        self.render_charts_row()
 
     def render_screen_batch_page(self):
         # batch screening page combining job setup and resume uploads
@@ -1044,6 +1273,7 @@ class AppUI:
     def render_analytics_page(self):
         self.render_status_banner()
         self.render_kpi_summary_row()
+        self.render_charts_row()
 
     def render_settings_page(self):
         st.subheader("Settings")
