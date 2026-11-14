@@ -7,3 +7,7 @@ __pycache__/
 # Exclude temporary data or raw outputs if needed (can be volume mounted)
 data/
 resume/
+
+# Exclude archived procedural code and design docs from Docker image
+modular/
+docs/
