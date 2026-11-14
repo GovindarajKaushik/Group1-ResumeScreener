@@ -6,27 +6,28 @@ from tempfile import TemporaryDirectory
 import uuid
 import streamlit as st
 
-from OOP.io_manager import IOManager
+from OOP.io_manager import ResumeImporter
 from OOP.logic_manager import Job, ScreeningPreferences
 
 
 # main Streamlit UI class handling layout and user inputs
 class AppUI:
 
-    PAGES = (
-        "Screen New Batch",
-        "View Saved Results",
-        "Review Candidates",
-        "Manage Jobs",
+    NAV_ITEMS = (
+        ("Dashboard", "📊"),
+        ("Resume Analyser", "📄"),
+        ("Candidates", "👥"),
+        ("Job Postings", "💼"),
+        ("Analytics", "📈"),
+        ("Settings", "⚙️"),
     )
 
-    def __init__(self, title: str = "AI Resume Screener", io_manager: IOManager | None = None):
+    PAGES = tuple(label for label, _ in NAV_ITEMS)
+
+    def __init__(self, title: str = "Resume Analyser", io_manager: ResumeImporter | None = None):
         self._title = str(title)
-        # use the provided IOManager or create a default one for file validation and text extraction
-        self._io_manager = io_manager or IOManager()
-        # guard against the typo in IOManager.__init__ (__vaild_resume_extensions)
-        if not hasattr(self._io_manager, "_IOManager__valid_resume_extensions"):
-            setattr(self._io_manager, "_IOManager__valid_resume_extensions", (".pdf", ".docx"))
+        # use the provided ResumeImporter or create a default one for file validation and text extraction
+        self._io_manager = io_manager or ResumeImporter()
 
     @property
     def title(self) -> str:
@@ -155,6 +156,96 @@ class AppUI:
                 border-top: 1px solid var(--ra-border);
                 margin: 1rem 0;
             }
+
+            /* Sidebar brand header, nav buttons, and bottom mode box */
+            .ra-brand-header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.25rem 0 1.15rem 0;
+                margin-bottom: 0.85rem;
+                border-bottom: 1px solid var(--ra-border);
+            }
+
+            .ra-brand-badge {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background-color: var(--ra-accent-primary);
+                border: 1px solid var(--ra-accent-hover);
+                color: var(--ra-text-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.15rem;
+                flex-shrink: 0;
+            }
+
+            .ra-brand-title {
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--ra-text-primary);
+                line-height: 1.2;
+            }
+
+            .ra-brand-subtitle {
+                font-size: 0.76rem;
+                color: var(--ra-text-muted);
+                margin-top: 0.12rem;
+            }
+
+            [data-testid="stSidebar"] .stButton > button {
+                justify-content: flex-start !important;
+                text-align: left !important;
+                padding: 0.55rem 0.9rem !important;
+                border-radius: 10px !important;
+                font-size: 0.9rem !important;
+                margin-bottom: 0.15rem !important;
+            }
+
+            [data-testid="stSidebar"] .stButton > button[kind="primary"] {
+                background: linear-gradient(90deg, #991B1B 0%, #DC2626 100%) !important;
+                border: 1px solid #DC2626 !important;
+                color: #FFFFFF !important;
+                font-weight: 600 !important;
+                box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+            }
+
+            [data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+                background-color: transparent !important;
+                border: 1px solid transparent !important;
+                color: var(--ra-text-muted) !important;
+                font-weight: 500 !important;
+            }
+
+            [data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+                background-color: #1C1C22 !important;
+                border-color: var(--ra-border) !important;
+                color: var(--ra-text-primary) !important;
+            }
+
+            .ra-mode-box {
+                margin-top: 1.75rem;
+                padding: 0.8rem 0.95rem;
+                border-radius: 12px;
+                background-color: rgba(153, 27, 27, 0.15);
+                border: 1px solid var(--ra-accent-primary);
+            }
+
+            .ra-mode-title {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                font-size: 0.84rem;
+                font-weight: 600;
+                color: var(--ra-text-primary);
+            }
+
+            .ra-mode-sub {
+                font-size: 0.75rem;
+                color: var(--ra-text-muted);
+                margin-top: 0.2rem;
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -163,6 +254,7 @@ class AppUI:
     def _init_session_state(self):
         # keep form and screening data across Streamlit reruns
         defaults = {
+            "active_page": "Dashboard",
             "job_description": None,
             "preferences": ScreeningPreferences().to_dict(),
             "resumes": [],
@@ -283,20 +375,54 @@ class AppUI:
         st.caption("INF1103 Phase 2 - Object-Oriented Streamlit Interface")
 
     def render_sidebar(self) -> str:
-        # sidebar for switching pages and seeing quick session stats
+        # sidebar with brand header, vertical pill navigation, and pinned bottom mode box
         with st.sidebar:
-            st.header("Navigation")
-            selected_page = st.radio("Go to", self.PAGES, key="active_page")
+            st.markdown(
+                """
+                <div class="ra-brand-header">
+                    <div class="ra-brand-badge">📄</div>
+                    <div>
+                        <div class="ra-brand-title">Resume Analyser</div>
+                        <div class="ra-brand-subtitle">AI-Powered Recruitment</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-            st.divider()
-            st.subheader("Session Summary")
-            job = st.session_state.get("job_description")
-            job_label = job["title"] if job and job.get("title") else "Not set"
-            st.write(f"**Active Role:** {job_label}")
-            st.write(f"**Resumes Loaded:** {len(st.session_state.get('resumes', []))}")
-            st.write(f"**Screened:** {len(st.session_state.get('results', {}))}")
+            active_page = st.session_state.get("active_page", "Dashboard")
+            for label, icon in self.NAV_ITEMS:
+                btn_kind = "primary" if label == active_page else "secondary"
+                if st.button(
+                    f"{icon}  {label}",
+                    key=f"nav_btn_{label}",
+                    type=btn_kind,
+                    use_container_width=True,
+                ):
+                    st.session_state["active_page"] = label
+                    st.rerun()
 
-        return selected_page
+            is_live = bool(os.environ.get("OPENROUTER_API_KEY"))
+            mode_label = "Live Backend" if is_live else "Demo Mode"
+            mode_desc = (
+                "Connected to OpenRouter AI"
+                if is_live
+                else "Interactive preview — set API key for live AI"
+            )
+            st.markdown(
+                f"""
+                <div class="ra-mode-box">
+                    <div class="ra-mode-title">
+                        <span>ℹ️</span>
+                        <span>{mode_label}</span>
+                    </div>
+                    <div class="ra-mode-sub">{mode_desc}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        return st.session_state.get("active_page", "Dashboard")
 
     def _render_job_form(self):
         # pre-fill the form if a job was already saved in this session
@@ -428,36 +554,40 @@ class AppUI:
 
     def render_screen_batch_page(self):
         # batch screening page combining job setup and resume uploads
-        st.subheader("Screen New Batch")
+        st.subheader("Resume Analyser")
         self._render_job_form()
         self._render_active_job_summary()
         self._render_resume_upload_section()
-        st.info("Step 4 will connect AIManager and ScoringEngine to screen the loaded resumes.")
 
     def render_saved_results_page(self):
-        # placeholder until DataManager is ready
-        st.subheader("View Saved Results")
-        st.info("Will connect to DataManager once completed.")
+        st.subheader("Saved Results")
 
     def render_review_candidates_page(self):
-        # placeholder until DataManager is ready
-        st.subheader("Review Candidates")
-        st.info("Will connect to DataManager once completed.")
+        st.subheader("Candidates")
 
     def render_manage_jobs_page(self):
-        # placeholder until DataManager is ready
-        st.subheader("Manage Jobs")
-        st.info("Will connect to DataManager once completed.")
+        st.subheader("Job Postings")
+
+    def render_dashboard_page(self):
+        st.subheader("Dashboard")
+
+    def render_analytics_page(self):
+        st.subheader("Analytics")
+
+    def render_settings_page(self):
+        st.subheader("Settings")
 
     def render_body(self, selected_page: str):
-        # route to whichever page was picked in the sidebar
+        # route to whichever view was selected in the sidebar
         page_routes = {
-            "Screen New Batch": self.render_screen_batch_page,
-            "View Saved Results": self.render_saved_results_page,
-            "Review Candidates": self.render_review_candidates_page,
-            "Manage Jobs": self.render_manage_jobs_page,
+            "Dashboard": self.render_dashboard_page,
+            "Resume Analyser": self.render_screen_batch_page,
+            "Candidates": self.render_review_candidates_page,
+            "Job Postings": self.render_manage_jobs_page,
+            "Analytics": self.render_analytics_page,
+            "Settings": self.render_settings_page,
         }
-        renderer = page_routes.get(selected_page, self.render_screen_batch_page)
+        renderer = page_routes.get(selected_page, self.render_dashboard_page)
         renderer()
 
     def run(self):
