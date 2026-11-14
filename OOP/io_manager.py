@@ -142,7 +142,7 @@ class DocxTextExtractor(TextExtractor):
 
         text_parts = []
         try:
-            document = Document(path)
+            document = Document(str(path))
             for paragraph in document.paragraphs:
                 if paragraph.text.strip():
                     text_parts.append(paragraph.text)
@@ -672,10 +672,35 @@ class ConsoleUI:
 class ResumeImporter:
     """Service class responsible for validating, extracting, cleaning, and anonymizing resumes."""
 
-    _supported_extensions = (".pdf", ".docx")
+    def __init__(self, extractors: dict[str, TextExtractor] | None = None):
+        if extractors is None:
+            self._extractors ={
+                ".pdf": PdfTextExtractor(),
+                ".docx": DocxTextExtractor(),
+            }
+        else:
+            self._extractors = {
+                extension.lower(): extractor
+                for extension, extractor in extractors.items()
+            }
 
-    def __init__(self):
-        self._supported_extensions = (".pdf", ".docx")
+        self._supported_extensions = tuple(self._extractors.keys())
+
+    def register_extractor(
+            self,
+            extension: str,
+            extractor: TextExtractor
+    ) -> None:
+        """Register an additional document text extractor."""
+
+        extension = extension.lower()
+
+        if not extension.startswith("."):
+            extension = "." + extension
+
+        self._extractors[extension] = extractor
+
+        self._supported_extensions = tuple(self._extractors.keys())
 
     def collect_batch(self, folder: str | Path) -> list[Path]:
         """Return files passing basic validation; report rejected paths clearly."""
@@ -742,8 +767,9 @@ class ResumeImporter:
             raise ValueError("Path must point to a regular file.")
 
         extension = os.path.splitext(file_path)[1].lower()
-        if extension not in self._supported_extensions:
-            raise ValueError("Unsupported file type. Use .pdf or .docx.")
+        if extension not in self._extractors:
+            supported = ", ".join(self._supported_extensions)
+            raise ValueError(f"Unsupported file type. Supported formats: {supported}")
 
         try:
             size = os.path.getsize(file_path)
@@ -757,13 +783,13 @@ class ResumeImporter:
         file_path = str(path)
         extension = os.path.splitext(file_path)[1].lower()
 
-        if extension == ".pdf":
-            raw_text = self._extract_pdf(file_path)
-        elif extension == ".docx":
-            raw_text = self._extract_docx(file_path)
-        else:
-            print(f"Unsupported resume type: {file_path}")
+        extractor = self._extractors.get(extension)
+
+        if extractor is None:
+            print(f"Unsupported resume type: {path}")
             return ""
+
+        raw_text = extractor.extract(path)
 
         return self._clean_text(raw_text)
 
@@ -857,8 +883,6 @@ class ResumeImporter:
     collect_resume_batch = collect_batch
     prepare_resumes_for_ai = prepare
     extract_resume_text = _extract_text
-    extract_pdf_text = _extract_pdf
-    extract_docx_text = _extract_docx
     clean_resume_text = _clean_text
     anonymize_resume_text = _anonymize_text
 
