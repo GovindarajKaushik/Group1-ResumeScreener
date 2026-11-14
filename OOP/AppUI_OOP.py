@@ -13,21 +13,20 @@ from OOP.logic_manager import Job, ScreeningPreferences
 # main Streamlit UI class handling layout and user inputs
 class AppUI:
 
-    NAV_ITEMS = (
-        ("Dashboard", "📊"),
-        ("Resume Analyser", "📄"),
-        ("Candidates", "👥"),
-        ("Job Postings", "💼"),
-        ("Analytics", "📈"),
-        ("Settings", "⚙️"),
+    PAGES = (
+        "Screen New Batch",
+        "View Saved Results",
+        "Review Candidates",
+        "Manage Jobs",
     )
 
-    PAGES = tuple(label for label, _ in NAV_ITEMS)
-
-    def __init__(self, title: str = "Resume Analyser", io_manager: ResumeImporter | None = None):
+    def __init__(self, title: str = "AI Resume Screener", io_manager: IOManager | None = None):
         self._title = str(title)
-        # use the provided ResumeImporter or create a default one for file validation and text extraction
-        self._io_manager = io_manager or ResumeImporter()
+        # use the provided IOManager or create a default one for file validation and text extraction
+        self._io_manager = io_manager or IOManager()
+        # guard against the typo in IOManager.__init__ (__vaild_resume_extensions)
+        if not hasattr(self._io_manager, "_IOManager__valid_resume_extensions"):
+            setattr(self._io_manager, "_IOManager__valid_resume_extensions", (".pdf", ".docx"))
 
     @property
     def title(self) -> str:
@@ -317,7 +316,7 @@ class AppUI:
         return job, preferences
 
     def _process_uploaded_file(self, file_name: str, file_bytes: bytes, temp_dir: str) -> dict:
-        # write uploaded bytes to a temp file so IOManager can validate, extract, and anonymize it
+        # write uploaded bytes to a temp file so ResumeImporter can validate, extract, and anonymize it
         safe_name = os.path.basename(file_name)
         temp_path = os.path.join(temp_dir, safe_name)
         with open(temp_path, "wb") as handle:
@@ -375,54 +374,20 @@ class AppUI:
         st.caption("INF1103 Phase 2 - Object-Oriented Streamlit Interface")
 
     def render_sidebar(self) -> str:
-        # sidebar with brand header, vertical pill navigation, and pinned bottom mode box
+        # sidebar for switching pages and seeing quick session stats
         with st.sidebar:
-            st.markdown(
-                """
-                <div class="ra-brand-header">
-                    <div class="ra-brand-badge">📄</div>
-                    <div>
-                        <div class="ra-brand-title">Resume Analyser</div>
-                        <div class="ra-brand-subtitle">AI-Powered Recruitment</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.header("Navigation")
+            selected_page = st.radio("Go to", self.PAGES, key="active_page")
 
-            active_page = st.session_state.get("active_page", "Dashboard")
-            for label, icon in self.NAV_ITEMS:
-                btn_kind = "primary" if label == active_page else "secondary"
-                if st.button(
-                    f"{icon}  {label}",
-                    key=f"nav_btn_{label}",
-                    type=btn_kind,
-                    use_container_width=True,
-                ):
-                    st.session_state["active_page"] = label
-                    st.rerun()
+            st.divider()
+            st.subheader("Session Summary")
+            job = st.session_state.get("job_description")
+            job_label = job["title"] if job and job.get("title") else "Not set"
+            st.write(f"**Active Role:** {job_label}")
+            st.write(f"**Resumes Loaded:** {len(st.session_state.get('resumes', []))}")
+            st.write(f"**Screened:** {len(st.session_state.get('results', {}))}")
 
-            is_live = bool(os.environ.get("OPENROUTER_API_KEY"))
-            mode_label = "Live Backend" if is_live else "Demo Mode"
-            mode_desc = (
-                "Connected to OpenRouter AI"
-                if is_live
-                else "Interactive preview — set API key for live AI"
-            )
-            st.markdown(
-                f"""
-                <div class="ra-mode-box">
-                    <div class="ra-mode-title">
-                        <span>ℹ️</span>
-                        <span>{mode_label}</span>
-                    </div>
-                    <div class="ra-mode-sub">{mode_desc}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        return st.session_state.get("active_page", "Dashboard")
+        return selected_page
 
     def _render_job_form(self):
         # pre-fill the form if a job was already saved in this session
@@ -513,7 +478,7 @@ class AppUI:
                 st.rerun()
 
     def _render_resume_upload_section(self):
-        # let the recruiter upload PDF or DOCX resumes and process them with IOManager
+        # let the recruiter upload PDF or DOCX resumes and process them with ResumeImporter
         st.divider()
         st.markdown("#### 2. Upload Candidate Resumes")
 
@@ -552,40 +517,39 @@ class AppUI:
                     st.session_state["rejected_resumes"] = []
                     st.rerun()
 
-    def render_screen_batch_page(self):
-        # batch screening page combining job setup and resume uploads
-        st.subheader("Resume Analyser")
-        self._render_job_form()
-        self._render_active_job_summary()
-        self._render_resume_upload_section()
-
-    def render_saved_results_page(self):
-        st.subheader("Saved Results")
-
-    def render_review_candidates_page(self):
-        st.subheader("Candidates")
-
-    def render_manage_jobs_page(self):
-        st.subheader("Job Postings")
-
     def render_dashboard_page(self):
         st.subheader("Dashboard")
 
-    def render_analytics_page(self):
-        st.subheader("Analytics")
+    def render_screen_batch_page(self):
+        # batch screening page combining job setup and resume uploads
+        st.subheader("Screen New Batch")
+        self._render_job_form()
+        self._render_active_job_summary()
+        self._render_resume_upload_section()
+        st.info("Step 4 will connect AIManager and ScoringEngine to screen the loaded resumes.")
 
-    def render_settings_page(self):
-        st.subheader("Settings")
+    def render_saved_results_page(self):
+        # placeholder until DataManager is ready
+        st.subheader("View Saved Results")
+        st.info("Will connect to DataManager once completed.")
+
+    def render_review_candidates_page(self):
+        # placeholder until DataManager is ready
+        st.subheader("Review Candidates")
+        st.info("Will connect to DataManager once completed.")
+
+    def render_manage_jobs_page(self):
+        # placeholder until DataManager is ready
+        st.subheader("Manage Jobs")
+        st.info("Will connect to DataManager once completed.")
 
     def render_body(self, selected_page: str):
         # route to whichever view was selected in the sidebar
         page_routes = {
-            "Dashboard": self.render_dashboard_page,
-            "Resume Analyser": self.render_screen_batch_page,
-            "Candidates": self.render_review_candidates_page,
-            "Job Postings": self.render_manage_jobs_page,
-            "Analytics": self.render_analytics_page,
-            "Settings": self.render_settings_page,
+            "Screen New Batch": self.render_screen_batch_page,
+            "View Saved Results": self.render_saved_results_page,
+            "Review Candidates": self.render_review_candidates_page,
+            "Manage Jobs": self.render_manage_jobs_page,
         }
         renderer = page_routes.get(selected_page, self.render_dashboard_page)
         renderer()
