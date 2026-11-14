@@ -9,7 +9,7 @@ from pathlib import Path
 
 from OOP.io_manager import IOManager
 from OOP.logic_manager import Job, ScreeningPreferences
-from modular.data_manager import RESULTS_FILE, load_all_results
+from OOP.data_manager import ScreeningStore, StorageError
 from OOP.candidate_report import CandidateReport
 
 
@@ -322,14 +322,12 @@ class AppUI:
         # placeholder until DataManager is ready
         st.subheader("View Saved Results")
 
-        project_folder = Path(__file__).resolve().parent.parent
-        csv_path = project_folder / "data" / "candidate_results.csv"
-        if not csv_path.is_file():
-            csv_path = Path(RESULTS_FILE)
-
-        candidates = load_all_results(str(csv_path))
-        if not candidates:
-            st.info("No saved screening results found.")
+        try:
+            candidates = [
+                record.to_dict() for record in ScreeningStore().load_results()
+            ]
+        except StorageError as error:
+            st.error(f"Could not load saved results: {error}")
             return
 
         candidate = st.selectbox(
