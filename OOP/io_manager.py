@@ -2,6 +2,7 @@ import math
 import os
 import re
 import uuid
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,6 +106,13 @@ class Resume:
             return self._anonymized_text
         return getattr(self, key, default)
 
+class TextExtractor(ABC):
+    """Abstract base class defining the contract for resume text extractors."""
+
+    @abstractmethod
+    def extract(self, path: str | Path) -> str:
+        """Extract raw plain text from the given document path."""
+        raise NotImplementedError
 
 class ConsoleUI:
     """Boundary class handling all terminal input and output responsibilities."""
