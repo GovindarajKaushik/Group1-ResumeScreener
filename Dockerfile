@@ -1,3 +1,11 @@
+FROM node:22-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -8,13 +16,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
-# Copy source files and modules
+# Copy source files, tests, and built React SPA assets
 COPY . .
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Expose Streamlit default port
-EXPOSE 8501
+EXPOSE 8000
 
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
+HEALTHCHECK CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || exit 1
 
-# Launch Streamlit app with polling watcher so live edits reload inside Docker on Windows
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.fileWatcherType=poll", "--server.runOnSave=true"]
+ENTRYPOINT ["uvicorn", "OOP.api_server:app", "--host", "0.0.0.0", "--port", "8000"]

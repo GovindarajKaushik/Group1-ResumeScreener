@@ -8,6 +8,8 @@ __pycache__/
 data/
 resume/
 
-# Exclude archived procedural code and design docs from Docker image
+# Exclude archived procedural code, frontend host cache/build, and design docs from Docker image
 modular/
 docs/
+frontend/node_modules/
+frontend/dist/
