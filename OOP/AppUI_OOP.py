@@ -41,6 +41,125 @@ class AppUI:
             layout="wide",
         )
 
+    def _inject_global_styles(self):
+        # apply the Obsidian Black, Dark Red & Cool Silver design system and reusable classes
+        st.markdown(
+            """
+            <style>
+            :root {
+                --ra-bg-canvas: #09090B;
+                --ra-bg-surface: #121216;
+                --ra-border: #24242B;
+                --ra-text-primary: #F4F4F5;
+                --ra-text-muted: #A1A1AA;
+                --ra-accent-primary: #991B1B;
+                --ra-accent-hover: #DC2626;
+                --ra-accent-rose: #F87171;
+                --ra-accent-gold: #F59E0B;
+                --background-color: #09090B;
+                --secondary-background-color: #121216;
+                --text-color: #F4F4F5;
+                --primary-color: #991B1B;
+            }
+
+            /* Clean app chrome */
+            header[data-testid="stHeader"],
+            #MainMenu,
+            footer,
+            [data-testid="stFooter"] {
+                visibility: hidden !important;
+                display: none !important;
+            }
+
+            .block-container {
+                padding: 1.75rem 2.25rem 2.5rem 2.25rem !important;
+                max-width: 1440px !important;
+            }
+
+            /* Canvas, sidebar, and typography */
+            .stApp,
+            [data-testid="stAppViewContainer"] {
+                background-color: var(--ra-bg-canvas) !important;
+                color: var(--ra-text-primary) !important;
+            }
+
+            [data-testid="stSidebar"],
+            [data-testid="stSidebar"] > div:first-child {
+                background-color: var(--ra-bg-surface) !important;
+                border-right: 1px solid var(--ra-border) !important;
+                color: var(--ra-text-primary) !important;
+            }
+
+            .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6, .stApp p, .stApp label {
+                color: var(--ra-text-primary);
+            }
+
+            .stCaption, [data-testid="stCaptionContainer"], .ra-muted {
+                color: var(--ra-text-muted) !important;
+            }
+
+            /* Primary & hover button accents */
+            .stButton > button[kind="primary"],
+            .stFormSubmitButton > button[kind="primary"] {
+                background-color: var(--ra-accent-primary) !important;
+                border: 1px solid var(--ra-accent-hover) !important;
+                color: var(--ra-text-primary) !important;
+                border-radius: 10px !important;
+                font-weight: 600 !important;
+                transition: all 0.18s ease-in-out !important;
+            }
+
+            .stButton > button[kind="primary"]:hover,
+            .stFormSubmitButton > button[kind="primary"]:hover {
+                background-color: var(--ra-accent-hover) !important;
+                border-color: var(--ra-accent-rose) !important;
+            }
+
+            /* Reusable base card, pill, and divider classes */
+            .ra-card {
+                background-color: var(--ra-bg-surface);
+                border: 1px solid var(--ra-border);
+                border-radius: 14px;
+                padding: 1.35rem 1.5rem;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+                margin-bottom: 1rem;
+            }
+
+            .ra-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 0.26rem 0.72rem;
+                border-radius: 999px;
+                font-size: 0.78rem;
+                font-weight: 600;
+                background-color: rgba(153, 27, 27, 0.22);
+                border: 1px solid var(--ra-accent-hover);
+                color: var(--ra-accent-rose);
+            }
+
+            .ra-pill-gold {
+                background-color: rgba(245, 158, 11, 0.16);
+                border: 1px solid var(--ra-accent-gold);
+                color: var(--ra-accent-gold);
+            }
+
+            .ra-pill-silver {
+                background-color: rgba(161, 161, 170, 0.12);
+                border: 1px solid var(--ra-border);
+                color: var(--ra-text-muted);
+            }
+
+            .ra-divider {
+                border: none;
+                border-top: 1px solid var(--ra-border);
+                margin: 1rem 0;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
     def _init_session_state(self):
         # keep form and screening data across Streamlit reruns
         defaults = {
@@ -345,6 +464,7 @@ class AppUI:
         # main entry point for rendering the Streamlit UI
         self.setup_page()
         self._init_session_state()
+        self._inject_global_styles()
         selected_page = self.render_sidebar()
         self.render_header()
         self.render_body(selected_page)
