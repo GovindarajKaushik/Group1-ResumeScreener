@@ -218,6 +218,80 @@ class IOManager:
             if not folder:
                 return resumes
 
+    def parse_skill_list(self, text):
+        # Return trimmed, nonempty skills without case-insensitive duplicates.
+        skills = []
+        seen = set()
+        for item in text.split(","):
+            skill = item.strip()
+            if skill and skill.lower() not in seen:
+                skills.append(skill)
+                seen.add(skill.lower())
+        return skills
+
+    def collect_job_description(self):
+        """Collect job description details from user input."""
+        while True:
+            title = input("Job Title: ").strip()
+            if title:
+                break
+            print("Job title cannot be empty. Please enter a job title.")
+
+        skills_input = input("Required skills (comma-separated): ")
+        skills = self.parse_skill_list(skills_input)
+
+        while True:
+            experience_input = input("Minimum years of experience: ")
+            try:
+                min_experience = float(experience_input)
+            except ValueError:
+                print("Invalid input. Enter a finite, nonnegative number.")
+                continue
+            if math.isfinite(min_experience) and min_experience >= 0:
+                break
+            print("Invalid input. Enter a finite, nonnegative number.")
+
+        education = input("Education requirements: ")
+
+        preferred_input = input("Preferred skills (comma-separated): ")
+        preferred_qualifications = self.parse_skill_list(preferred_input)
+        required_names = {skill.lower() for skill in skills}
+        preferred_qualifications = [
+            skill for skill in preferred_qualifications if skill.lower() not in required_names
+        ]
+
+        job_description = {
+            "title": title,
+            "required_skills": skills,
+            "min_experience": min_experience,
+            "education": education,
+            "preferred": preferred_qualifications,
+        }
+        return job_description
+
+    def collect_screening_preferences(self):
+        """Collect screening preferences (minimum qualifying score) from user input."""
+        while True:
+            min_score_input = input("Minimum score for screening (0-100, press Enter for default 60): ")
+            if min_score_input.strip() == "":
+                min_score = 60.0
+                break
+            else:
+                try:
+                    min_score = float(min_score_input)
+                    if 0 <= min_score <= 100:
+                        break
+                    else:
+                        print("Invalid input. Score must be between 0 and 100.")
+                except ValueError:
+                    print("Invalid input. Please enter a number.")
+
+        preferences = {
+            "min_qualifying_score": min_score,
+        }
+
+        return preferences
+
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
 
