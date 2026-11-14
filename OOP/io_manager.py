@@ -292,6 +292,46 @@ class IOManager:
 
         return preferences
 
+    def display_result(self, candidates):
+        """Display the final screening results in descending order of score."""
+        sorted_candidates = sorted(candidates, key=lambda c: c["final_score"], reverse=True)
+        for c in sorted_candidates:
+            print(c["file_name"], c["final_score"])
+
+    def display_candidate_detail(self, candidate):
+        """Display detailed information about a single candidate."""
+        print("\n" + "=" * 60)
+        print("SAVED CANDIDATE DETAILS")
+        print("=" * 60)
+        print(f"Candidate ID: {candidate.get('candidate_id') or 'Not provided'}")
+        print(f"Resume: {candidate['file_name']}")
+        print(f"Role: {candidate.get('job_title') or 'Not provided'}")
+        print(f"Job ID: {candidate.get('job_id') or 'Not recorded (older result)'}")
+        print(f"Final score: {self.format_saved_score(candidate['final_score'])}")
+        print(f"System recommendation: {candidate.get('status') or 'Not provided'}")
+        print(f"Fast-track: {'Yes' if candidate.get('fast_track') else 'No'}")
+        print(f"Recruiter decision: {candidate.get('recruiter_decision') or 'pending'}")
+        ai_result = candidate["ai_result"]
+        print(f"AI confidence: {ai_result.get('confidence') or 'Not provided'}")
+        print("\nCRITERION SCORES")
+        print(f"Skills: {self.format_saved_score(candidate.get('skills_score'))}")
+        print(f"Experience: {self.format_saved_score(ai_result.get('experience_score'))}")
+        print(f"Education: {self.format_saved_score(ai_result.get('education_score'))}")
+        print("\nSKILLS AND EVIDENCE")
+        print(f"AI-reported present: {', '.join(ai_result['skills_present']) or 'None reported'}")
+        print(f"Not demonstrated: {', '.join(ai_result['skills_missing']) or 'None reported'}")
+        print(f"Evidence: {ai_result['evidence'] or 'Not provided'}")
+        print("\nAI SUMMARY")
+        print(ai_result.get('summary') or "Not provided")
+        print("\nSCORING NOTES / PROCESSING ERRORS")
+        for note in candidate.get("notes", []):
+            print(f"- {note}")
+        if not candidate.get("notes"):
+            print("None recorded")
+        print(f"\nSaved: {self.format_timestamp(candidate.get('created_at'))}")
+        print("System recommendations do not change the recruiter decision.")
+        print("=" * 60)
+    
 VALID_RESUME_EXTENSIONS = ('.pdf', '.docx')
 
 
