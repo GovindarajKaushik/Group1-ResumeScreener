@@ -6,3 +6,7 @@ __pycache__/
 
 # Generated application data
 /data/
+
+# Node / React frontend dependencies and builds
+node_modules/
+frontend/dist/
