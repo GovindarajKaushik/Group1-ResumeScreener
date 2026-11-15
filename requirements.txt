@@ -5,3 +5,4 @@ pypdf==6.20.0
 streamlit>=1.35.0
 fastapi>=0.115.0
 uvicorn>=0.30.0
+reportlab==5.1.0

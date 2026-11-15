@@ -6,6 +6,9 @@ import math
 import os
 import streamlit as st
 
+from OOP.candidate_report import CandidateReport
+from OOP.data_manager import ScreeningStore, StorageError
+
 
 # Shared dashboard/analytics card and SVG chart components
 class OverviewWidgets:
@@ -495,7 +498,33 @@ class CandidatesView(BasePageView):
         super().__init__("Candidates", "👥")
 
     def render(self):
+        # load saved candidates and allow Markdown preview + PDF download via CandidateReport
         st.subheader("Candidates")
+        try:
+            candidates = [
+                record.to_dict() for record in ScreeningStore().load_results()
+            ]
+        except StorageError as error:
+            st.error(f"Could not load saved results: {error}")
+            return
+
+        if not candidates:
+            st.info("No saved screening results found.")
+            return
+
+        candidate = st.selectbox(
+            "Select a candidate",
+            candidates,
+            format_func=lambda row: f"{row['candidate_id']} | {row['file_name']}",
+        )
+        report = CandidateReport(candidate)
+        st.markdown(report.to_markdown())
+        st.download_button(
+            label="Download candidate report (PDF)",
+            data=report.to_pdf(),
+            file_name=f"{candidate['candidate_id']}-screening-report.pdf",
+            mime="application/pdf",
+        )
 
 
 class JobPostingsView(BasePageView):
