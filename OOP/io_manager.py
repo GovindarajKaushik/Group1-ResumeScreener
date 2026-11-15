@@ -886,6 +886,66 @@ class ResumeImporter:
     clean_resume_text = _clean_text
     anonymize_resume_text = _anonymize_text
 
+class CandidateReport(ABC):
+    """Abstract base class defining the contract for candidate report generators."""
+    @abstractmethod
+    def generate_individual(self, candidate, output_path: str | Path) -> Path:
+        """Export a detailed report for a single candidate and return the output path."""
+        raise NotImplementedError
 
+    @abstractmethod
+    def generate_batch(
+        self, candidates: list, output_path: str | Path, job: Job | dict | None = None
+        ) -> Path:
+        """Export a summary report for a batch of candidates and return the output path."""
+        raise NotImplementedError
+
+class PdfCandidateReport(CandidateReport):
+    """Concrete report generator that exports individual and batch reports to PDF."""
+    def generate_individual(self, candidate, output_path: str | Path) -> Path:
+        raise NotImplementedError
+    def generate_batch(self, candidate, output_path: str | Path) -> Path:
+        raise NotImplementedError
+    @staticmethod
+    def _prepare_output_path(output_path: str | Path) -> Path:
+        target = Path(output_path)
+        if target.suffix.lower() != ".pdf":
+            target = target.with_suffix(".pdf")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        return target
+    def _create_pdf(self, fpdf_cls, title: str):
+        pdf = fpdf_cls()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.cell(0, 10, self._safe_text(title), ln=True)
+        pdf.set_font("Helvetica", "", 9)  
+        timestamp = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC")
+        pdf.cell(0, 6, f"Generated: {timestamp}", ln=True)
+        pdf.ln(4)
+        return pdf
+    def _add_section_heading(self, pdf, heading: str) -> None:
+        pdf.ln(3)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(0, 10, self._safe_text(heading), ln=True)
+        pdf.set_font("Helvetica", "", 10)
+    def _add_key_value(self, pdf, label: str, value) -> None:
+        text = f"{label}: {value if value is not None else 'Not Porvided'}"
+        pdf.multi_cell(0, 6, self._safe_text(text))
+    def _add_paragraph(self, pdf, text: str) -> None:
+        pdf.multi_cell(0, 6, self._safe_text(text))
+    @staticmethod
+    def _get_field(obj, key: str, default=None):
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+    @staticmethod
+    def _format_score(value) -> str:
+        if value is None:
+            return "Not scored"
+        return f"{value:g} / 100"
+    def _safe_text(value) -> str:
+        text = str(value ot "")
+        return text.encode("latin-1", "replace").decode("latin-1")
 if __name__ == "__main__":
     print("Start the application with: python main.py")
