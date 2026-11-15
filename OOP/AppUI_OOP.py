@@ -1,19 +1,28 @@
-# UI module for the Streamlit web app
+# Main controller module for the Object-Oriented Streamlit UI
 
+from datetime import datetime
 import math
 import os
 from tempfile import TemporaryDirectory
 import uuid
 import streamlit as st
-from pathlib import Path
 
 from OOP.io_manager import ResumeImporter
 from OOP.logic_manager import Job, ScreeningPreferences
-from OOP.data_manager import ScreeningStore, StorageError
-from OOP.candidate_report import CandidateReport
+from OOP.ui.ui_theme import UITheme
+from OOP.ui.ui_views import (
+    AnalyticsView,
+    BasePageView,
+    CandidatesView,
+    DashboardView,
+    JobPostingsView,
+    OverviewWidgets,
+    ResumeAnalyserView,
+    SettingsView,
+)
 
 
-# main Streamlit UI class handling layout and user inputs
+# Coordinates sidebar navigation, session state, file ingestion, and polymorphic page views
 class AppUI:
 
     PAGES = (
@@ -34,15 +43,36 @@ class AppUI:
         "Settings": "⚙️",
     }
 
-    def __init__(self, title: str = "Resume Analyser", io_manager: ResumeImporter | None = None):
+    def __init__(
+        self,
+        title: str = "Resume Analyser",
+        io_manager: ResumeImporter | None = None,
+        theme: UITheme | None = None,
+    ):
         self._title = str(title)
-        # use the provided ResumeImporter or create a default one for file validation and text extraction
+        # aggregation/composition of IO, theme, and view objects
         self._io_manager = io_manager or ResumeImporter()
+        self._theme = theme or UITheme()
+        self._widgets = OverviewWidgets()
+        self._views: dict[str, BasePageView] = {
+            "Dashboard": DashboardView(self._widgets),
+            "Resume Analyser": ResumeAnalyserView(self),
+            "Candidates": CandidatesView(),
+            "Job Postings": JobPostingsView(),
+            "Analytics": AnalyticsView(self._widgets),
+            "Settings": SettingsView(),
+        }
 
     @property
     def title(self) -> str:
         # read-only access to the app title
         return self._title
+
+    def register_view(self, view: BasePageView):
+        # allow new BasePageView subclasses to be registered without modifying routing logic (OCP)
+        if not isinstance(view, BasePageView):
+            raise TypeError("view must be an instance of BasePageView")
+        self._views[view.page_name] = view
 
     def setup_page(self):
         # set browser tab title, icon, and wide layout
@@ -51,260 +81,15 @@ class AppUI:
             page_icon="📄",
             layout="wide",
         )
-        self._inject_global_styles()
 
     def _inject_global_styles(self):
-        # inject Obsidian Black, Dark Red & Cool Silver design system variables, chrome cleanup, and reusable card classes
-        st.markdown(
-            """
-            <style>
-            :root {
-                --ra-bg-canvas: #09090B;
-                --ra-bg-surface: #121216;
-                --ra-border: #24242B;
-                --ra-text-primary: #F4F4F5;
-                --ra-text-muted: #A1A1AA;
-                --ra-accent-primary: #991B1B;
-                --ra-accent-hover: #DC2626;
-                --ra-accent-rose: #F87171;
-                --ra-accent-gold: #F59E0B;
-                --background-color: #09090B;
-                --secondary-background-color: #121216;
-                --text-color: #F4F4F5;
-                --primary-color: #991B1B;
-            }
-
-            /* Clean App Chrome */
-            #MainMenu,
-            footer,
-            header[data-testid="stHeader"],
-            div[data-testid="stToolbar"],
-            div[data-testid="stDecoration"] {
-                display: none !important;
-            }
-
-            /* Main Canvas & Sidebar Backgrounds */
-            .stApp,
-            div[data-testid="stAppViewContainer"],
-            section.main {
-                background-color: var(--ra-bg-canvas) !important;
-                color: var(--ra-text-primary) !important;
-            }
-
-            section[data-testid="stSidebar"] {
-                background-color: var(--ra-bg-surface) !important;
-                border-right: 1px solid var(--ra-border) !important;
-            }
-
-            section[data-testid="stSidebar"] > div:first-child {
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
-                padding-top: 1.25rem !important;
-                padding-bottom: 1.25rem !important;
-            }
-
-            /* Main Block Container Spacing */
-            .block-container {
-                padding-top: 1.75rem !important;
-                padding-bottom: 2.5rem !important;
-                padding-left: 2.25rem !important;
-                padding-right: 2.25rem !important;
-                max-width: 100% !important;
-            }
-
-            /* Typography */
-            h1, h2, h3, h4, h5, h6,
-            p, span, label, div[data-testid="stMarkdownContainer"] {
-                color: var(--ra-text-primary);
-            }
-
-            .stCaption, small, .ra-muted {
-                color: var(--ra-text-muted) !important;
-            }
-
-            /* Primary & Secondary Buttons */
-            .stButton > button[kind="primary"],
-            .stFormSubmitButton > button[kind="primary"] {
-                background-color: var(--ra-accent-primary) !important;
-                border: 1px solid var(--ra-accent-hover) !important;
-                color: var(--ra-text-primary) !important;
-                border-radius: 10px !important;
-                font-weight: 600 !important;
-                transition: background-color 0.18s ease, border-color 0.18s ease;
-            }
-
-            .stButton > button[kind="primary"]:hover,
-            .stFormSubmitButton > button[kind="primary"]:hover {
-                background-color: var(--ra-accent-hover) !important;
-                border-color: var(--ra-accent-rose) !important;
-            }
-
-            /* Sidebar Brand Header */
-            .ra-brand-header {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.25rem 0.25rem 1.25rem 0.25rem;
-                margin-bottom: 0.75rem;
-                border-bottom: 1px solid var(--ra-border);
-            }
-
-            .ra-brand-badge {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                background-color: var(--ra-accent-primary);
-                border: 1px solid var(--ra-accent-hover);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.2rem;
-                color: #FFFFFF;
-                flex-shrink: 0;
-                box-shadow: 0 4px 12px rgba(153, 27, 27, 0.35);
-            }
-
-            .ra-brand-title {
-                font-size: 1.05rem;
-                font-weight: 700;
-                color: var(--ra-text-primary);
-                line-height: 1.2;
-                margin: 0;
-            }
-
-            .ra-brand-subtitle {
-                font-size: 0.76rem;
-                color: var(--ra-text-muted);
-                line-height: 1.2;
-                margin-top: 2px;
-            }
-
-            /* Sidebar Navigation Pills */
-            section[data-testid="stSidebar"] .stButton > button {
-                width: 100% !important;
-                justify-content: flex-start !important;
-                text-align: left !important;
-                padding: 0.6rem 0.9rem !important;
-                border-radius: 9999px !important;
-                font-size: 0.9rem !important;
-                font-weight: 500 !important;
-                margin-bottom: 0.2rem !important;
-                transition: all 0.16s ease !important;
-            }
-
-            section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
-                background: transparent !important;
-                border: 1px solid transparent !important;
-                color: var(--ra-text-muted) !important;
-                box-shadow: none !important;
-            }
-
-            section[data-testid="stSidebar"] .stButton > button[kind="secondary"] p,
-            section[data-testid="stSidebar"] .stButton > button[kind="secondary"] span {
-                color: var(--ra-text-muted) !important;
-            }
-
-            section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
-                background-color: #1C1C22 !important;
-                border-color: var(--ra-border) !important;
-                color: var(--ra-text-primary) !important;
-            }
-
-            section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover p,
-            section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover span {
-                color: var(--ra-text-primary) !important;
-            }
-
-            section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
-                background: linear-gradient(90deg, #991B1B 0%, #DC2626 100%) !important;
-                border: 1px solid #DC2626 !important;
-                color: #FFFFFF !important;
-                font-weight: 600 !important;
-                box-shadow: 0 4px 14px rgba(153, 27, 27, 0.4) !important;
-            }
-
-            section[data-testid="stSidebar"] .stButton > button[kind="primary"] p,
-            section[data-testid="stSidebar"] .stButton > button[kind="primary"] span {
-                color: #FFFFFF !important;
-            }
-
-            /* Pinned Bottom Mode Indicator */
-            .ra-mode-box {
-                margin-top: 1.75rem;
-                background-color: rgba(153, 27, 27, 0.15);
-                border: 1px solid #991B1B;
-                border-radius: 12px;
-                padding: 0.75rem 0.9rem;
-                display: flex;
-                align-items: center;
-                gap: 0.65rem;
-            }
-
-            .ra-mode-icon {
-                font-size: 1rem;
-                color: var(--ra-accent-rose);
-                flex-shrink: 0;
-            }
-
-            .ra-mode-title {
-                font-size: 0.82rem;
-                font-weight: 600;
-                color: var(--ra-text-primary);
-                line-height: 1.25;
-            }
-
-            .ra-mode-desc {
-                font-size: 0.72rem;
-                color: var(--ra-text-muted);
-                line-height: 1.25;
-                margin-top: 2px;
-            }
-
-            /* Reusable Base Card Styles */
-            .ra-card,
-            div[data-testid="stVerticalBlockBorderWrapper"] {
-                background-color: var(--ra-bg-surface) !important;
-                border: 1px solid var(--ra-border) !important;
-                border-radius: 14px !important;
-                padding: 1.35rem 1.5rem !important;
-                box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.65) !important;
-            }
-
-            .ra-pill {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.35rem;
-                padding: 0.25rem 0.7rem;
-                border-radius: 9999px;
-                font-size: 0.78rem;
-                font-weight: 600;
-                background-color: rgba(153, 27, 27, 0.22);
-                color: var(--ra-accent-rose);
-                border: 1px solid var(--ra-accent-primary);
-            }
-
-            .ra-pill-gold {
-                background-color: rgba(245, 158, 11, 0.16);
-                color: var(--ra-accent-gold);
-                border: 1px solid rgba(245, 158, 11, 0.45);
-            }
-
-            .ra-divider,
-            hr {
-                border: none !important;
-                border-top: 1px solid var(--ra-border) !important;
-                margin: 1.15rem 0 !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+        self._theme.apply_global_styles()
 
     def _init_session_state(self):
         # keep form and screening data across Streamlit reruns
         defaults = {
-            "active_page": "Resume Analyser",
+            "active_page": "Dashboard",
+            "nav_tick": 0,
             "job_description": None,
             "preferences": ScreeningPreferences().to_dict(),
             "resumes": [],
@@ -420,20 +205,63 @@ class AppUI:
         return added_count, rejected
 
     def render_header(self):
-        # show app title at the top of the page
-        st.title(f"📄 {self._title}")
-        st.caption("INF1103 Phase 2 - Object-Oriented Streamlit Interface")
+        # top split header bar with title/subtitle on the left and utility controls on the right
+        has_api_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
+        mode_text = "Live Backend" if has_api_key else "Demo Mode"
+        action_text = "Connected" if has_api_key else "Connect"
+        last_updated = st.session_state.get("last_updated") or datetime.now().strftime("%H:%M:%S")
+        st.session_state["last_updated"] = last_updated
+
+        st.markdown(
+            f"""
+            <div class="ra-top-header">
+                <div>
+                    <h1 class="ra-header-title">
+                        Resume <span class="ra-header-title-accent">Analyser</span>
+                    </h1>
+                    <div class="ra-header-subtitle">
+                        AI-powered recruitment insights and candidate analysis.
+                    </div>
+                </div>
+                <div class="ra-header-controls">
+                    <div class="ra-status-pill">
+                        <span class="ra-status-dot"></span>
+                        <span>{mode_text}</span>
+                        <span class="ra-inline-connect-btn">{action_text}</span>
+                    </div>
+                    <div class="ra-refresh-btn" title="Refresh workspace">↻</div>
+                    <div class="ra-updated-pill">
+                        <span>🕒</span>
+                        <span>Last Updated: {last_updated}</span>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    def render_status_banner(self):
+        self._widgets.render_status_banner()
+
+    def render_kpi_summary_row(self):
+        self._widgets.render_kpi_summary_row()
+
+    def render_charts_row(self):
+        self._widgets.render_charts_row()
+
+    def render_operational_row(self):
+        self._widgets.render_operational_row()
 
     def render_sidebar(self) -> str:
-        # left sidebar with brand header, vertical pill navigation, and pinned bottom mode box
-        current_page = st.session_state.get("active_page", "Resume Analyser")
+        # sidebar with brand header, vertical pill navigation, and pinned bottom mode box
+        current_page = st.session_state.get("active_page", "Dashboard")
         if current_page not in self.PAGES:
-            current_page = "Resume Analyser"
+            current_page = "Dashboard"
             st.session_state["active_page"] = current_page
 
         has_api_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
         mode_label = "Live Backend" if has_api_key else "Demo Mode"
-        mode_desc = "OpenAI API key configured" if has_api_key else "Offline simulation & local scoring"
+        mode_sub = "OpenAI API connected" if has_api_key else "Using local/mock screening mode"
 
         with st.sidebar:
             st.markdown(
@@ -459,16 +287,14 @@ class AppUI:
                     use_container_width=True,
                 ):
                     st.session_state["active_page"] = page
+                    st.session_state["nav_tick"] = int(st.session_state.get("nav_tick", 0)) + 1
                     st.rerun()
 
             st.markdown(
                 f"""
                 <div class="ra-mode-box">
-                    <div class="ra-mode-icon">ℹ️</div>
-                    <div>
-                        <div class="ra-mode-title">{mode_label}</div>
-                        <div class="ra-mode-desc">{mode_desc}</div>
-                    </div>
+                    <div class="ra-mode-title">ℹ️ <span>{mode_label}</span></div>
+                    <div class="ra-mode-sub">{mode_sub}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -604,77 +430,19 @@ class AppUI:
                     st.session_state["rejected_resumes"] = []
                     st.rerun()
 
-    def render_dashboard_page(self):
-        st.subheader("Dashboard")
-
-    def render_screen_batch_page(self):
-        # batch screening page combining job setup and resume uploads
-        st.subheader("Resume Analyser")
-        self._render_job_form()
-        self._render_active_job_summary()
-        self._render_resume_upload_section()
-        st.info("Step 4 will connect AIManager and ScoringEngine to screen the loaded resumes.")
-
-    def render_saved_results_page(self):
-        # placeholder until DataManager is ready
-        st.subheader("View Saved Results")
-
-        try:
-            candidates = [
-                record.to_dict() for record in ScreeningStore().load_results()
-            ]
-        except StorageError as error:
-            st.error(f"Could not load saved results: {error}")
-            return
-
-        if not candidates:
-            st.info("No saved screening results found.")
-            return
-
-        candidate = st.selectbox(
-            "Select a candidate",
-            candidates,
-            format_func=lambda row: f"{row['candidate_id']} | {row['file_name']}",
-        )
-
-        report = CandidateReport(candidate)
-        st.markdown(report.to_markdown())
-        st.download_button(
-            label="Download candidate report (PDF)",
-            data=report.to_pdf(),
-            file_name=f"{candidate['candidate_id']}-screening-report.pdf",
-            mime="application/pdf",
-        )
-
-    def render_review_candidates_page(self):
-        self.render_saved_results_page()
-
-    def render_manage_jobs_page(self):
-        st.subheader("Job Postings")
-
-    def render_analytics_page(self):
-        st.subheader("Analytics")
-
-    def render_settings_page(self):
-        st.subheader("Settings")
-
     def render_body(self, selected_page: str):
-        # route to whichever page was picked in the sidebar
-        page_routes = {
-            "Dashboard": self.render_dashboard_page,
-            "Resume Analyser": self.render_screen_batch_page,
-            "Candidates": self.render_review_candidates_page,
-            "Job Postings": self.render_manage_jobs_page,
-            "Analytics": self.render_analytics_page,
-            "Settings": self.render_settings_page,
-        }
-        renderer = page_routes.get(selected_page, self.render_screen_batch_page)
-        renderer()
+        # apply view transition animation and polymorphically render the active BasePageView
+        nav_tick = int(st.session_state.get("nav_tick", 0))
+        self._theme.apply_view_transition(nav_tick)
+
+        view = self._views.get(selected_page, self._views["Dashboard"])
+        view.render()
 
     def run(self):
         # main entry point for rendering the Streamlit UI
         self.setup_page()
         self._init_session_state()
+        self._inject_global_styles()
         selected_page = self.render_sidebar()
         self.render_header()
         self.render_body(selected_page)
