@@ -5,9 +5,12 @@ import os
 from tempfile import TemporaryDirectory
 import uuid
 import streamlit as st
+from pathlib import Path
 
 from OOP.io_manager import ResumeImporter
 from OOP.logic_manager import Job, ScreeningPreferences
+from OOP.data_manager import ScreeningStore, StorageError
+from OOP.candidate_report import CandidateReport
 
 
 # main Streamlit UI class handling layout and user inputs
@@ -610,9 +613,41 @@ class AppUI:
         self._render_job_form()
         self._render_active_job_summary()
         self._render_resume_upload_section()
+        st.info("Step 4 will connect AIManager and ScoringEngine to screen the loaded resumes.")
+
+    def render_saved_results_page(self):
+        # placeholder until DataManager is ready
+        st.subheader("View Saved Results")
+
+        try:
+            candidates = [
+                record.to_dict() for record in ScreeningStore().load_results()
+            ]
+        except StorageError as error:
+            st.error(f"Could not load saved results: {error}")
+            return
+
+        if not candidates:
+            st.info("No saved screening results found.")
+            return
+
+        candidate = st.selectbox(
+            "Select a candidate",
+            candidates,
+            format_func=lambda row: f"{row['candidate_id']} | {row['file_name']}",
+        )
+
+        report = CandidateReport(candidate)
+        st.markdown(report.to_markdown())
+        st.download_button(
+            label="Download candidate report (PDF)",
+            data=report.to_pdf(),
+            file_name=f"{candidate['candidate_id']}-screening-report.pdf",
+            mime="application/pdf",
+        )
 
     def render_review_candidates_page(self):
-        st.subheader("Candidates")
+        self.render_saved_results_page()
 
     def render_manage_jobs_page(self):
         st.subheader("Job Postings")
