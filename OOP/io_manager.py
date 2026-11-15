@@ -891,7 +891,61 @@ class CandidateReport(ABC):
     @abstractmethod
     def generate_individual(self, candidate, output_path: str | Path) -> Path:
         """Export a detailed report for a single candidate and return the output path."""
-        raise NotImplementedError
+        if candidate is None:
+           raise ValueError("Candidate cannot be None.")
+        from fpdf import FPDF
+        target = self._prepare_output_path(output_path)
+        pdf = self._create_pdf(FPDF, "Candidate Screening Report")
+        cid = self._get_field(candidate, "candidate_id", "Not provided")
+        file_name = self._get_field(candidate, "file_name", "Not provided")
+        job_title = self._get_field(candidate, "job_title", "Not provided")
+        job_id = self._get_field(candidate, "job_id", "Not recorded")
+        final_score = self._get_field(candidate, "final_score", None)
+        status = self._get_field(candidate, "status", "Not provided")
+        fast_track = bool(self._get_field(candidate, "fast_track", False))
+        decision = self._get_field(candidate, "recruiter_decision", "pending") or "pending"
+        skills_score = self._get_field(candidate, "skills_score", None)
+        notes = self._get_field(candidate, "notes", []) or []
+        ai_result = self._get_field(candidate, "ai_result", None)
+        source = ai_result if isinstance(ai_result, dict) else candidate
+        confidence = self._get_field(source, "confidence", "Not provided")
+        exp_score = self._get_field(source, "experience_score", None)
+        edu_score = self._get_field(source, "education_score", None)
+        skills_present = self._get_field(source, "skills_present", []) or []
+        skills_missing = self._get_field(source, "skills_missing", []) or []
+        evidence = self._get_field(source, "evidence", "") or "Not provided"
+        summary = self._get_field(source, "summary", "") or "Not provided"
+        self._add_section_heading(pdf, "Candidate Overview")
+        self._add_key_value(pdf, "Candidate ID", cid)
+        self._add_key_value(pdf, "Resume File", file_name)
+        self._add_key_value(pdf, "Role", f"{job_title} ({job_id})")
+        self._add_key_value(pdf, "Final Score", self._format_score(final_score))
+        self._add_key_value(pdf, "Recommendation", status)
+        self._add_key_value(pdf, "Fast-Track", "Yes" if fast_track else "No")
+        self._add_key_value(pdf, "Recruiter Decision", decision)
+        self._add_key_value(pdf, "AI Confidence", confidence)
+        self._add_section_heading(pdf, "Criterion Scores")
+        self._add_key_value(pdf, "Skills", self._format_score(skills_score))
+        self._add_key_value(pdf, "Experience", self._format_score(exp_score))
+        self._add_key_value(pdf, "Education", self._format_score(edu_score))
+        self._add_section_heading(pdf, "Skills and Evidence")
+        self._add_key_value(
+            pdf, "Skills Present", ", ".join(skills_present) or "None reported"
+        )
+        self._add_key_value(
+            pdf, "Skills Missing", ", ".join(skills_missing) or "None reported"
+        )
+        self._add_paragraph(pdf, f"Evidence: {evidence}")
+        self._add_section_heading(pdf, "AI Summary")
+        self._add_paragraph(pdf, summary)
+        self._add_section_heading(pdf, "Scoring Notes")
+        if notes:
+            for note in notes:
+                self._add_paragraph(pdf, f"- {note}")
+        else:
+            self._add_paragraph(pdf, "None recorded.")
+        pdf.output(str(target))
+        return target
 
     @abstractmethod
     def generate_batch(
@@ -945,7 +999,7 @@ class PdfCandidateReport(CandidateReport):
             return "Not scored"
         return f"{value:g} / 100"
     def _safe_text(value) -> str:
-        text = str(value ot "")
+        text = str(value or "")
         return text.encode("latin-1", "replace").decode("latin-1")
 if __name__ == "__main__":
     print("Start the application with: python main.py")
