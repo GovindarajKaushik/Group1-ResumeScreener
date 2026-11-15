@@ -7,7 +7,7 @@ import uuid
 import streamlit as st
 from pathlib import Path
 
-from OOP.io_manager import IOManager
+from OOP.io_manager import ResumeImporter
 from OOP.logic_manager import Job, ScreeningPreferences
 from OOP.data_manager import ScreeningStore, StorageError
 from OOP.candidate_report import CandidateReport
@@ -17,19 +17,27 @@ from OOP.candidate_report import CandidateReport
 class AppUI:
 
     PAGES = (
-        "Screen New Batch",
-        "View Saved Results",
-        "Review Candidates",
-        "Manage Jobs",
+        "Dashboard",
+        "Resume Analyser",
+        "Candidates",
+        "Job Postings",
+        "Analytics",
+        "Settings",
     )
 
-    def __init__(self, title: str = "AI Resume Screener", io_manager: IOManager | None = None):
+    NAV_ICONS = {
+        "Dashboard": "📊",
+        "Resume Analyser": "📄",
+        "Candidates": "👥",
+        "Job Postings": "💼",
+        "Analytics": "📈",
+        "Settings": "⚙️",
+    }
+
+    def __init__(self, title: str = "Resume Analyser", io_manager: ResumeImporter | None = None):
         self._title = str(title)
-        # use the provided IOManager or create a default one for file validation and text extraction
-        self._io_manager = io_manager or IOManager()
-        # guard against the typo in IOManager.__init__ (__vaild_resume_extensions)
-        if not hasattr(self._io_manager, "_IOManager__valid_resume_extensions"):
-            setattr(self._io_manager, "_IOManager__valid_resume_extensions", (".pdf", ".docx"))
+        # use the provided ResumeImporter or create a default one for file validation and text extraction
+        self._io_manager = io_manager or ResumeImporter()
 
     @property
     def title(self) -> str:
@@ -43,10 +51,260 @@ class AppUI:
             page_icon="📄",
             layout="wide",
         )
+        self._inject_global_styles()
+
+    def _inject_global_styles(self):
+        # inject Obsidian Black, Dark Red & Cool Silver design system variables, chrome cleanup, and reusable card classes
+        st.markdown(
+            """
+            <style>
+            :root {
+                --ra-bg-canvas: #09090B;
+                --ra-bg-surface: #121216;
+                --ra-border: #24242B;
+                --ra-text-primary: #F4F4F5;
+                --ra-text-muted: #A1A1AA;
+                --ra-accent-primary: #991B1B;
+                --ra-accent-hover: #DC2626;
+                --ra-accent-rose: #F87171;
+                --ra-accent-gold: #F59E0B;
+                --background-color: #09090B;
+                --secondary-background-color: #121216;
+                --text-color: #F4F4F5;
+                --primary-color: #991B1B;
+            }
+
+            /* Clean App Chrome */
+            #MainMenu,
+            footer,
+            header[data-testid="stHeader"],
+            div[data-testid="stToolbar"],
+            div[data-testid="stDecoration"] {
+                display: none !important;
+            }
+
+            /* Main Canvas & Sidebar Backgrounds */
+            .stApp,
+            div[data-testid="stAppViewContainer"],
+            section.main {
+                background-color: var(--ra-bg-canvas) !important;
+                color: var(--ra-text-primary) !important;
+            }
+
+            section[data-testid="stSidebar"] {
+                background-color: var(--ra-bg-surface) !important;
+                border-right: 1px solid var(--ra-border) !important;
+            }
+
+            section[data-testid="stSidebar"] > div:first-child {
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+                padding-top: 1.25rem !important;
+                padding-bottom: 1.25rem !important;
+            }
+
+            /* Main Block Container Spacing */
+            .block-container {
+                padding-top: 1.75rem !important;
+                padding-bottom: 2.5rem !important;
+                padding-left: 2.25rem !important;
+                padding-right: 2.25rem !important;
+                max-width: 100% !important;
+            }
+
+            /* Typography */
+            h1, h2, h3, h4, h5, h6,
+            p, span, label, div[data-testid="stMarkdownContainer"] {
+                color: var(--ra-text-primary);
+            }
+
+            .stCaption, small, .ra-muted {
+                color: var(--ra-text-muted) !important;
+            }
+
+            /* Primary & Secondary Buttons */
+            .stButton > button[kind="primary"],
+            .stFormSubmitButton > button[kind="primary"] {
+                background-color: var(--ra-accent-primary) !important;
+                border: 1px solid var(--ra-accent-hover) !important;
+                color: var(--ra-text-primary) !important;
+                border-radius: 10px !important;
+                font-weight: 600 !important;
+                transition: background-color 0.18s ease, border-color 0.18s ease;
+            }
+
+            .stButton > button[kind="primary"]:hover,
+            .stFormSubmitButton > button[kind="primary"]:hover {
+                background-color: var(--ra-accent-hover) !important;
+                border-color: var(--ra-accent-rose) !important;
+            }
+
+            /* Sidebar Brand Header */
+            .ra-brand-header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.25rem 0.25rem 1.25rem 0.25rem;
+                margin-bottom: 0.75rem;
+                border-bottom: 1px solid var(--ra-border);
+            }
+
+            .ra-brand-badge {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background-color: var(--ra-accent-primary);
+                border: 1px solid var(--ra-accent-hover);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                color: #FFFFFF;
+                flex-shrink: 0;
+                box-shadow: 0 4px 12px rgba(153, 27, 27, 0.35);
+            }
+
+            .ra-brand-title {
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--ra-text-primary);
+                line-height: 1.2;
+                margin: 0;
+            }
+
+            .ra-brand-subtitle {
+                font-size: 0.76rem;
+                color: var(--ra-text-muted);
+                line-height: 1.2;
+                margin-top: 2px;
+            }
+
+            /* Sidebar Navigation Pills */
+            section[data-testid="stSidebar"] .stButton > button {
+                width: 100% !important;
+                justify-content: flex-start !important;
+                text-align: left !important;
+                padding: 0.6rem 0.9rem !important;
+                border-radius: 9999px !important;
+                font-size: 0.9rem !important;
+                font-weight: 500 !important;
+                margin-bottom: 0.2rem !important;
+                transition: all 0.16s ease !important;
+            }
+
+            section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+                background: transparent !important;
+                border: 1px solid transparent !important;
+                color: var(--ra-text-muted) !important;
+                box-shadow: none !important;
+            }
+
+            section[data-testid="stSidebar"] .stButton > button[kind="secondary"] p,
+            section[data-testid="stSidebar"] .stButton > button[kind="secondary"] span {
+                color: var(--ra-text-muted) !important;
+            }
+
+            section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+                background-color: #1C1C22 !important;
+                border-color: var(--ra-border) !important;
+                color: var(--ra-text-primary) !important;
+            }
+
+            section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover p,
+            section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover span {
+                color: var(--ra-text-primary) !important;
+            }
+
+            section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+                background: linear-gradient(90deg, #991B1B 0%, #DC2626 100%) !important;
+                border: 1px solid #DC2626 !important;
+                color: #FFFFFF !important;
+                font-weight: 600 !important;
+                box-shadow: 0 4px 14px rgba(153, 27, 27, 0.4) !important;
+            }
+
+            section[data-testid="stSidebar"] .stButton > button[kind="primary"] p,
+            section[data-testid="stSidebar"] .stButton > button[kind="primary"] span {
+                color: #FFFFFF !important;
+            }
+
+            /* Pinned Bottom Mode Indicator */
+            .ra-mode-box {
+                margin-top: 1.75rem;
+                background-color: rgba(153, 27, 27, 0.15);
+                border: 1px solid #991B1B;
+                border-radius: 12px;
+                padding: 0.75rem 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 0.65rem;
+            }
+
+            .ra-mode-icon {
+                font-size: 1rem;
+                color: var(--ra-accent-rose);
+                flex-shrink: 0;
+            }
+
+            .ra-mode-title {
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--ra-text-primary);
+                line-height: 1.25;
+            }
+
+            .ra-mode-desc {
+                font-size: 0.72rem;
+                color: var(--ra-text-muted);
+                line-height: 1.25;
+                margin-top: 2px;
+            }
+
+            /* Reusable Base Card Styles */
+            .ra-card,
+            div[data-testid="stVerticalBlockBorderWrapper"] {
+                background-color: var(--ra-bg-surface) !important;
+                border: 1px solid var(--ra-border) !important;
+                border-radius: 14px !important;
+                padding: 1.35rem 1.5rem !important;
+                box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.65) !important;
+            }
+
+            .ra-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 0.25rem 0.7rem;
+                border-radius: 9999px;
+                font-size: 0.78rem;
+                font-weight: 600;
+                background-color: rgba(153, 27, 27, 0.22);
+                color: var(--ra-accent-rose);
+                border: 1px solid var(--ra-accent-primary);
+            }
+
+            .ra-pill-gold {
+                background-color: rgba(245, 158, 11, 0.16);
+                color: var(--ra-accent-gold);
+                border: 1px solid rgba(245, 158, 11, 0.45);
+            }
+
+            .ra-divider,
+            hr {
+                border: none !important;
+                border-top: 1px solid var(--ra-border) !important;
+                margin: 1.15rem 0 !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
     def _init_session_state(self):
         # keep form and screening data across Streamlit reruns
         defaults = {
+            "active_page": "Resume Analyser",
             "job_description": None,
             "preferences": ScreeningPreferences().to_dict(),
             "resumes": [],
@@ -109,7 +367,7 @@ class AppUI:
         return job, preferences
 
     def _process_uploaded_file(self, file_name: str, file_bytes: bytes, temp_dir: str) -> dict:
-        # write uploaded bytes to a temp file so IOManager can validate, extract, and anonymize it
+        # write uploaded bytes to a temp file so ResumeImporter can validate, extract, and anonymize it
         safe_name = os.path.basename(file_name)
         temp_path = os.path.join(temp_dir, safe_name)
         with open(temp_path, "wb") as handle:
@@ -167,20 +425,56 @@ class AppUI:
         st.caption("INF1103 Phase 2 - Object-Oriented Streamlit Interface")
 
     def render_sidebar(self) -> str:
-        # sidebar for switching pages and seeing quick session stats
+        # left sidebar with brand header, vertical pill navigation, and pinned bottom mode box
+        current_page = st.session_state.get("active_page", "Resume Analyser")
+        if current_page not in self.PAGES:
+            current_page = "Resume Analyser"
+            st.session_state["active_page"] = current_page
+
+        has_api_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
+        mode_label = "Live Backend" if has_api_key else "Demo Mode"
+        mode_desc = "OpenAI API key configured" if has_api_key else "Offline simulation & local scoring"
+
         with st.sidebar:
-            st.header("Navigation")
-            selected_page = st.radio("Go to", self.PAGES, key="active_page")
+            st.markdown(
+                """
+                <div class="ra-brand-header">
+                    <div class="ra-brand-badge">📄</div>
+                    <div>
+                        <div class="ra-brand-title">Resume Analyser</div>
+                        <div class="ra-brand-subtitle">AI-Powered Recruitment</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-            st.divider()
-            st.subheader("Session Summary")
-            job = st.session_state.get("job_description")
-            job_label = job["title"] if job and job.get("title") else "Not set"
-            st.write(f"**Active Role:** {job_label}")
-            st.write(f"**Resumes Loaded:** {len(st.session_state.get('resumes', []))}")
-            st.write(f"**Screened:** {len(st.session_state.get('results', {}))}")
+            for page in self.PAGES:
+                icon = self.NAV_ICONS.get(page, "•")
+                is_active = page == current_page
+                if st.button(
+                    f"{icon}  {page}",
+                    key=f"nav_btn_{page}",
+                    type="primary" if is_active else "secondary",
+                    use_container_width=True,
+                ):
+                    st.session_state["active_page"] = page
+                    st.rerun()
 
-        return selected_page
+            st.markdown(
+                f"""
+                <div class="ra-mode-box">
+                    <div class="ra-mode-icon">ℹ️</div>
+                    <div>
+                        <div class="ra-mode-title">{mode_label}</div>
+                        <div class="ra-mode-desc">{mode_desc}</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        return st.session_state["active_page"]
 
     def _render_job_form(self):
         # pre-fill the form if a job was already saved in this session
@@ -271,7 +565,7 @@ class AppUI:
                 st.rerun()
 
     def _render_resume_upload_section(self):
-        # let the recruiter upload PDF or DOCX resumes and process them with IOManager
+        # let the recruiter upload PDF or DOCX resumes and process them with ResumeImporter
         st.divider()
         st.markdown("#### 2. Upload Candidate Resumes")
 
@@ -310,9 +604,12 @@ class AppUI:
                     st.session_state["rejected_resumes"] = []
                     st.rerun()
 
+    def render_dashboard_page(self):
+        st.subheader("Dashboard")
+
     def render_screen_batch_page(self):
         # batch screening page combining job setup and resume uploads
-        st.subheader("Screen New Batch")
+        st.subheader("Resume Analyser")
         self._render_job_form()
         self._render_active_job_summary()
         self._render_resume_upload_section()
@@ -328,6 +625,10 @@ class AppUI:
             ]
         except StorageError as error:
             st.error(f"Could not load saved results: {error}")
+            return
+
+        if not candidates:
+            st.info("No saved screening results found.")
             return
 
         candidate = st.selectbox(
@@ -346,22 +647,26 @@ class AppUI:
         )
 
     def render_review_candidates_page(self):
-        # placeholder until DataManager is ready
-        st.subheader("Review Candidates")
-        st.info("Will connect to DataManager once completed.")
+        self.render_saved_results_page()
 
     def render_manage_jobs_page(self):
-        # placeholder until DataManager is ready
-        st.subheader("Manage Jobs")
-        st.info("Will connect to DataManager once completed.")
+        st.subheader("Job Postings")
+
+    def render_analytics_page(self):
+        st.subheader("Analytics")
+
+    def render_settings_page(self):
+        st.subheader("Settings")
 
     def render_body(self, selected_page: str):
         # route to whichever page was picked in the sidebar
         page_routes = {
-            "Screen New Batch": self.render_screen_batch_page,
-            "View Saved Results": self.render_saved_results_page,
-            "Review Candidates": self.render_review_candidates_page,
-            "Manage Jobs": self.render_manage_jobs_page,
+            "Dashboard": self.render_dashboard_page,
+            "Resume Analyser": self.render_screen_batch_page,
+            "Candidates": self.render_review_candidates_page,
+            "Job Postings": self.render_manage_jobs_page,
+            "Analytics": self.render_analytics_page,
+            "Settings": self.render_settings_page,
         }
         renderer = page_routes.get(selected_page, self.render_screen_batch_page)
         renderer()
