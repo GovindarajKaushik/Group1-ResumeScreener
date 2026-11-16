@@ -6,7 +6,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-
+from contextlib import redirect_stdout
+from types import SimpleNamespace
 from docx import Document
 
 from OOP.io_manager import (
@@ -194,6 +195,83 @@ class TestConsoleUIHelpers(unittest.TestCase):
         with patch("builtins.input", side_effect=["9", "2"]), patch("sys.stdout", new_callable=io.StringIO):
             self.assertEqual(ui.get_main_menu_choice(), "2")
 
+
+class TestConsoleUISkillFilter(unittest.TestCase):
+    def setUp(self):
+        self.ui = ConsoleUI()
+        self.c1 = {
+            "candidate_id": "C001",
+            "file_name": "resume_01_strong.docx",
+            "job_id": "J001",
+            "job_title": "Data Analyst",
+            "final_score": 59,
+            "skills_score": 62.5,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "shortlisted",
+            "skills_present": ["Python", "SQL", "AWS"],
+            "skills_missing": ["Excel", "Agile"],
+            "experience_score": 95.0,
+            "education_score": 100.0,
+            "confidence": "high",
+        }
+        self.c2 = SimpleNamespace(
+            candidate_id="C002",
+            file_name="resume_02_missing.docx",
+            job_id="J001",
+            job_title="Data Analyst",
+            final_score=59,
+            skills_score=50.0,
+            status="SECONDARY_REVIEW",
+            fast_track=False,
+            recruiter_decision="pending",
+            skills_present=["Python", "SQL"],
+            skills_missing=["Excel", "AWS", "Agile"],
+            experience_score=95.0,
+            education_score=75.0,
+            confidence="high",
+        )
+        self.c3 = {
+            "candidate_id": "C003",
+            "file_name": "resume_03_weak.docx",
+            "job_id": "J001",
+            "job_title": "Data Analyst",
+            "final_score": 23,
+            "skills_score": 0.0,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "rejected",
+            "skills_present": [],
+            "skills_missing": ["Python", "SQL", "Excel"],
+            "experience_score": 50.0,
+            "education_score": 40.0,
+            "confidence": "high",
+        }
+        self.candidates = [self.c3, self.c1, self.c2]
+    def test_collect_skill_filter_parses_and_deduplicates(self):
+        with patch("builtins.input", return_value=" Python, sql , python , AWS "):
+            skills = self.ui.collect_skill_filter()
+        self.assertEqual(skills, ["Python", "sql", "AWS"])
+    def test_filter_candidates_by_skills_matches_and_sorts_by_score(self):
+        matches = self.ui.filter_candidates_by_skills(
+            self.candidates, ["python", "sql"]
+        )
+        self.assertEqual(len(matches), 2)
+        ids = [self.ui._get_candidate_field(c, "candidate_id") for c in matches]
+        self.assertEqual(ids, ["C001", "C002"])
+    def test_filter_candidates_by_skills_narrows_to_aws(self):
+        matches = self.ui.filter_candidates_by_skills(self.candidates, ["AWS"])
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["candidate_id"], "C001")
+    def test_show_skill_filtered_results_prints_no_match_message(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            result = self.ui.show_skill_filtered_results(
+                self.candidates, ["Kubernetes"]
+            )
+        self.assertEqual(result, [])
+        self.assertIn("No candidates matched all requested skills.", buf.getvalue())
+        
 
 if __name__ == "__main__":
     unittest.main()
