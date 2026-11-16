@@ -635,6 +635,67 @@ class ConsoleUI:
         """Print an error message to the user."""
         print(f"Error: {text}")
 
+    def _get_candidate_field(self, candidate, key: str, default=None):
+        """Read a field from a dict or object candidate, falling back to nested ai_result."""
+        if isinstance(candidate, dict):
+            if key in candidate and candidate[key] is not None:
+                return candidate[key]
+            ai_result = candidate.get("ai_result")
+            if isinstance(ai_result, dict) and key in ai_result:
+                return ai_result[key]
+            return default
+        value = getattr(candidate, key, None)
+        if value is not None:
+            return value
+        ai_result = getattr(candidate, "ai_result", None)
+        if isinstance(ai_result, dict):
+            return ai_result.get(key, default)
+        return getattr(ai_result, key, default) if ai_result is not None else default
+
+    def collect_skill_filter(self) -> list[str]:
+        """Prompt for comma-separated skills to filter candidates (Enter to skip)."""
+        raw = input(
+            "\nEnter skill(s) to filter by (comma-separated, or press Enter for all): "
+        ).strip()
+        if not raw:
+            return []
+        return self._parse_skill_list(raw)
+
+    def filter_candidates_by_skills( self, candidates: list, required_skills: list[str]) -> list:
+        """Return candidates matching all requested skills, sorted by final_score descending."""
+        wanted = [skill.strip().lower() for skill in required_skills if skill.strip()]
+        if not wanted:
+            matched = list(candidates)
+        else:
+            matched = []
+            for candidate in candidates:
+                present = self._get_candidate_field(candidate, "skills_present", []) or []
+                present_lower = {str(s).strip().lower() for s in present}
+                if all(req in present_lower for req in wanted):
+                    matched.append(candidate)
+
+        def sort_key(cand):
+            score = self._get_candidate_field(cand, "final_score", None)
+            return (score is not None, float(score) if score is not None else -1.0)
+
+        return sorted(matched, key=sort_key, reverse=True)
+
+    def show_skill_filtered_results(
+        self, candidates: list, required_skills: list[str]
+    ) -> list:
+        """Filter candidates by skills, display ranked matches, and return the filtered list."""
+        filtered = self.filter_candidates_by_skills(candidates, required_skills)
+        skill_label = ", ".join(required_skills) if required_skills else "All skills"
+        print(
+            f"\n--- Skill Filter [{skill_label}]: "
+            f"{len(filtered)} of {len(candidates)} candidate(s) matched (ranked best first) ---"
+        )
+        if not filtered:
+            print("No candidates matched all requested skills.")
+            return []
+        self.show_saved_results(filtered)
+        return filtered
+
     def _format_timestamp(self, value) -> str:
         """Display ISO dates readably without changing stored data or guessing old timezones."""
         if not value:
