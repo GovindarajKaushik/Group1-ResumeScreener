@@ -271,7 +271,64 @@ class TestConsoleUISkillFilter(unittest.TestCase):
             )
         self.assertEqual(result, [])
         self.assertIn("No candidates matched all requested skills.", buf.getvalue())
-        
+class TestConsoleUICandidateComparison(unittest.TestCase):
+
+    def setUp(self):
+        self.ui = ConsoleUI()
+        self.c1 = {
+            "candidate_id": "C001",
+            "file_name": "resume_01_strong.docx",
+            "job_title": "Data Analyst",
+            "final_score": 59,
+            "skills_score": 62.5,
+            "experience_score": 95.0,
+            "education_score": 100.0,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "shortlisted",
+            "confidence": "high",
+            "skills_present": ["Python", "SQL", "AWS"],
+            "skills_missing": ["Excel", "Agile"],
+        }
+        self.c2 = {
+            "candidate_id": "C002",
+            "file_name": "resume_02_missing.docx",
+            "job_title": "Data Analyst",
+            "final_score": 59,
+            "skills_score": 50.0,
+            "experience_score": 95.0,
+            "education_score": 75.0,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "pending",
+            "confidence": "high",
+            "skills_present": ["Python", "SQL"],
+            "skills_missing": ["Excel", "AWS", "Agile"],
+        }
+    def test_select_candidates_for_comparison_requires_at_least_two(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            result = self.ui.select_candidates_for_comparison([self.c1])
+        self.assertIsNone(result)
+        self.assertIn("At least 2 candidates are required", buf.getvalue())
+    def test_select_candidates_for_comparison_rejects_duplicate_and_returns_pair(self):
+        with patch("builtins.input", side_effect=["C001", "C001", "C002"]):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                pair = self.ui.select_candidates_for_comparison([self.c1, self.c2])
+        self.assertEqual(pair, (self.c1, self.c2))
+        self.assertIn("Please select a different candidate ID", buf.getvalue())
+    def test_show_candidate_comparison_prints_side_by_side_table(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.ui.show_candidate_comparison(self.c1, self.c2)
+        output = buf.getvalue()
+        self.assertIn("CANDIDATE SIDE-BY-SIDE COMPARISON", output)
+        self.assertIn("C001", output)
+        self.assertIn("C002", output)
+        self.assertIn("62.5 / 100", output)
+        self.assertIn("50 / 100", output)
+        self.assertIn("Python, SQL, AWS", output)
 
 if __name__ == "__main__":
     unittest.main()
