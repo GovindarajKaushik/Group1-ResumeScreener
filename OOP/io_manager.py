@@ -696,6 +696,34 @@ class ConsoleUI:
         self.show_saved_results(filtered)
         return filtered
 
+    def select_candidates_for_comparison(
+        self, candidates: list
+    ) -> tuple | None:
+        """Prompt the user to select two distinct candidates from the list for comparison."""
+        if len(candidates) < 2:
+            print("At least 2 candidates are required for side-by-side comparison.")
+            return None
+        first = self.select_saved_candidate(
+            candidates,
+            prompt="\nEnter first candidate ID to compare (or press Enter to cancel): ",
+        )
+        if first is None:
+            return None
+        first_id = str(self._get_candidate_field(first, "candidate_id", "")).upper()
+        while True:
+            second = self.select_saved_candidate(
+                candidates,
+                prompt="Enter second candidate ID to compare (or press Enter to cancel): ",
+            )
+            if second is None:
+                return None
+            second_id = str(
+                self._get_candidate_field(second, "candidate_id", "")
+            ).upper()
+            if second_id != first_id:
+                return first, second
+            print("Please select a different candidate ID for comparison.")
+
     def _format_timestamp(self, value) -> str:
         """Display ISO dates readably without changing stored data or guessing old timezones."""
         if not value:
