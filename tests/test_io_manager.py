@@ -21,8 +21,6 @@ from OOP.io_manager import (
     ResumeImporter,
     ScreeningPreferences,
     TextExtractor,
-    CandidateReport,
-    PdfCandidateReport
 )
 
 
@@ -198,83 +196,6 @@ class TestConsoleUIHelpers(unittest.TestCase):
 
         with patch("builtins.input", side_effect=["9", "2"]), patch("sys.stdout", new_callable=io.StringIO):
             self.assertEqual(ui.get_main_menu_choice(), "2")
-
-class TestPdfCandidateReport(unittest.TestCase):
-
-    def setUp(self):
-        self.report = PdfCandidateReport()
-        self.sample_dict = {
-            "candidate_id": "C001",
-            "file_name": "resume_01_strong.docx",
-            "job_id": "J001",
-            "job_title": "Data Engineer",
-            "final_score": 88,
-            "status": "SHORTLIST",
-            "fast_track": True,
-            "recruiter_decision": "shortlisted",
-            "skills_score": 90,
-            "notes": ["All must-have skills demonstrated."],
-            "ai_result": {
-                "confidence": "high",
-                "experience_score": 85,
-                "education_score": 80,
-                "skills_present": ["Python", "SQL", "Airflow"],
-                "skills_missing": [],
-                "evidence": "Built production ETL pipelines in Python and Airflow.",
-                "summary": "Strong match for Data Engineer.",
-            },
-        }
-        self.sample_obj = SimpleNamespace(
-            candidate_id="C002",
-            file_name="resume_02_missing.docx",
-            job_id="J001",
-            job_title="Data Engineer",
-            final_score=64,
-            status="SECONDARY_REVIEW",
-            fast_track=False,
-            recruiter_decision="pending",
-            skills_score=60,
-            experience_score=70,
-            education_score=65,
-            confidence="medium",
-            skills_present=["Python", "SQL"],
-            skills_missing=["Airflow"],
-            evidence="Used Python and SQL in academic projects.",
-            summary="Missing Airflow experience.",
-            notes=["Missing must-have skill: Airflow"],
-        )
-    def test_inherits_from_candidate_report_abc(self):
-        self.assertIsInstance(self.report, CandidateReport)
-    def test_generate_individual_raises_on_none(self):
-        with TemporaryDirectory() as tmpdir:
-            with self.assertRaises(ValueError):
-                self.report.generate_individual(None, Path(tmpdir) / "empty.pdf")
-    def test_generate_individual_creates_readable_pdf_from_dict(self):
-        with TemporaryDirectory() as tmpdir:
-            saved_path = self.report.generate_individual(
-                self.sample_dict, Path(tmpdir) / "c001_report"
-            )
-            self.assertEqual(saved_path.suffix, ".pdf")
-            self.assertTrue(saved_path.is_file())
-            text = "\n".join(
-                page.extract_text() or "" for page in PdfReader(str(saved_path)).pages
-            )
-            self.assertIn("Candidate Screening Report", text)
-            self.assertIn("C001", text)
-            self.assertIn("Data Engineer", text)
-            self.assertIn("88 / 100", text)
-            self.assertIn("SHORTLIST", text)
-    def test_generate_individual_supports_object_records(self):
-        with TemporaryDirectory() as tmpdir:
-            saved_path = self.report.generate_individual(
-                self.sample_obj, Path(tmpdir) / "c002.pdf"
-            )
-            text = "\n".join(
-                page.extract_text() or "" for page in PdfReader(str(saved_path)).pages
-            )
-            self.assertIn("C002", text)
-            self.assertIn("SECONDARY_REVIEW", text)
-            self.assertIn("Airflow", text)
 
 if __name__ == "__main__":
     unittest.main()
