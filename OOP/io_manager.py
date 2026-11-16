@@ -724,6 +724,88 @@ class ConsoleUI:
                 return first, second
             print("Please select a different candidate ID for comparison.")
 
+    def show_candidate_comparison(self, candidate_a, candidate_b) -> None:
+        """Display a side-by-side comparison table for two candidates in the terminal."""
+        def fmt_list(items) -> str:
+            if not items:
+                return "None"
+            return ", ".join(str(x) for x in items)
+        def cell(value, width: int = 26) -> str:
+            text = str(value if value is not None else "Not provided")
+            return text if len(text) <= width else text[: width - 3] + "..."
+        id_a = self._get_candidate_field(candidate_a, "candidate_id", "Candidate A")
+        id_b = self._get_candidate_field(candidate_b, "candidate_id", "Candidate B")
+        rows = [
+            (
+                "Resume",
+                self._get_candidate_field(candidate_a, "file_name", "-"),
+                self._get_candidate_field(candidate_b, "file_name", "-"),
+            ),
+            (
+                "Role",
+                self._get_candidate_field(candidate_a, "job_title", "-"),
+                self._get_candidate_field(candidate_b, "job_title", "-"),
+            ),
+            (
+                "Final Score",
+                self._format_score(self._get_candidate_field(candidate_a, "final_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "final_score")),
+            ),
+            (
+                "Recommendation",
+                self._get_candidate_field(candidate_a, "status", "-"),
+                self._get_candidate_field(candidate_b, "status", "-"),
+            ),
+            (
+                "Fast-Track",
+                "Yes" if self._get_candidate_field(candidate_a, "fast_track", False) else "No",
+                "Yes" if self._get_candidate_field(candidate_b, "fast_track", False) else "No",
+            ),
+            (
+                "Decision",
+                self._get_candidate_field(candidate_a, "recruiter_decision", "pending") or "pending",
+                self._get_candidate_field(candidate_b, "recruiter_decision", "pending") or "pending",
+            ),
+            (
+                "Skills Score",
+                self._format_score(self._get_candidate_field(candidate_a, "skills_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "skills_score")),
+            ),
+            (
+                "Experience Score",
+                self._format_score(self._get_candidate_field(candidate_a, "experience_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "experience_score")),
+            ),
+            (
+                "Education Score",
+                self._format_score(self._get_candidate_field(candidate_a, "education_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "education_score")),
+            ),
+            (
+                "AI Confidence",
+                self._get_candidate_field(candidate_a, "confidence", "-"),
+                self._get_candidate_field(candidate_b, "confidence", "-"),
+            ),
+            (
+                "Skills Present",
+                fmt_list(self._get_candidate_field(candidate_a, "skills_present", [])),
+                fmt_list(self._get_candidate_field(candidate_b, "skills_present", [])),
+            ),
+            (
+                "Skills Missing",
+                fmt_list(self._get_candidate_field(candidate_a, "skills_missing", [])),
+                fmt_list(self._get_candidate_field(candidate_b, "skills_missing", [])),
+            ),
+        ]
+        print("\n" + "=" * 78)
+        print("CANDIDATE SIDE-BY-SIDE COMPARISON")
+        print("=" * 78)
+        print(f"{'Field':<18} | {cell(id_a):<26} | {cell(id_b):<26}")
+        print("-" * 18 + "-+-" + "-" * 26 + "-+-" + "-" * 26)
+        for label, val_a, val_b in rows:
+            print(f"{label:<18} | {cell(val_a):<26} | {cell(val_b):<26}")
+        print("=" * 78)
+ 
     def _format_timestamp(self, value) -> str:
         """Display ISO dates readably without changing stored data or guessing old timezones."""
         if not value:
