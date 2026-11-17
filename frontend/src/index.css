@@ -190,17 +190,13 @@ body {
 }
 
 .ra-topbar {
-  padding: 1rem 1.75rem;
-  border-bottom: 1px solid var(--ra-border);
-  background: rgba(17, 24, 39, 0.78);
-  backdrop-filter: blur(12px);
+  padding: 1.35rem 1.75rem 0.25rem;
+  border-bottom: none;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .ra-topbar h2 {
@@ -256,6 +252,18 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 1rem;
+}
+
+.ra-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.45fr 0.85fr;
+  gap: 1rem;
+}
+
+@media (max-width: 960px) {
+  .ra-detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .ra-btn {
@@ -358,6 +366,108 @@ body {
   transition: transform 140ms ease;
 }
 
+@keyframes raToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes raTickPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes raTickDraw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.ra-toast-container {
+  position: fixed;
+  top: 1.15rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: min(440px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.ra-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.72rem 1rem;
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--ra-border-strong);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ra-text-primary);
+  animation: raToastIn 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ra-toast-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  animation: raTickPop 460ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+
+.ra-tick-path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: raTickDraw 420ms cubic-bezier(0.22, 1, 0.36, 1) 200ms forwards;
+}
+
+.ra-toast-success,
+.ra-toast-shortlisted {
+  border-left: 4px solid var(--ra-green);
+}
+
+.ra-toast-error,
+.ra-toast-rejected {
+  border-left: 4px solid var(--ra-accent-rose);
+}
+
+.ra-toast-pending {
+  border-left: 4px solid var(--ra-amber);
+}
+
+.ra-toast-info {
+  border-left: 4px solid var(--ra-accent-cyan);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ra-view-enter,
   .ra-stagger-1,
@@ -366,7 +476,10 @@ body {
   .ra-stagger-4,
   .ra-bar-fill,
   .ra-donut-slice,
-  .ra-dot {
+  .ra-dot,
+  .ra-toast,
+  .ra-toast-icon,
+  .ra-tick-path {
     animation: none;
   }
   * {
