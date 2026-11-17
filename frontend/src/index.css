@@ -35,11 +35,31 @@ body {
 @keyframes raFadeSlideUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(10px) scale(0.99);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes raBarGrow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes raDonutSlice {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -49,13 +69,49 @@ body {
     opacity: 1;
   }
   50% {
-    transform: scale(1.3);
+    transform: scale(1.25);
     opacity: 0.65;
   }
 }
 
 .ra-view-enter {
-  animation: raFadeSlideUp 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: raFadeSlideUp 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ra-stagger-1 { animation: raFadeSlideUp 700ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both; }
+.ra-stagger-2 { animation: raFadeSlideUp 700ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both; }
+.ra-stagger-3 { animation: raFadeSlideUp 700ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both; }
+.ra-stagger-4 { animation: raFadeSlideUp 700ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both; }
+
+.ra-bar-fill {
+  transform-origin: left center;
+  animation: raBarGrow 1100ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+}
+
+.ra-kpi-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.ra-kpi-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--kpi-accent, var(--ra-accent-primary)), transparent);
+  opacity: 0.85;
+}
+
+.ra-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+}
+
+.ra-donut-slice {
+  transform-origin: center;
+  animation: raDonutSlice 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 280ms ease, stroke-width 280ms ease;
+  cursor: pointer;
 }
 
 .ra-shell {
@@ -111,7 +167,7 @@ body {
   cursor: pointer;
   font-size: 0.92rem;
   font-weight: 500;
-  transition: background 180ms ease, color 180ms ease, border-color 180ms ease, transform 160ms ease;
+  transition: background 260ms ease, color 260ms ease, border-color 260ms ease, transform 240ms ease;
 }
 
 .ra-nav-btn:hover {
@@ -169,7 +225,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  animation: raPulse 2.4s ease-in-out infinite;
+  animation: raPulse 3.2s ease-in-out infinite;
 }
 
 .ra-content {
@@ -184,7 +240,7 @@ body {
   border-radius: 14px;
   padding: 1.3rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  transition: border-color 280ms ease, transform 280ms ease, box-shadow 280ms ease;
 }
 
 .ra-card:hover {
@@ -216,7 +272,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  transition: transform 140ms ease, box-shadow 180ms ease, filter 180ms ease, background 180ms ease;
+  transition: transform 240ms ease, box-shadow 260ms ease, filter 260ms ease, background 260ms ease;
 }
 
 .ra-btn:hover:not(:disabled) {
@@ -255,7 +311,7 @@ body {
   border-radius: 9px;
   font-size: 0.9rem;
   outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition: border-color 240ms ease, box-shadow 240ms ease;
 }
 
 .ra-input:focus,
@@ -286,7 +342,7 @@ body {
 }
 
 .ra-table tbody tr {
-  transition: background 150ms ease;
+  transition: background 240ms ease;
 }
 
 .ra-table tbody tr:hover {
@@ -305,6 +361,12 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .ra-view-enter,
+  .ra-stagger-1,
+  .ra-stagger-2,
+  .ra-stagger-3,
+  .ra-stagger-4,
+  .ra-bar-fill,
+  .ra-donut-slice,
   .ra-dot {
     animation: none;
   }

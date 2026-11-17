@@ -2,6 +2,176 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { StatusBadge } from "./StatusBadge";
 
+const PIE_COLORS = [
+  "#6366f1",
+  "#38bdf8",
+  "#34d399",
+  "#fbbf24",
+  "#fb7185",
+  "#a78bfa",
+  "#2dd4bf",
+  "#94a3b8",
+];
+
+function SkillsPieChart({ skills }) {
+  const [hovered, setHovered] = useState(null);
+
+  if (!skills?.length) {
+    return (
+      <p style={{ color: "var(--ra-text-muted)", marginBottom: 0 }}>
+        No demonstrated skills recorded yet.
+      </p>
+    );
+  }
+
+  const topItems = skills.slice(0, 6);
+  const totalMentions = topItems.reduce((sum, item) => sum + item.count, 0) || 1;
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius;
+
+  let cumulativeOffset = 0;
+  const slices = topItems.map((item, idx) => {
+    const fraction = item.count / totalMentions;
+    const dashLength = fraction * circumference;
+    const slice = {
+      ...item,
+      color: PIE_COLORS[idx % PIE_COLORS.length],
+      pct: Math.round(fraction * 100),
+      dashArray: `${dashLength} ${circumference - dashLength}`,
+      dashOffset: -cumulativeOffset,
+    };
+    cumulativeOffset += dashLength;
+    return slice;
+  });
+
+  const activeSlice = hovered !== null ? slices[hovered] : null;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+      <div style={{ position: "relative", width: 164, height: 164, flexShrink: 0 }}>
+        <svg viewBox="0 0 160 160" width="164" height="164" style={{ transform: "rotate(-90deg)" }}>
+          <circle
+            cx="80"
+            cy="80"
+            r={radius}
+            fill="none"
+            stroke="rgba(148, 163, 184, 0.1)"
+            strokeWidth="22"
+          />
+          {slices.map((slice, idx) => (
+            <circle
+              key={slice.skill}
+              cx="80"
+              cy="80"
+              r={radius}
+              fill="none"
+              stroke={slice.color}
+              strokeWidth={hovered === idx ? 26 : 22}
+              strokeDasharray={slice.dashArray}
+              strokeDashoffset={slice.dashOffset}
+              className="ra-donut-slice"
+              style={{
+                opacity: hovered === null || hovered === idx ? 1 : 0.45,
+                animationDelay: `${idx * 110}ms`,
+              }}
+              onMouseEnter={() => setHovered(idx)}
+              onMouseLeave={() => setHovered(null)}
+            />
+          ))}
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+            textAlign: "center",
+            padding: "0 1.5rem",
+          }}
+        >
+          <div style={{ fontSize: "1.2rem", fontWeight: 700 }}>
+            {activeSlice ? `${activeSlice.pct}%` : totalMentions}
+          </div>
+          <div style={{ fontSize: "0.72rem", color: "var(--ra-text-muted)", lineHeight: 1.2 }}>
+            {activeSlice ? activeSlice.skill : "Skill Matches"}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 180, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        {slices.map((slice, idx) => (
+          <div
+            key={slice.skill}
+            onMouseEnter={() => setHovered(idx)}
+            onMouseLeave={() => setHovered(null)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0.3rem 0.5rem",
+              borderRadius: "7px",
+              fontSize: "0.84rem",
+              cursor: "pointer",
+              background: hovered === idx ? "rgba(255, 255, 255, 0.05)" : "transparent",
+              transition: "background 250ms ease",
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "3px",
+                  backgroundColor: slice.color,
+                }}
+              />
+              {slice.skill}
+            </span>
+            <span style={{ color: "var(--ra-text-muted)", fontWeight: 600 }}>
+              {slice.count} ({slice.pct}%)
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FunnelMeterRow({ label, count, total, color }) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.28rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.84rem" }}>
+        <span>{label}</span>
+        <span style={{ color: "var(--ra-text-muted)", fontWeight: 600 }}>
+          {count} <span style={{ opacity: 0.75 }}>({pct}%)</span>
+        </span>
+      </div>
+      <div
+        style={{
+          height: "7px",
+          borderRadius: "999px",
+          background: "rgba(11, 15, 23, 0.9)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          className="ra-bar-fill"
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            borderRadius: "999px",
+            background: color,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function DashboardView({ onNavigate }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -24,11 +194,11 @@ export function DashboardView({ onNavigate }) {
   }, []);
 
   if (loading) {
-    return <div className="ra-card">Loading dashboard metrics...</div>;
+    return <div className="ra-card">Loading analytics dashboard...</div>;
   }
   if (error) {
     return (
-      <div className="ra-card" style={{ borderColor: "var(--ra-accent-hover)" }}>
+      <div className="ra-card" style={{ borderColor: "var(--ra-accent-rose)" }}>
         <p style={{ marginTop: 0, color: "var(--ra-accent-rose)" }}>Error: {error}</p>
         <button type="button" className="ra-btn" onClick={load}>
           Retry
@@ -37,85 +207,118 @@ export function DashboardView({ onNavigate }) {
     );
   }
 
-  const maxSkillCount = Math.max(1, ...(data?.top_skills || []).map((s) => s.count));
+  const total = data.total_candidates || 0;
+  const shortlistCount = data.status_counts?.SHORTLIST ?? 0;
+  const secondaryCount = data.status_counts?.SECONDARY_REVIEW ?? 0;
+  const reEntryCount = data.status_counts?.RE_ENTRY ?? 0;
+  const scoredCount = Math.max(0, total - reEntryCount);
+  const shortlistRate = scoredCount > 0 ? Math.round((shortlistCount / scoredCount) * 100) : 0;
+
+  const pendingCount = data.decision_counts?.pending ?? 0;
+  const humanShortlisted = data.decision_counts?.shortlisted ?? 0;
+  const humanRejected = data.decision_counts?.rejected ?? 0;
+  const reviewedCount = humanShortlisted + humanRejected;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div className="ra-grid-4">
-        <div className="ra-card">
-          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.82rem" }}>Total Candidates</div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 700, marginTop: "0.35rem" }}>
-            {data.total_candidates}
+        <div className="ra-card ra-kpi-card ra-stagger-1" style={{ "--kpi-accent": "#6366f1" }}>
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.8rem", fontWeight: 600 }}>
+            Total Screened vs Pending
+          </div>
+          <div style={{ fontSize: "1.9rem", fontWeight: 700, marginTop: "0.35rem" }}>
+            {total}{" "}
+            <span style={{ fontSize: "0.95rem", fontWeight: 500, color: "var(--ra-amber)" }}>
+              / {pendingCount} pending
+            </span>
+          </div>
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.78rem", marginTop: "0.35rem" }}>
+            {reviewedCount} reviewed across {data.total_jobs} saved job(s)
           </div>
         </div>
-        <div className="ra-card">
-          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.82rem" }}>Recommended Shortlist</div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 700, marginTop: "0.35rem", color: "#86efac" }}>
-            {data.status_counts?.SHORTLIST ?? 0}
+
+        <div className="ra-card ra-kpi-card ra-stagger-2" style={{ "--kpi-accent": "#34d399" }}>
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.8rem", fontWeight: 600 }}>
+            Shortlist Rate (%)
+          </div>
+          <div style={{ fontSize: "1.9rem", fontWeight: 700, marginTop: "0.35rem", color: "var(--ra-green)" }}>
+            {shortlistRate}%
+          </div>
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.78rem", marginTop: "0.35rem" }}>
+            {shortlistCount}/{scoredCount} system · {humanShortlisted} human shortlisted
           </div>
         </div>
-        <div className="ra-card">
-          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.82rem" }}>Fast-Track Qualified</div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 700, marginTop: "0.35rem", color: "#93c5fd" }}>
+
+        <div className="ra-card ra-kpi-card ra-stagger-3" style={{ "--kpi-accent": "#38bdf8" }}>
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.8rem", fontWeight: 600 }}>
+            Fast-Track Candidates
+          </div>
+          <div style={{ fontSize: "1.9rem", fontWeight: 700, marginTop: "0.35rem", color: "var(--ra-accent-cyan)" }}>
             {data.fast_track_count}
           </div>
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.78rem", marginTop: "0.35rem" }}>
+            Ready for immediate interview scheduling
+          </div>
         </div>
-        <div className="ra-card">
-          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.82rem" }}>Saved Jobs</div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 700, marginTop: "0.35rem" }}>
-            {data.total_jobs}
+
+        <div
+          className="ra-card ra-kpi-card ra-stagger-4"
+          style={{ "--kpi-accent": reEntryCount > 0 ? "#fb7185" : "#34d399" }}
+        >
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.8rem", fontWeight: 600 }}>
+            Failed / Re-Entry Count
+          </div>
+          <div
+            style={{
+              fontSize: "1.9rem",
+              fontWeight: 700,
+              marginTop: "0.35rem",
+              color: reEntryCount > 0 ? "var(--ra-accent-rose)" : "var(--ra-green)",
+            }}
+          >
+            {reEntryCount}
+          </div>
+          <div style={{ color: "var(--ra-text-muted)", fontSize: "0.78rem", marginTop: "0.35rem" }}>
+            {reEntryCount > 0 ? "Batch API or parse issues need attention" : "All records processed cleanly"}
           </div>
         </div>
       </div>
 
       <div className="ra-grid-2">
-        <div className="ra-card">
-          <h3 style={{ marginTop: 0, fontSize: "1rem" }}>Status &amp; Recruiter Decisions</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", marginBottom: "1rem" }}>
-            <StatusBadge value="SHORTLIST" label={`Shortlist: ${data.status_counts?.SHORTLIST ?? 0}`} />
-            <StatusBadge
-              value="SECONDARY_REVIEW"
-              label={`Secondary Review: ${data.status_counts?.SECONDARY_REVIEW ?? 0}`}
-            />
-            <StatusBadge value="RE_ENTRY" label={`Re-entry: ${data.status_counts?.RE_ENTRY ?? 0}`} />
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
-            <StatusBadge value="shortlisted" label={`Recruiter Shortlisted: ${data.decision_counts?.shortlisted ?? 0}`} />
-            <StatusBadge value="pending" label={`Pending: ${data.decision_counts?.pending ?? 0}`} />
-            <StatusBadge value="rejected" label={`Rejected: ${data.decision_counts?.rejected ?? 0}`} />
+        <div className="ra-card ra-stagger-2">
+          <h3 style={{ marginTop: 0, marginBottom: "1rem", fontSize: "1rem" }}>
+            Pipeline Funnel &amp; Human Decisions
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ fontSize: "0.76rem", color: "var(--ra-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                System Routing
+              </div>
+              <FunnelMeterRow label="Shortlist" count={shortlistCount} total={total} color="#34d399" />
+              <FunnelMeterRow label="Secondary Review" count={secondaryCount} total={total} color="#fbbf24" />
+              <FunnelMeterRow label="Re-Entry" count={reEntryCount} total={total} color="#fb7185" />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ fontSize: "0.76rem", color: "var(--ra-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Recruiter Confirmation
+              </div>
+              <FunnelMeterRow label="Shortlisted" count={humanShortlisted} total={total} color="#38bdf8" />
+              <FunnelMeterRow label="Pending Review" count={pendingCount} total={total} color="#94a3b8" />
+              <FunnelMeterRow label="Rejected" count={humanRejected} total={total} color="#fb7185" />
+            </div>
           </div>
         </div>
 
-        <div className="ra-card">
-          <h3 style={{ marginTop: 0, fontSize: "1rem" }}>Top Demonstrated Skills</h3>
-          {!data.top_skills?.length ? (
-            <p style={{ color: "var(--ra-text-muted)", marginBottom: 0 }}>No skills recorded yet.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
-              {data.top_skills.map((item) => (
-                <div key={item.skill}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.84rem", marginBottom: "0.2rem" }}>
-                    <span>{item.skill}</span>
-                    <span style={{ color: "var(--ra-text-muted)" }}>{item.count}</span>
-                  </div>
-                  <div style={{ height: "6px", background: "var(--ra-bg-canvas)", borderRadius: "999px", overflow: "hidden" }}>
-                    <div
-                      style={{
-                        width: `${Math.round((item.count / maxSkillCount) * 100)}%`,
-                        height: "100%",
-                        background: "linear-gradient(90deg, var(--ra-accent-primary), var(--ra-accent-cyan))",
-                        transition: "width 450ms cubic-bezier(0.16, 1, 0.3, 1)",
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="ra-card ra-stagger-3">
+          <h3 style={{ marginTop: 0, marginBottom: "1rem", fontSize: "1rem" }}>
+            Top Demonstrated Skills
+          </h3>
+          <SkillsPieChart skills={data.top_skills} />
         </div>
       </div>
 
-      <div className="ra-card">
+      <div className="ra-card ra-stagger-4">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
           <h3 style={{ margin: 0, fontSize: "1rem" }}>Recent Screened Candidates</h3>
           <div style={{ display: "flex", gap: "0.5rem" }}>
