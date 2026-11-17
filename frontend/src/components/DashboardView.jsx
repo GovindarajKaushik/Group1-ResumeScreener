@@ -103,7 +103,8 @@ export function DashboardView({ onNavigate }) {
                       style={{
                         width: `${Math.round((item.count / maxSkillCount) * 100)}%`,
                         height: "100%",
-                        background: "var(--ra-accent-hover)",
+                        background: "linear-gradient(90deg, var(--ra-accent-primary), var(--ra-accent-cyan))",
+                        transition: "width 450ms cubic-bezier(0.16, 1, 0.3, 1)",
                       }}
                     />
                   </div>

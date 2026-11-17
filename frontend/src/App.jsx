@@ -84,7 +84,7 @@ function App() {
           </div>
         </header>
 
-        <main className="ra-content">
+        <main key={activeTab} className="ra-content ra-view-enter">
           {activeTab === "dashboard" && <DashboardView onNavigate={setActiveTab} />}
           {activeTab === "screen" && (
             <ScreenResumesView onOpenJobCandidates={openJobCandidates} />
