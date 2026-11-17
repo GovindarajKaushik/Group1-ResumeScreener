@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 import openai
 
 from OOP.ai_manager import AIManager
+from OOP.logic_manager import Job
 
 
 JOB = {"title": "Backend Dev", "required_skills": ["Python"], "preferred": ["SQL"],
@@ -121,6 +122,62 @@ class TestAIManager(unittest.TestCase):
         with patch.object(manager, "_can_retry_error", return_value=True):
             with self.assertRaises(ConnectionError):
                 manager.process_resume(JOB, "Some resume")
+
+    def test_prompt_supports_typed_job_object(self):
+        # verify _build_user_prompt accepts a Job instance directly
+        typed_job = Job(
+            title="Data Engineer",
+            required_skills=["Python", "SQL"],
+            preferred=["Docker"],
+            min_experience=3,
+            education="BSc",
+        )
+        prompt = self.make_manager()._build_user_prompt(typed_job, "Built ETL pipelines")
+        self.assertIn("Data Engineer", prompt)
+        self.assertIn("Python, SQL", prompt)
+        self.assertIn("Docker", prompt)
+        self.assertIn("Built ETL pipelines", prompt)
+
+    def test_env_overrides_for_model_and_api_url(self):
+        # verify OPENROUTER_MODEL and OPENROUTER_API_URL env vars override defaults
+        with patch.dict(
+            os.environ,
+            {
+                "OPENROUTER_API_KEY": "test-key",
+                "OPENROUTER_MODEL": "custom/test-model",
+                "OPENROUTER_API_URL": "https://example.invalid/v1",
+            },
+            clear=True,
+        ):
+            manager = AIManager()
+            self.assertEqual(manager.model_name, "custom/test-model")
+            self.assertEqual(manager.api_url, "https://example.invalid/v1")
+
+    def test_markdown_fenced_json_reply_is_parsed(self):
+        # allow valid JSON wrapped in markdown code fences
+        manager = self.make_manager()
+        fenced = f"```json\n{json.dumps(valid_ai_payload())}\n```"
+        result = manager._parse_response(fake_response(fenced))
+        self.assertEqual(result["overall_score"], 75)
+
+    def test_invalid_last_used_year_and_non_finite_scores_are_rejected(self):
+        # reject non-integer last_used_year and NaN/Inf scores
+        manager = self.make_manager()
+
+        bad_year_str = valid_ai_payload()
+        bad_year_str["skills"][0]["last_used_year"] = "2026"
+        with self.assertRaises(ValueError):
+            manager._validate_ai_result(bad_year_str)
+
+        bad_year_bool = valid_ai_payload()
+        bad_year_bool["skills"][0]["last_used_year"] = True
+        with self.assertRaises(ValueError):
+            manager._validate_ai_result(bad_year_bool)
+
+        nan_score = valid_ai_payload()
+        nan_score["experience_score"] = float("nan")
+        with self.assertRaises(ValueError):
+            manager._validate_ai_result(nan_score)
 
 
 if __name__ == "__main__":

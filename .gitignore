@@ -10,3 +10,5 @@ __pycache__/
 # Node / React frontend dependencies and builds
 node_modules/
 frontend/dist/
+
+docs/resume_screening_oop.drawio
