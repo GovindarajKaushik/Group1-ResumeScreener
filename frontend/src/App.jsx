@@ -56,6 +56,23 @@ function NavIcon({ id }) {
       </svg>
     );
   }
+  if (id === "settings") {
+    return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.79 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    );
+  }
+  if (id === "help") {
+    return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    );
+  }
   return (
     <svg {...props}>
       <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
@@ -92,71 +109,98 @@ function App() {
           className="ra-brand"
           style={{
             display: "flex",
-            flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: "0.55rem",
+            gap: "0.7rem",
           }}
         >
-          <div
+          <img
+            src={logoImg}
+            alt="Candidate Insight"
             style={{
-              background: "#ffffff",
-              border: "1px solid var(--ra-border)",
+              width: "44px",
+              height: "44px",
               borderRadius: "10px",
-              padding: "0.3rem 0.5rem",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flex: "1 1 auto",
-              minWidth: 0,
-            }}
-          >
-            <img
-              src={logoImg}
-              alt="Candidate Insight"
-              style={{
-                width: "100%",
-                maxWidth: "132px",
-                height: "44px",
-                objectFit: "contain",
-                display: "block",
-                mixBlendMode: "multiply",
-              }}
-            />
-          </div>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "0.2rem 0.55rem",
-              borderRadius: "999px",
-              fontSize: "0.7rem",
-              fontWeight: 700,
+              objectFit: "contain",
+              background: "#ffffff",
+              padding: "3px",
               flexShrink: 0,
-              background: "rgba(22, 163, 74, 0.14)",
-              border: "1px solid rgba(22, 163, 74, 0.4)",
-              color: "#15803d",
+              border: "1px solid var(--ra-border)",
+              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.06)",
             }}
-          >
-            v{pkg.version}
-          </span>
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+              <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--ra-text-primary)", letterSpacing: "-0.02em" }}>
+                ResumeScreenerAI
+              </span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "0.1rem 0.45rem",
+                  borderRadius: "999px",
+                  fontSize: "0.66rem",
+                  fontWeight: 700,
+                  background: "rgba(22, 163, 74, 0.14)",
+                  border: "1px solid rgba(22, 163, 74, 0.4)",
+                  color: "#15803d",
+                }}
+              >
+                v{pkg.version}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <nav className="ra-nav">
-          {NAV_ITEMS.map((item) => (
+        <div>
+          <div
+            style={{
+              fontSize: "0.68rem",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--ra-text-muted)",
+              padding: "0 0.35rem 0.45rem",
+            }}
+          >
+            Menu
+          </div>
+          <nav className="ra-nav">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`ra-nav-btn ${activeTab === item.id ? "active" : ""}`}
+                onClick={() => setActiveTab(item.id)}
+                style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}
+              >
+                <NavIcon id={item.id} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div style={{ marginTop: "auto", paddingTop: "1rem", borderTop: "1px solid var(--ra-border)" }}>
+          <nav className="ra-nav">
             <button
-              key={item.id}
               type="button"
-              className={`ra-nav-btn ${activeTab === item.id ? "active" : ""}`}
-              onClick={() => setActiveTab(item.id)}
+              className="ra-nav-btn"
               style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}
             >
-              <NavIcon id={item.id} />
-              <span>{item.label}</span>
+              <NavIcon id="settings" />
+              <span>Settings</span>
             </button>
-          ))}
-        </nav>
+            <button
+              type="button"
+              className="ra-nav-btn"
+              style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}
+            >
+              <NavIcon id="help" />
+              <span>Help</span>
+            </button>
+          </nav>
+        </div>
       </aside>
 
       <div className="ra-main">

@@ -6,6 +6,7 @@ from collections import Counter
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import zipfile
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -182,16 +183,14 @@ class APIServer:
                 target = Path(tmp_dir) / f"{idx}_{name}"
                 try:
                     target.write_bytes(base64.b64decode(item.content_base64, validate=True))
-                    self._importer.validate_resume_file(target)
-                except (binascii.Error, ValueError) as exc:
+                except binascii.Error as exc:
                     rejected.append({"file_name": name, "reason": str(exc)})
                     continue
-                prepared = self._importer.prepare([target])
-                if not prepared:
-                    rejected.append({"file_name": name, "reason": "No readable text remained after anonymization."})
-                    continue
-                prepared[0].file_name = name
-                resumes.append(prepared[0])
+
+                if target.suffix.lower() == ".zip":
+                    self._extract_zip_resumes(target, name, Path(tmp_dir), idx, resumes, rejected)
+                else:
+                    self._prepare_resume_target(target, name, resumes, rejected)
 
         if not resumes:
             raise HTTPException(status_code=400, detail={"message": "No readable PDF/DOCX resumes remained.", "rejected_files": rejected})
@@ -211,6 +210,39 @@ class APIServer:
             "save_failures": outcome["save_failures"],
             "debug_warning": outcome["debug_warning"],
         }
+
+    def _prepare_resume_target(self, target: Path, display_name: str, resumes: list, rejected: list) -> None:
+        try:
+            self._importer.validate_resume_file(target)
+        except ValueError as exc:
+            rejected.append({"file_name": display_name, "reason": str(exc)})
+            return
+        prepared = self._importer.prepare([target])
+        if not prepared:
+            rejected.append({"file_name": display_name, "reason": "No readable text remained after anonymization."})
+            return
+        prepared[0].file_name = display_name
+        resumes.append(prepared[0])
+
+    def _extract_zip_resumes(self, archive_path: Path, archive_name: str, tmp_root: Path, batch_idx: int, resumes: list, rejected: list) -> None:
+        try:
+            with zipfile.ZipFile(archive_path, "r") as zf:
+                entries = [
+                    info for info in zf.infolist()
+                    if not info.is_dir()
+                    and not Path(info.filename).name.startswith(".")
+                    and "__MACOSX" not in Path(info.filename).parts
+                ]
+                if not entries:
+                    rejected.append({"file_name": archive_name, "reason": "ZIP archive contains no files."})
+                    return
+                for entry_idx, info in enumerate(entries):
+                    member_name = Path(info.filename).name
+                    extracted = tmp_root / f"zip_{batch_idx}_{entry_idx}_{member_name}"
+                    extracted.write_bytes(zf.read(info))
+                    self._prepare_resume_target(extracted, member_name, resumes, rejected)
+        except zipfile.BadZipFile:
+            rejected.append({"file_name": archive_name, "reason": "Invalid or corrupted ZIP archive."})
 
     def list_candidates(
         self,

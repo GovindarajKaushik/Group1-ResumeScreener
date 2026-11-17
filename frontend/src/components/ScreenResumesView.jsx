@@ -1,12 +1,26 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, fileToBase64 } from "../api";
 import { StatusBadge } from "./StatusBadge";
+
+const ACCEPTED_EXTS = new Set([".pdf", ".docx", ".zip"]);
 
 function parseSkills(raw) {
   return raw
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function fileExtension(name = "") {
+  const idx = name.lastIndexOf(".");
+  return idx >= 0 ? name.slice(idx).toLowerCase() : "";
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 export function ScreenResumesView({ onOpenJobCandidates }) {
@@ -17,14 +31,21 @@ export function ScreenResumesView({ onOpenJobCandidates }) {
   const [education, setEducation] = useState("");
   const [minScore, setMinScore] = useState("60");
   const [files, setFiles] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [rejectedDetails, setRejectedDetails] = useState([]);
   const [result, setResult] = useState(null);
 
-  const handleFilePick = (event) => {
-    const picked = Array.from(event.target.files || []);
+  const addPickedFiles = (rawList, onlyAllowed = false) => {
+    const picked = Array.from(rawList || []).filter((f) => {
+      if (!onlyAllowed) return true;
+      return ACCEPTED_EXTS.has(fileExtension(f.name));
+    });
     if (!picked.length) return;
     setFiles((prev) => {
       const existing = new Set(prev.map((f) => `${f.name}:${f.size}`));
@@ -36,7 +57,17 @@ export function ScreenResumesView({ onOpenJobCandidates }) {
       });
       return next;
     });
+  };
+
+  const handleFilePick = (event, onlyAllowed = false) => {
+    addPickedFiles(event.target.files, onlyAllowed);
     event.target.value = "";
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDragging(false);
+    addPickedFiles(event.dataTransfer?.files, true);
   };
 
   const removeFile = (index) => {
@@ -179,48 +210,179 @@ export function ScreenResumesView({ onOpenJobCandidates }) {
           </div>
         </div>
 
-        <h3 style={{ margin: "0.5rem 0 0", fontSize: "1rem" }}>2. Upload Candidate Resumes (PDF / DOCX)</h3>
+        <h3 style={{ margin: "0.5rem 0 0", fontSize: "1rem" }}>2. Upload Candidate Resumes (PDF / DOCX / ZIP)</h3>
 
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-          <input
-            type="file"
-            accept=".pdf,.docx"
-            multiple
-            onChange={handleFilePick}
-            style={{ color: "var(--ra-text-muted)" }}
-          />
-          {files.length > 0 && (
-            <button type="button" className="ra-btn ra-btn-secondary" onClick={() => setFiles([])}>
-              Clear All ({files.length})
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.zip"
+          multiple
+          onChange={(e) => handleFilePick(e, false)}
+          style={{ display: "none" }}
+        />
+        <input
+          ref={folderInputRef}
+          type="file"
+          webkitdirectory=""
+          directory=""
+          multiple
+          onChange={(e) => handleFilePick(e, true)}
+          style={{ display: "none" }}
+        />
+
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          style={{
+            border: isDragging ? "2px dashed #111827" : "1.5px dashed var(--ra-border-strong)",
+            background: isDragging ? "rgba(17, 24, 39, 0.04)" : "var(--ra-bg-elevated)",
+            borderRadius: "8px",
+            padding: "1.4rem 1.25rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            gap: "0.75rem",
+            transition: "border-color 220ms ease, background 220ms ease",
+          }}
+        >
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--ra-text-muted)"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
+              Drag &amp; drop resumes or a ZIP batch here
+            </div>
+            <div style={{ fontSize: "0.78rem", color: "var(--ra-text-muted)", marginTop: "0.2rem" }}>
+              Supports multi-select files, entire folders, or .zip archives (.pdf, .docx)
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap", justifyContent: "center" }}>
+            <button
+              type="button"
+              className="ra-btn ra-btn-secondary"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Choose Files
             </button>
-          )}
+            <button
+              type="button"
+              className="ra-btn ra-btn-secondary"
+              onClick={() => folderInputRef.current?.click()}
+            >
+              Select Folder
+            </button>
+          </div>
         </div>
 
         {files.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            {files.map((file, idx) => (
-              <span
-                key={`${file.name}-${idx}`}
-                className="ra-badge"
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.3rem 0.65rem" }}
-              >
-                {file.name}
-                <button
-                  type="button"
-                  onClick={() => removeFile(idx)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "var(--ra-accent-rose)",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    padding: 0,
-                  }}
-                >
-                  ×
-                </button>
+          <div
+            style={{
+              border: "1px solid var(--ra-border)",
+              borderRadius: "8px",
+              background: "#ffffff",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "0.6rem 0.9rem",
+                background: "var(--ra-bg-elevated)",
+                borderBottom: "1px solid var(--ra-border)",
+                fontSize: "0.82rem",
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>
+                Queued Files ({files.length}) · {formatBytes(files.reduce((sum, f) => sum + (f.size || 0), 0))}
               </span>
-            ))}
+              <button
+                type="button"
+                className="ra-btn ra-btn-secondary"
+                onClick={() => setFiles([])}
+                style={{ padding: "0.28rem 0.65rem", fontSize: "0.76rem" }}
+              >
+                Clear All
+              </button>
+            </div>
+            <div style={{ maxHeight: 220, overflowY: "auto" }}>
+              {files.map((file, idx) => {
+                const ext = fileExtension(file.name).replace(".", "").toUpperCase() || "FILE";
+                return (
+                  <div
+                    key={`${file.name}-${idx}`}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      padding: "0.52rem 0.9rem",
+                      borderBottom: idx < files.length - 1 ? "1px solid var(--ra-border)" : "none",
+                      fontSize: "0.83rem",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", minWidth: 0 }}>
+                      <span
+                        className="ra-badge"
+                        style={{
+                          fontSize: "0.68rem",
+                          padding: "0.14rem 0.45rem",
+                          background: "var(--ra-bg-elevated)",
+                          borderColor: "var(--ra-border-strong)",
+                          color: "var(--ra-text-primary)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {ext}
+                      </span>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {file.name}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
+                      <span style={{ fontSize: "0.76rem", color: "var(--ra-text-muted)" }}>
+                        {formatBytes(file.size)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--ra-accent-rose)",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: "1rem",
+                          lineHeight: 1,
+                          padding: "0 0.2rem",
+                        }}
+                        aria-label={`Remove ${file.name}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

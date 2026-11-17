@@ -120,10 +120,14 @@ body {
 .ra-sidebar {
   background: #f8f9fa;
   border-right: 1px solid var(--ra-border);
-  padding: 1.5rem 1rem;
+  padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.15rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .ra-brand h1 {
@@ -581,6 +585,8 @@ body {
     grid-template-columns: 1fr;
   }
   .ra-sidebar {
+    position: static;
+    height: auto;
     border-right: none;
     border-bottom: 1px solid var(--ra-border);
   }
