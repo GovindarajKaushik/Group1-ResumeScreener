@@ -1057,6 +1057,5 @@ class ResumeImporter:
     clean_resume_text = _clean_text
     anonymize_resume_text = _anonymize_text
 
-
 if __name__ == "__main__":
     print("Start the application with: python main.py")

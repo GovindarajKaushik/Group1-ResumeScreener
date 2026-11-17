@@ -1,0 +1,22 @@
+:root {
+  color-scheme: dark;
+  --ra-bg-canvas: #09090b;
+  --ra-bg-surface: #121216;
+  --ra-border: #24242b;
+  --ra-text-primary: #f4f4f5;
+  --ra-text-muted: #a1a1aa;
+  --ra-accent-primary: #991b1b;
+  --ra-accent-hover: #dc2626;
+  --ra-accent-rose: #f87171;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--ra-bg-canvas);
+  color: var(--ra-text-primary);
+}

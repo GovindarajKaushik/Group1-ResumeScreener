@@ -15,6 +15,8 @@ except ModuleNotFoundError:
     sys.modules["streamlit"] = types.SimpleNamespace(session_state={})
 
 from OOP.AppUI_OOP import AppUI
+from OOP.ui.ui_theme import UITheme
+from OOP.ui.ui_views import BasePageView, OverviewWidgets
 
 
 class TestAppUIHelpers(unittest.TestCase):
@@ -73,6 +75,30 @@ class TestAppUIHelpers(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             with self.assertRaises(ValueError):
                 self.ui._process_uploaded_file("empty.pdf", b"", temp_dir)
+
+    def test_theme_and_polymorphic_view_registration(self):
+        # verify UITheme encapsulation and polymorphic BasePageView registration
+        theme = UITheme()
+        self.assertEqual(theme.palette["bg_canvas"], "#09090B")
+        self.assertIn("raViewEnterA", theme.get_view_transition_css(0))
+        self.assertIn("raViewEnterB", theme.get_view_transition_css(1))
+
+        self.assertEqual(OverviewWidgets.extract_initials("alex_tan_resume.pdf"), "AT")
+
+        class CustomReportView(BasePageView):
+            def __init__(self):
+                super().__init__("Custom Reports", "📑")
+                self.rendered = False
+
+            def render(self):
+                self.rendered = True
+
+        custom_view = CustomReportView()
+        self.ui.register_view(custom_view)
+        self.assertIs(self.ui._views["Custom Reports"], custom_view)
+
+        with self.assertRaises(TypeError):
+            self.ui.register_view("not-a-view")
 
 
 if __name__ == "__main__":
