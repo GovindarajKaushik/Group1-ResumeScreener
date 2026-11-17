@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -83,8 +84,9 @@ class APIServer:
         return FileResponse(self._frontend_dist_dir / "index.html")
 
     def get_health(self) -> dict:
-        # verify the backend is reachable and report whether an OpenAI key is configured
-        has_api_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
+        # verify the backend is reachable and report whether an OpenRouter key is configured
+        load_dotenv()
+        has_api_key = bool(os.getenv("OPENROUTER_API_KEY", "").strip())
         return {
             "status": "ok",
             "service": self._title,
