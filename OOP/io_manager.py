@@ -121,6 +121,32 @@ class ConsoleUI:
                 return choice
             print("Invalid choice. Enter 1, 2, 3, 4, or 5.")
 
+    def get_saved_results_action(self) -> str:
+        """Display post-listing actions for saved results and return the chosen option or ''."""
+        while True:
+            print("\nSAVED RESULTS ACTIONS")
+            print("1. View candidate details")
+            print("2. Filter candidates by skills")
+            print("3. Compare two candidates side-by-side")
+            print("4. Export PDF report")
+            choice = input(
+                "Choose an action (1-4, or press Enter for the main menu): "
+            ).strip()
+            if not choice or choice in ("1", "2", "3", "4"):
+                return choice
+            print("Invalid choice. Enter 1, 2, 3, 4, or press Enter.")
+
+    def get_pdf_export_choice(self) -> str:
+        """Prompt the user to choose individual or batch PDF report export, or '' to cancel."""
+        while True:
+            print("\nPDF REPORT EXPORT")
+            print("1. Export individual candidate PDF report")
+            print("2. Export batch summary PDF report")
+            choice = input("Choose report type (1-2, or press Enter to cancel): ").strip()
+            if not choice or choice in ("1", "2"):
+                return choice
+            print("Invalid choice. Enter 1, 2, or press Enter.")
+
     def _get_valid_folder(self, prompt_text: str) -> str:
         """Check for a valid folder path and return it; re-prompt if invalid."""
         while True:
@@ -1217,4 +1243,4 @@ class PdfCandidateReport(CandidateReport):
 
 
 if __name__ == "__main__":
-    print("Start the application with: python main.py")
+    print("Start the application with: python OOP/main.py")
