@@ -382,6 +382,66 @@ class ScreeningRecord(_MappingCompatMixin):
         return {"resume_id": self.resume_id, "file_name": self.file_name, "status": self.status, "retryable": self.retryable, "screening_result": payload, "error": self.error}
 
 
+class ScreeningBatch:
+    """Transient aggregate holding one active screening job, resumes, records, and evaluations."""
+
+    def __init__(self, job, preferences=None, resumes=None):
+        self._job = Job.from_any(job)
+        self._preferences = (
+            ScreeningPreferences.from_any(preferences)
+            if preferences is not None
+            else self._job.preferences
+        )
+        self._resumes = {}
+        for resume in resumes or []:
+            rid = resume["id"] if isinstance(resume, dict) else resume.id
+            self._resumes[str(rid)] = resume
+        self._records = {}
+        self._evaluations = {}
+
+    @property
+    def job(self):
+        return self._job
+
+    @property
+    def preferences(self):
+        return self._preferences
+
+    @property
+    def resumes(self):
+        return dict(self._resumes)
+
+    @property
+    def records(self):
+        return dict(self._records)
+
+    @property
+    def evaluations(self):
+        return dict(self._evaluations)
+
+    def replace_record(self, record):
+        if not isinstance(record, ScreeningRecord):
+            raise TypeError("record must be a ScreeningRecord")
+        self._records[record.resume_id] = record
+
+    def set_evaluation(self, resume_id, evaluation):
+        if not isinstance(evaluation, Evaluation):
+            raise TypeError("evaluation must be an Evaluation")
+        self._evaluations[str(resume_id)] = evaluation
+
+    def failed_records(self):
+        return [rec for rec in self._records.values() if rec.status == "error"]
+
+    def failed_ids(self):
+        return [rec.resume_id for rec in self._records.values() if rec.status == "error"]
+
+    def retryable_ids(self):
+        return [rec.resume_id for rec in self._records.values() if rec.can_retry()]
+
+    def success_count(self):
+        return sum(1 for rec in self._records.values() if rec.status == "success")
+
+
 class ScoringRuleStep(ABC):
     def __init__(self, rules):
         self._rules = rules
