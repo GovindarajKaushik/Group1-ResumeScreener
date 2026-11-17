@@ -936,48 +936,6 @@ class ResumeImporter:
 
         return self._clean_text(raw_text)
 
-    def _extract_pdf(self, path: str | Path) -> str:
-        """Extract plain text from a PDF file, page by page."""
-        from pypdf import PdfReader
-
-        text_parts = []
-        try:
-            reader = PdfReader(str(path))
-            for page in reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text_parts.append(page_text)
-        except Exception as error:
-            print(f"Error reading PDF '{path}': {error}")
-            return ""
-
-        return "\n".join(text_parts)
-
-    def _extract_docx(self, path: str | Path) -> str:
-        """Extract plain text from a DOCX file, including table cells."""
-        from docx import Document
-
-        text_parts = []
-        try:
-            document = Document(str(path))
-            for paragraph in document.paragraphs:
-                if paragraph.text.strip():
-                    text_parts.append(paragraph.text)
-
-            for table in document.tables:
-                for row in table.rows:
-                    row_text = []
-                    for cell in row.cells:
-                        if cell.text.strip():
-                            row_text.append(cell.text.strip())
-                    if row_text:
-                        text_parts.append(" | ".join(row_text))
-        except Exception as error:
-            print(f"Error reading DOCX '{path}': {error}")
-            return ""
-
-        return "\n".join(text_parts)
-
     def _clean_text(self, text: str) -> str:
         """Normalize line endings and strip blank/whitespace-only lines."""
         if not text:
@@ -1235,11 +1193,6 @@ class PdfCandidateReport(CandidateReport):
         if value is None:
             return "Not scored"
         return f"{value:g} / 100"
-
-    @staticmethod
-    def _safe_text(value) -> str:
-        text = str(value or "")
-        return text.encode("latin-1", "replace").decode("latin-1")
 
 
 if __name__ == "__main__":
