@@ -581,6 +581,177 @@ class ConsoleUI:
         """Print an error message to the user."""
         print(f"Error: {text}")
 
+    def _get_candidate_field(self, candidate, key: str, default=None):
+        """Read a field from a dict or object candidate, falling back to nested ai_result."""
+        if isinstance(candidate, dict):
+            if key in candidate and candidate[key] is not None:
+                return candidate[key]
+            ai_result = candidate.get("ai_result")
+            if isinstance(ai_result, dict) and key in ai_result:
+                return ai_result[key]
+            return default
+        value = getattr(candidate, key, None)
+        if value is not None:
+            return value
+        ai_result = getattr(candidate, "ai_result", None)
+        if isinstance(ai_result, dict):
+            return ai_result.get(key, default)
+        return getattr(ai_result, key, default) if ai_result is not None else default
+
+    def collect_skill_filter(self) -> list[str]:
+        """Prompt for comma-separated skills to filter candidates (Enter to skip)."""
+        raw = input(
+            "\nEnter skill(s) to filter by (comma-separated, or press Enter for all): "
+        ).strip()
+        if not raw:
+            return []
+        return self._parse_skill_list(raw)
+
+    def filter_candidates_by_skills( self, candidates: list, required_skills: list[str]) -> list:
+        """Return candidates matching all requested skills, sorted by final_score descending."""
+        wanted = [skill.strip().lower() for skill in required_skills if skill.strip()]
+        if not wanted:
+            matched = list(candidates)
+        else:
+            matched = []
+            for candidate in candidates:
+                present = self._get_candidate_field(candidate, "skills_present", []) or []
+                present_lower = {str(s).strip().lower() for s in present}
+                if all(req in present_lower for req in wanted):
+                    matched.append(candidate)
+
+        def sort_key(cand):
+            score = self._get_candidate_field(cand, "final_score", None)
+            return (score is not None, float(score) if score is not None else -1.0)
+
+        return sorted(matched, key=sort_key, reverse=True)
+
+    def show_skill_filtered_results(
+        self, candidates: list, required_skills: list[str]
+    ) -> list:
+        """Filter candidates by skills, display ranked matches, and return the filtered list."""
+        filtered = self.filter_candidates_by_skills(candidates, required_skills)
+        skill_label = ", ".join(required_skills) if required_skills else "All skills"
+        print(
+            f"\n--- Skill Filter [{skill_label}]: "
+            f"{len(filtered)} of {len(candidates)} candidate(s) matched (ranked best first) ---"
+        )
+        if not filtered:
+            print("No candidates matched all requested skills.")
+            return []
+        self.show_saved_results(filtered)
+        return filtered
+
+    def select_candidates_for_comparison(
+        self, candidates: list
+    ) -> tuple | None:
+        """Prompt the user to select two distinct candidates from the list for comparison."""
+        if len(candidates) < 2:
+            print("At least 2 candidates are required for side-by-side comparison.")
+            return None
+        first = self.select_saved_candidate(
+            candidates,
+            prompt="\nEnter first candidate ID to compare (or press Enter to cancel): ",
+        )
+        if first is None:
+            return None
+        first_id = str(self._get_candidate_field(first, "candidate_id", "")).upper()
+        while True:
+            second = self.select_saved_candidate(
+                candidates,
+                prompt="Enter second candidate ID to compare (or press Enter to cancel): ",
+            )
+            if second is None:
+                return None
+            second_id = str(
+                self._get_candidate_field(second, "candidate_id", "")
+            ).upper()
+            if second_id != first_id:
+                return first, second
+            print("Please select a different candidate ID for comparison.")
+
+    def show_candidate_comparison(self, candidate_a, candidate_b) -> None:
+        """Display a side-by-side comparison table for two candidates in the terminal."""
+        def fmt_list(items) -> str:
+            if not items:
+                return "None"
+            return ", ".join(str(x) for x in items)
+        def cell(value, width: int = 26) -> str:
+            text = str(value if value is not None else "Not provided")
+            return text if len(text) <= width else text[: width - 3] + "..."
+        id_a = self._get_candidate_field(candidate_a, "candidate_id", "Candidate A")
+        id_b = self._get_candidate_field(candidate_b, "candidate_id", "Candidate B")
+        rows = [
+            (
+                "Resume",
+                self._get_candidate_field(candidate_a, "file_name", "-"),
+                self._get_candidate_field(candidate_b, "file_name", "-"),
+            ),
+            (
+                "Role",
+                self._get_candidate_field(candidate_a, "job_title", "-"),
+                self._get_candidate_field(candidate_b, "job_title", "-"),
+            ),
+            (
+                "Final Score",
+                self._format_score(self._get_candidate_field(candidate_a, "final_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "final_score")),
+            ),
+            (
+                "Recommendation",
+                self._get_candidate_field(candidate_a, "status", "-"),
+                self._get_candidate_field(candidate_b, "status", "-"),
+            ),
+            (
+                "Fast-Track",
+                "Yes" if self._get_candidate_field(candidate_a, "fast_track", False) else "No",
+                "Yes" if self._get_candidate_field(candidate_b, "fast_track", False) else "No",
+            ),
+            (
+                "Decision",
+                self._get_candidate_field(candidate_a, "recruiter_decision", "pending") or "pending",
+                self._get_candidate_field(candidate_b, "recruiter_decision", "pending") or "pending",
+            ),
+            (
+                "Skills Score",
+                self._format_score(self._get_candidate_field(candidate_a, "skills_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "skills_score")),
+            ),
+            (
+                "Experience Score",
+                self._format_score(self._get_candidate_field(candidate_a, "experience_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "experience_score")),
+            ),
+            (
+                "Education Score",
+                self._format_score(self._get_candidate_field(candidate_a, "education_score")),
+                self._format_score(self._get_candidate_field(candidate_b, "education_score")),
+            ),
+            (
+                "AI Confidence",
+                self._get_candidate_field(candidate_a, "confidence", "-"),
+                self._get_candidate_field(candidate_b, "confidence", "-"),
+            ),
+            (
+                "Skills Present",
+                fmt_list(self._get_candidate_field(candidate_a, "skills_present", [])),
+                fmt_list(self._get_candidate_field(candidate_b, "skills_present", [])),
+            ),
+            (
+                "Skills Missing",
+                fmt_list(self._get_candidate_field(candidate_a, "skills_missing", [])),
+                fmt_list(self._get_candidate_field(candidate_b, "skills_missing", [])),
+            ),
+        ]
+        print("\n" + "=" * 78)
+        print("CANDIDATE SIDE-BY-SIDE COMPARISON")
+        print("=" * 78)
+        print(f"{'Field':<18} | {cell(id_a):<26} | {cell(id_b):<26}")
+        print("-" * 18 + "-+-" + "-" * 26 + "-+-" + "-" * 26)
+        for label, val_a, val_b in rows:
+            print(f"{label:<18} | {cell(val_a):<26} | {cell(val_b):<26}")
+        print("=" * 78)
+ 
     def _format_timestamp(self, value) -> str:
         """Display ISO dates readably without changing stored data or guessing old timezones."""
         if not value:

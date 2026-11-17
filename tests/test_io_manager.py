@@ -6,7 +6,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-
+from contextlib import redirect_stdout
+from types import SimpleNamespace
 from docx import Document
 
 from OOP.io_manager import (
@@ -239,6 +240,141 @@ class TestPdfCandidateReport(unittest.TestCase):
             report.generate_individual(None, "ignored.pdf")
         with self.assertRaises(ValueError):
             report.generate_batch([], "ignored.pdf")
+
+
+class TestConsoleUISkillFilter(unittest.TestCase):
+    def setUp(self):
+        self.ui = ConsoleUI()
+        self.c1 = {
+            "candidate_id": "C001",
+            "file_name": "resume_01_strong.docx",
+            "job_id": "J001",
+            "job_title": "Data Analyst",
+            "final_score": 59,
+            "skills_score": 62.5,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "shortlisted",
+            "skills_present": ["Python", "SQL", "AWS"],
+            "skills_missing": ["Excel", "Agile"],
+            "experience_score": 95.0,
+            "education_score": 100.0,
+            "confidence": "high",
+        }
+        self.c2 = SimpleNamespace(
+            candidate_id="C002",
+            file_name="resume_02_missing.docx",
+            job_id="J001",
+            job_title="Data Analyst",
+            final_score=59,
+            skills_score=50.0,
+            status="SECONDARY_REVIEW",
+            fast_track=False,
+            recruiter_decision="pending",
+            skills_present=["Python", "SQL"],
+            skills_missing=["Excel", "AWS", "Agile"],
+            experience_score=95.0,
+            education_score=75.0,
+            confidence="high",
+        )
+        self.c3 = {
+            "candidate_id": "C003",
+            "file_name": "resume_03_weak.docx",
+            "job_id": "J001",
+            "job_title": "Data Analyst",
+            "final_score": 23,
+            "skills_score": 0.0,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "rejected",
+            "skills_present": [],
+            "skills_missing": ["Python", "SQL", "Excel"],
+            "experience_score": 50.0,
+            "education_score": 40.0,
+            "confidence": "high",
+        }
+        self.candidates = [self.c3, self.c1, self.c2]
+    def test_collect_skill_filter_parses_and_deduplicates(self):
+        with patch("builtins.input", return_value=" Python, sql , python , AWS "):
+            skills = self.ui.collect_skill_filter()
+        self.assertEqual(skills, ["Python", "sql", "AWS"])
+    def test_filter_candidates_by_skills_matches_and_sorts_by_score(self):
+        matches = self.ui.filter_candidates_by_skills(
+            self.candidates, ["python", "sql"]
+        )
+        self.assertEqual(len(matches), 2)
+        ids = [self.ui._get_candidate_field(c, "candidate_id") for c in matches]
+        self.assertEqual(ids, ["C001", "C002"])
+    def test_filter_candidates_by_skills_narrows_to_aws(self):
+        matches = self.ui.filter_candidates_by_skills(self.candidates, ["AWS"])
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["candidate_id"], "C001")
+    def test_show_skill_filtered_results_prints_no_match_message(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            result = self.ui.show_skill_filtered_results(
+                self.candidates, ["Kubernetes"]
+            )
+        self.assertEqual(result, [])
+        self.assertIn("No candidates matched all requested skills.", buf.getvalue())
+class TestConsoleUICandidateComparison(unittest.TestCase):
+
+    def setUp(self):
+        self.ui = ConsoleUI()
+        self.c1 = {
+            "candidate_id": "C001",
+            "file_name": "resume_01_strong.docx",
+            "job_title": "Data Analyst",
+            "final_score": 59,
+            "skills_score": 62.5,
+            "experience_score": 95.0,
+            "education_score": 100.0,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "shortlisted",
+            "confidence": "high",
+            "skills_present": ["Python", "SQL", "AWS"],
+            "skills_missing": ["Excel", "Agile"],
+        }
+        self.c2 = {
+            "candidate_id": "C002",
+            "file_name": "resume_02_missing.docx",
+            "job_title": "Data Analyst",
+            "final_score": 59,
+            "skills_score": 50.0,
+            "experience_score": 95.0,
+            "education_score": 75.0,
+            "status": "SECONDARY_REVIEW",
+            "fast_track": False,
+            "recruiter_decision": "pending",
+            "confidence": "high",
+            "skills_present": ["Python", "SQL"],
+            "skills_missing": ["Excel", "AWS", "Agile"],
+        }
+    def test_select_candidates_for_comparison_requires_at_least_two(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            result = self.ui.select_candidates_for_comparison([self.c1])
+        self.assertIsNone(result)
+        self.assertIn("At least 2 candidates are required", buf.getvalue())
+    def test_select_candidates_for_comparison_rejects_duplicate_and_returns_pair(self):
+        with patch("builtins.input", side_effect=["C001", "C001", "C002"]):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                pair = self.ui.select_candidates_for_comparison([self.c1, self.c2])
+        self.assertEqual(pair, (self.c1, self.c2))
+        self.assertIn("Please select a different candidate ID", buf.getvalue())
+    def test_show_candidate_comparison_prints_side_by_side_table(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.ui.show_candidate_comparison(self.c1, self.c2)
+        output = buf.getvalue()
+        self.assertIn("CANDIDATE SIDE-BY-SIDE COMPARISON", output)
+        self.assertIn("C001", output)
+        self.assertIn("C002", output)
+        self.assertIn("62.5 / 100", output)
+        self.assertIn("50 / 100", output)
+        self.assertIn("Python, SQL, AWS", output)
 
 
 if __name__ == "__main__":
