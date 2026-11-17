@@ -212,8 +212,27 @@ class APIServer:
             "debug_warning": outcome["debug_warning"],
         }
 
-    def list_candidates(self, job_id: str | None = None, status: str | None = None, decision: str | None = None, skill: str | None = None, keyword: str | None = None) -> dict:
-        candidates = self._run_store(lambda: self._store.search_candidates(status=status or None, decision=decision or None, keyword=keyword or None))
+    def list_candidates(
+        self,
+        job_id: str | None = None,
+        status: str | None = None,
+        decision: str | None = None,
+        min_score: float | None = None,
+        max_score: float | None = None,
+        fast_track: bool | None = None,
+        skill: str | None = None,
+        keyword: str | None = None,
+    ) -> dict:
+        candidates = self._run_store(
+            lambda: self._store.search_candidates(
+                status=status or None,
+                decision=decision or None,
+                min_score=min_score,
+                max_score=max_score,
+                fast_track=fast_track,
+                keyword=keyword or None,
+            )
+        )
         if job_id is not None:
             candidates = [c for c in candidates if c.job_id == job_id]
         if skill:

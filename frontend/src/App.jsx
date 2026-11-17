@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { CandidatesView } from "./components/CandidatesView";
 import { DashboardView } from "./components/DashboardView";
 import { JobPostingsView } from "./components/JobPostingsView";
 import { ScreenResumesView } from "./components/ScreenResumesView";
@@ -89,14 +90,17 @@ function App() {
           {activeTab === "screen" && (
             <ScreenResumesView onOpenJobCandidates={openJobCandidates} />
           )}
+          {activeTab === "candidates" && (
+            <CandidatesView
+              initialJobId={selectedJobFilter}
+              onClearJobFilter={() => setSelectedJobFilter("")}
+            />
+          )}
           {activeTab === "jobs" && <JobPostingsView onOpenJobCandidates={openJobCandidates} />}
-          {activeTab !== "dashboard" && activeTab !== "screen" && activeTab !== "jobs" && (
+          {activeTab === "audit" && (
             <div className="ra-card">
               <h3 style={{ marginTop: 0 }}>{currentNav.label}</h3>
               <p style={{ color: "var(--ra-text-muted)", marginBottom: 0 }}>
-                {selectedJobFilter && activeTab === "candidates"
-                  ? `Filtered to job ${selectedJobFilter} — `
-                  : ""}
                 View not available yet.
               </p>
             </div>
