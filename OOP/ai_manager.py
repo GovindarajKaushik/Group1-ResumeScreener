@@ -1,13 +1,15 @@
 import json
+import math
 import os
 import openai
 from dotenv import load_dotenv
 from openai import OpenAI
 
 
+# OpenRouter API gateway: builds prompts, calls the API, and validates JSON output
 class AIManager:
 
-# prompt to AI
+    # prompt to AI
     SYSTEM_PROMPT = """You are an expert recruiter assisting with resume screening.
 Compare the candidate resume with the job requirements using semantic understanding: treat equivalent skills described with different wording as a match (e.g. "built REST services" satisfies "API development").
 Base every judgement ONLY on the resume text. Never consider or infer personal attributes such as name, age, gender, ethnicity or marital status.
@@ -38,19 +40,16 @@ If supporting evidence cannot be provided, leave evidence empty. Missing evidenc
     # constructor
     def __init__(self, api_url=None, model_name=None):
         load_dotenv()
-        self.api_url = api_url or self.API_URL
-        self.model_name = model_name or self.MODEL_NAME
+        self.api_url = api_url or os.environ.get("OPENROUTER_API_URL") or self.API_URL
+        self.model_name = model_name or os.environ.get("OPENROUTER_MODEL") or self.MODEL_NAME
         self.client = self._create_client()
 
     # load openrouter api key from env
     def _load_api_key(self):
-        try:
-            api_key = os.environ.get("OPENROUTER_API_KEY")
-            if not api_key:
-                raise ValueError("API key not found in environment variables")
-            return api_key
-        except Exception as e:
-            raise ValueError(f"Error loading API client: {e}")
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("API key not found in environment variables")
+        return api_key
 
     # get openAI client
     def _get_client(self, api_url, api_key):
@@ -68,16 +67,38 @@ If supporting evidence cannot be provided, leave evidence empty. Missing evidenc
         api_key = self._load_api_key()
         return self._get_client(self.api_url, api_key)
 
+    # read a field from either a typed Job object or a plain dict
+    @staticmethod
+    def _read_job_field(job_description, field, default=""):
+        if isinstance(job_description, dict):
+            return job_description.get(field, default)
+        return getattr(job_description, field, default)
+
     # build the user prompt
     def _build_user_prompt(self, job_description, resume_text):
+        title = self._read_job_field(job_description, "title", "")
+        required_skills = self._read_job_field(job_description, "required_skills", []) or []
+        preferred = self._read_job_field(job_description, "preferred", []) or []
+        min_experience = self._read_job_field(job_description, "min_experience", 0)
+        education = self._read_job_field(job_description, "education", "")
         return (
-            "JOB TITLE:\n" + str(job_description.get("title", "")) + "\n\n"
-            "MUST-HAVE SKILLS:\n" + ", ".join(job_description.get("required_skills", [])) + "\n\n"
-            "PREFERRED SKILLS:\n" + ", ".join(job_description.get("preferred", [])) + "\n\n"
-            "MINIMUM YEARS OF EXPERIENCE:\n" + str(job_description.get("min_experience", 0)) + "\n\n"
-            "EDUCATION REQUIREMENT:\n" + str(job_description.get("education", "")) + "\n\n"
-            "ANONYMISED RESUME TEXT:\n" + resume_text
+            "JOB TITLE:\n" + str(title) + "\n\n"
+            "MUST-HAVE SKILLS:\n" + ", ".join(required_skills) + "\n\n"
+            "PREFERRED SKILLS:\n" + ", ".join(preferred) + "\n\n"
+            "MINIMUM YEARS OF EXPERIENCE:\n" + str(min_experience) + "\n\n"
+            "EDUCATION REQUIREMENT:\n" + str(education) + "\n\n"
+            "ANONYMISED RESUME TEXT:\n" + str(resume_text)
         )
+
+    # strip optional markdown code fences if the model wrapped its JSON reply
+    @staticmethod
+    def _strip_code_fences(content):
+        stripped = content.strip()
+        if stripped.startswith("```"):
+            lines = stripped.splitlines()
+            if len(lines) >= 3 and lines[-1].strip() == "```":
+                return "\n".join(lines[1:-1]).strip()
+        return stripped
 
     # check the reply
     def _parse_response(self, response):
@@ -86,10 +107,11 @@ If supporting evidence cannot be provided, leave evidence empty. Missing evidenc
             if not response.choices:
                 raise ValueError("response contained no choices")
             content = response.choices[0].message.content
-            if not content:
+            if not content or not isinstance(content, str):
                 raise ValueError("response was empty")
+            cleaned = self._strip_code_fences(content)
             # JSONDecodeError is a kind of ValueError, so it is caught below too
-            return self._validate_ai_result(json.loads(content))
+            return self._validate_ai_result(json.loads(cleaned))
         except (AttributeError, IndexError, TypeError, ValueError) as e:
             raise ValueError(f"Malformed API response: {e}") from e
 
@@ -123,6 +145,11 @@ If supporting evidence cannot be provided, leave evidence empty. Missing evidenc
                 raise ValueError("skill category must be must_have or preferred")
             if not isinstance(skill.get("present"), bool):
                 raise ValueError("skill present must be true or false")
+            last_used_year = skill.get("last_used_year")
+            if last_used_year is not None and (
+                isinstance(last_used_year, bool) or not isinstance(last_used_year, int)
+            ):
+                raise ValueError("skill last_used_year must be an integer or null")
             evidence = skill.get("evidence")
             if evidence is not None and not isinstance(evidence, str):
                 raise ValueError("skill evidence must be text or null")
@@ -132,6 +159,7 @@ If supporting evidence cannot be provided, leave evidence empty. Missing evidenc
             if (
                 isinstance(score, bool)
                 or not isinstance(score, (int, float))
+                or not math.isfinite(score)
                 or not 0 <= score <= 100
             ):
                 raise ValueError(f"'{field}' must be a number from 0 to 100")
