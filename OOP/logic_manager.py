@@ -692,37 +692,3 @@ class RankingService(CandidateRanker):
     def evaluate_and_rank(self, path, job, preferences=None):
         records = self._debug_store.load(path)
         return self.build_rows(records, self._scorer.evaluate_records(records, job, preferences))
-
-
-_DEFAULT_ENGINE = ScoringEngine()
-_DEFAULT_STORE = DebugResultStore()
-_DEFAULT_RANKER = RankingService(debug_store=_DEFAULT_STORE, scorer=_DEFAULT_ENGINE)
-
-
-def extract_ai_fields(raw):
-    res = _DEFAULT_ENGINE._normalize_ai_fields(raw)
-    return res.to_dict() if res is not None else None
-
-
-def evaluate_candidate(ai_response, job_description, preferences=None):
-    return _DEFAULT_ENGINE.evaluate(ai_response, job_description, preferences).to_dict()
-
-
-def rank_candidates(evaluations):
-    return _DEFAULT_RANKER.rank(evaluations)
-
-
-def load_results(json_path):
-    return _DEFAULT_STORE.load_raw(json_path)
-
-
-def evaluate_results(results, job_description, preferences=None):
-    return {rid: ev.to_dict() for rid, ev in _DEFAULT_ENGINE.evaluate_records(results, job_description, preferences).items()}
-
-
-def build_ranking_rows(results, evaluations):
-    return [row.to_dict() for row in _DEFAULT_RANKER.build_rows(results, evaluations)]
-
-
-def evaluate_and_rank(json_path, job_description, preferences=None):
-    return [row.to_dict() for row in _DEFAULT_RANKER.evaluate_and_rank(json_path, job_description, preferences)]
