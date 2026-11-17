@@ -1,6 +1,7 @@
 import { useState } from "react";
 import pkg from "../package.json";
 import logoImg from "./logo.png";
+import { AuditLogView } from "./components/AuditLogView";
 import { CandidatesView } from "./components/CandidatesView";
 import { DashboardView } from "./components/DashboardView";
 import { JobPostingsView } from "./components/JobPostingsView";
@@ -220,14 +221,7 @@ function App() {
             />
           )}
           {activeTab === "jobs" && <JobPostingsView onOpenJobCandidates={openJobCandidates} />}
-          {activeTab === "audit" && (
-            <div className="ra-card">
-              <h3 style={{ marginTop: 0 }}>{currentNav.label}</h3>
-              <p style={{ color: "var(--ra-text-muted)", marginBottom: 0 }}>
-                View not available yet.
-              </p>
-            </div>
-          )}
+          {activeTab === "audit" && <AuditLogView />}
         </main>
       </div>
     </div>
