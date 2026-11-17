@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "./api";
 import { DashboardView } from "./components/DashboardView";
 import { JobPostingsView } from "./components/JobPostingsView";
+import { ScreenResumesView } from "./components/ScreenResumesView";
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard" },
@@ -85,15 +86,18 @@ function App() {
 
         <main className="ra-content">
           {activeTab === "dashboard" && <DashboardView onNavigate={setActiveTab} />}
+          {activeTab === "screen" && (
+            <ScreenResumesView onOpenJobCandidates={openJobCandidates} />
+          )}
           {activeTab === "jobs" && <JobPostingsView onOpenJobCandidates={openJobCandidates} />}
-          {activeTab !== "dashboard" && activeTab !== "jobs" && (
+          {activeTab !== "dashboard" && activeTab !== "screen" && activeTab !== "jobs" && (
             <div className="ra-card">
               <h3 style={{ marginTop: 0 }}>{currentNav.label}</h3>
               <p style={{ color: "var(--ra-text-muted)", marginBottom: 0 }}>
                 {selectedJobFilter && activeTab === "candidates"
                   ? `Filtered to job ${selectedJobFilter} — `
                   : ""}
-                Will be wired in Steps 5c–5d.
+                View not available yet.
               </p>
             </div>
           )}
