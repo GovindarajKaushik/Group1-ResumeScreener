@@ -1,109 +1,105 @@
 import { useEffect, useState } from "react";
+import { api } from "./api";
+import { DashboardView } from "./components/DashboardView";
+import { JobPostingsView } from "./components/JobPostingsView";
 
-// Minimal connection check view to verify React (Vite) <-> FastAPI communication
+const NAV_ITEMS = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "screen", label: "Screen Resumes" },
+  { id: "candidates", label: "Candidates & Review" },
+  { id: "jobs", label: "Job Postings" },
+  { id: "audit", label: "Audit Log" },
+];
+
 function App() {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [selectedJobFilter, setSelectedJobFilter] = useState("");
   const [health, setHealth] = useState(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const checkBackend = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/health");
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const data = await response.json();
-      setHealth(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reach FastAPI");
-      setHealth(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [healthError, setHealthError] = useState("");
 
   useEffect(() => {
-    checkBackend();
+    api
+      .getHealth()
+      .then((data) => {
+        setHealth(data);
+        setHealthError("");
+      })
+      .catch((err) => {
+        setHealth(null);
+        setHealthError(err.message || "Backend unreachable");
+      });
   }, []);
 
-  return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem",
-      }}
-    >
-      <section
-        style={{
-          width: "100%",
-          maxWidth: "560px",
-          backgroundColor: "#121216",
-          border: "1px solid #24242b",
-          borderTop: "2px solid #dc2626",
-          borderRadius: "14px",
-          padding: "1.75rem",
-          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
-        }}
-      >
-        <h1 style={{ margin: "0 0 0.35rem 0", fontSize: "1.65rem" }}>
-          Resume <span style={{ color: "#f87171" }}>Analyser</span>
-        </h1>
-        <p style={{ margin: "0 0 1.25rem 0", color: "#a1a1aa", fontSize: "0.92rem" }}>
-          React (Vite) + FastAPI Initialization Check
-        </p>
+  const openJobCandidates = (jobId) => {
+    setSelectedJobFilter(jobId);
+    setActiveTab("candidates");
+  };
 
-        <div
-          style={{
-            padding: "1rem",
-            borderRadius: "10px",
-            backgroundColor: "#09090b",
-            border: "1px solid #24242b",
-            marginBottom: "1.25rem",
-            fontSize: "0.9rem",
-          }}
-        >
-          {loading && <span style={{ color: "#a1a1aa" }}>Connecting to FastAPI backend...</span>}
-          {!loading && error && (
-            <span style={{ color: "#f87171" }}>
-              Backend unreachable: {error}
-            </span>
-          )}
-          {!loading && health && (
-            <pre
-              style={{
-                margin: 0,
-                color: "#f4f4f5",
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {JSON.stringify(health, null, 2)}
-            </pre>
-          )}
+  const currentNav = NAV_ITEMS.find((item) => item.id === activeTab) || NAV_ITEMS[0];
+
+  return (
+    <div className="ra-shell">
+      <aside className="ra-sidebar">
+        <div className="ra-brand">
+          <h1>
+            Resume <span>Analyser</span>
+          </h1>
+          <p>OOP Screener Console</p>
         </div>
 
-        <button
-          type="button"
-          onClick={checkBackend}
-          style={{
-            backgroundColor: "#991b1b",
-            border: "1px solid #dc2626",
-            color: "#f4f4f5",
-            padding: "0.55rem 1.1rem",
-            borderRadius: "9px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Re-test /api/health
-        </button>
-      </section>
-    </main>
+        <nav className="ra-nav">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`ra-nav-btn ${activeTab === item.id ? "active" : ""}`}
+              onClick={() => setActiveTab(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="ra-main">
+        <header className="ra-topbar">
+          <h2>{currentNav.label}</h2>
+          <div className="ra-pill">
+            <span
+              className="ra-dot"
+              style={{
+                backgroundColor: healthError
+                  ? "var(--ra-accent-rose)"
+                  : health?.ai_connected
+                    ? "var(--ra-green)"
+                    : "var(--ra-amber)",
+              }}
+            />
+            {healthError
+              ? `Offline: ${healthError}`
+              : health
+                ? `Backend OK · ${health.ai_connected ? "OpenRouter Ready" : "No API Key"}`
+                : "Checking backend..."}
+          </div>
+        </header>
+
+        <main className="ra-content">
+          {activeTab === "dashboard" && <DashboardView onNavigate={setActiveTab} />}
+          {activeTab === "jobs" && <JobPostingsView onOpenJobCandidates={openJobCandidates} />}
+          {activeTab !== "dashboard" && activeTab !== "jobs" && (
+            <div className="ra-card">
+              <h3 style={{ marginTop: 0 }}>{currentNav.label}</h3>
+              <p style={{ color: "var(--ra-text-muted)", marginBottom: 0 }}>
+                {selectedJobFilter && activeTab === "candidates"
+                  ? `Filtered to job ${selectedJobFilter} — `
+                  : ""}
+                Will be wired in Steps 5c–5d.
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
 

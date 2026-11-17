@@ -2,12 +2,16 @@
   color-scheme: dark;
   --ra-bg-canvas: #09090b;
   --ra-bg-surface: #121216;
-  --ra-border: #24242b;
+  --ra-bg-elevated: #18181d;
+  --ra-border: #27272f;
   --ra-text-primary: #f4f4f5;
   --ra-text-muted: #a1a1aa;
   --ra-accent-primary: #991b1b;
   --ra-accent-hover: #dc2626;
   --ra-accent-rose: #f87171;
+  --ra-green: #22c55e;
+  --ra-amber: #f59e0b;
+  --ra-blue: #3b82f6;
 }
 
 * {
@@ -19,4 +23,221 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--ra-bg-canvas);
   color: var(--ra-text-primary);
+}
+
+.ra-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+}
+
+.ra-sidebar {
+  background: var(--ra-bg-surface);
+  border-right: 1px solid var(--ra-border);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ra-brand h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.ra-brand span {
+  color: var(--ra-accent-rose);
+}
+
+.ra-brand p {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ra-text-muted);
+}
+
+.ra-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ra-nav-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ra-text-muted);
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ra-nav-btn:hover {
+  background: var(--ra-bg-elevated);
+  color: var(--ra-text-primary);
+}
+
+.ra-nav-btn.active {
+  background: rgba(153, 27, 27, 0.22);
+  border-color: var(--ra-accent-hover);
+  color: var(--ra-text-primary);
+}
+
+.ra-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ra-topbar {
+  padding: 1rem 1.75rem;
+  border-bottom: 1px solid var(--ra-border);
+  background: var(--ra-bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ra-topbar h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.ra-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--ra-border);
+  background: var(--ra-bg-elevated);
+}
+
+.ra-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ra-content {
+  padding: 1.75rem;
+  max-width: 1280px;
+  width: 100%;
+}
+
+.ra-card {
+  background: var(--ra-bg-surface);
+  border: 1px solid var(--ra-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.ra-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+}
+
+.ra-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.ra-btn {
+  background: var(--ra-accent-primary);
+  border: 1px solid var(--ra-accent-hover);
+  color: var(--ra-text-primary);
+  padding: 0.5rem 0.95rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ra-btn:hover:not(:disabled) {
+  background: var(--ra-accent-hover);
+}
+
+.ra-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ra-btn-secondary {
+  background: var(--ra-bg-elevated);
+  border-color: var(--ra-border);
+}
+
+.ra-btn-secondary:hover:not(:disabled) {
+  background: #22222a;
+}
+
+.ra-input,
+.ra-select {
+  width: 100%;
+  background: var(--ra-bg-canvas);
+  border: 1px solid var(--ra-border);
+  color: var(--ra-text-primary);
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.ra-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.ra-table th,
+.ra-table td {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--ra-border);
+}
+
+.ra-table th {
+  color: var(--ra-text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ra-badge {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: 1px solid var(--ra-border);
+}
+
+@media (max-width: 820px) {
+  .ra-shell {
+    grid-template-columns: 1fr;
+  }
+  .ra-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--ra-border);
+  }
+  .ra-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .ra-nav-btn {
+    width: auto;
+  }
 }
