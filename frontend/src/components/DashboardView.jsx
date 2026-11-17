@@ -115,7 +115,7 @@ function SkillsPieChart({ skills }) {
               borderRadius: "7px",
               fontSize: "0.84rem",
               cursor: "pointer",
-              background: hovered === idx ? "rgba(255, 255, 255, 0.05)" : "transparent",
+              background: hovered === idx ? "var(--ra-bg-elevated)" : "transparent",
               transition: "background 250ms ease",
             }}
           >
@@ -154,7 +154,7 @@ function FunnelMeterRow({ label, count, total, color }) {
         style={{
           height: "7px",
           borderRadius: "999px",
-          background: "rgba(11, 15, 23, 0.9)",
+          background: "var(--ra-bg-elevated)",
           overflow: "hidden",
         }}
       >

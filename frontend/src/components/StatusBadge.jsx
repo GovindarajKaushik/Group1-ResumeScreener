@@ -1,11 +1,11 @@
 const STYLES = {
-  SHORTLIST: { bg: "rgba(34, 197, 94, 0.16)", border: "#22c55e", color: "#86efac" },
-  SECONDARY_REVIEW: { bg: "rgba(245, 158, 11, 0.16)", border: "#f59e0b", color: "#fcd34d" },
-  RE_ENTRY: { bg: "rgba(239, 68, 68, 0.18)", border: "#ef4444", color: "#fca5a5" },
-  shortlisted: { bg: "rgba(34, 197, 94, 0.16)", border: "#22c55e", color: "#86efac" },
-  rejected: { bg: "rgba(239, 68, 68, 0.18)", border: "#ef4444", color: "#fca5a5" },
-  pending: { bg: "rgba(161, 161, 170, 0.14)", border: "#52525b", color: "#d4d4d8" },
-  FAST_TRACK: { bg: "rgba(59, 130, 246, 0.18)", border: "#3b82f6", color: "#93c5fd" },
+  SHORTLIST: { bg: "rgba(22, 163, 74, 0.1)", border: "rgba(22, 163, 74, 0.35)", color: "#15803d" },
+  SECONDARY_REVIEW: { bg: "rgba(217, 119, 6, 0.1)", border: "rgba(217, 119, 6, 0.35)", color: "#b45309" },
+  RE_ENTRY: { bg: "rgba(220, 38, 38, 0.1)", border: "rgba(220, 38, 38, 0.35)", color: "#b91c1c" },
+  shortlisted: { bg: "rgba(22, 163, 74, 0.1)", border: "rgba(22, 163, 74, 0.35)", color: "#15803d" },
+  rejected: { bg: "rgba(220, 38, 38, 0.1)", border: "rgba(220, 38, 38, 0.35)", color: "#b91c1c" },
+  pending: { bg: "rgba(9, 9, 11, 0.06)", border: "rgba(9, 9, 11, 0.18)", color: "#3f3f46" },
+  FAST_TRACK: { bg: "#09090b", border: "#09090b", color: "#ffffff" },
 };
 
 export function StatusBadge({ value, label }) {

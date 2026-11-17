@@ -9,50 +9,50 @@ const QUICK_TABS = [
     label: "All Candidates",
     status: "",
     decision: "",
-    dot: "#818cf8",
-    activeBg: "rgba(99, 102, 241, 0.22)",
-    activeBorder: "rgba(129, 140, 248, 0.6)",
-    activeColor: "#c7d2fe",
+    dot: "#09090b",
+    activeBg: "#ffffff",
+    activeBorder: "rgba(9, 9, 11, 0.25)",
+    activeColor: "#09090b",
   },
   {
     id: "shortlisted",
     label: "Shortlisted",
     status: "",
     decision: "shortlisted",
-    dot: "#34d399",
-    activeBg: "rgba(52, 211, 153, 0.18)",
-    activeBorder: "rgba(52, 211, 153, 0.6)",
-    activeColor: "#6ee7b7",
+    dot: "#16a34a",
+    activeBg: "rgba(22, 163, 74, 0.12)",
+    activeBorder: "rgba(22, 163, 74, 0.45)",
+    activeColor: "#15803d",
   },
   {
     id: "pending",
     label: "Pending Review",
     status: "",
     decision: "pending",
-    dot: "#fbbf24",
-    activeBg: "rgba(251, 191, 36, 0.18)",
-    activeBorder: "rgba(251, 191, 36, 0.6)",
-    activeColor: "#fcd34d",
+    dot: "#d97706",
+    activeBg: "rgba(217, 119, 6, 0.12)",
+    activeBorder: "rgba(217, 119, 6, 0.45)",
+    activeColor: "#b45309",
   },
   {
     id: "rejected",
     label: "Rejected",
     status: "",
     decision: "rejected",
-    dot: "#fb7185",
-    activeBg: "rgba(251, 113, 133, 0.18)",
-    activeBorder: "rgba(251, 113, 133, 0.6)",
-    activeColor: "#fda4af",
+    dot: "#dc2626",
+    activeBg: "rgba(220, 38, 38, 0.1)",
+    activeBorder: "rgba(220, 38, 38, 0.4)",
+    activeColor: "#b91c1c",
   },
   {
     id: "re_entry",
     label: "Re-Entry",
     status: "RE_ENTRY",
     decision: "",
-    dot: "#fb923c",
-    activeBg: "rgba(251, 146, 60, 0.18)",
-    activeBorder: "rgba(251, 146, 60, 0.6)",
-    activeColor: "#fdba74",
+    dot: "#ea580c",
+    activeBg: "rgba(234, 88, 12, 0.1)",
+    activeBorder: "rgba(234, 88, 12, 0.4)",
+    activeColor: "#c2410c",
   },
 ];
 
@@ -131,11 +131,9 @@ function CandidateAvatar({ candidateId, fileName, highlight = false }) {
         fontWeight: 700,
         fontSize: "0.78rem",
         letterSpacing: "0.02em",
-        color: "#f8fafc",
-        background: highlight
-          ? "linear-gradient(135deg, #6366f1, #38bdf8)"
-          : "linear-gradient(135deg, #1e293b, #334155)",
-        border: highlight ? "2px solid rgba(129, 140, 248, 0.7)" : "1px solid var(--ra-border-strong)",
+        color: highlight ? "#ffffff" : "#09090b",
+        background: highlight ? "#09090b" : "#e4e4e7",
+        border: highlight ? "2px solid #09090b" : "1px solid var(--ra-border-strong)",
       }}
     >
       {label}
@@ -264,7 +262,7 @@ function CompareSubPage({ candidates, compareIds, onChangeCompareIds, onBack }) 
           style={{
             padding: "1.25rem",
             borderRadius: "10px",
-            background: "rgba(11, 15, 23, 0.55)",
+            background: "var(--ra-bg-elevated)",
             border: "1px dashed var(--ra-border-strong)",
             color: "var(--ra-text-muted)",
             fontSize: "0.86rem",
@@ -661,76 +659,69 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
           document.body,
         )}
 
-      {/* Sub-Page Switcher Header */}
+      {/* Sub-Page Switcher Header (centered) */}
       <div
         className="ra-stagger-1"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
           alignItems: "center",
-          flexWrap: "wrap",
           gap: "0.75rem",
         }}
       >
+        <div />
         <div
           style={{
             display: "inline-flex",
             gap: "0.35rem",
-            background: "rgba(17, 24, 39, 0.9)",
-            padding: "0.32rem",
-            borderRadius: "11px",
+            background: "#ffffff",
+            padding: "0.28rem",
+            borderRadius: "8px",
             border: "1px solid var(--ra-border)",
+            justifySelf: "center",
           }}
         >
           <button
             type="button"
+            className={`ra-status-pill ${subPage === "pipeline" ? "active" : ""}`}
             onClick={() => setSubPage("pipeline")}
             style={{
-              background:
-                subPage === "pipeline"
-                  ? "linear-gradient(135deg, #6366f1, #3b82f6)"
-                  : "transparent",
-              color: subPage === "pipeline" ? "#f8fafc" : "var(--ra-text-muted)",
-              border: subPage === "pipeline" ? "1px solid rgba(129, 140, 248, 0.55)" : "1px solid transparent",
-              boxShadow: subPage === "pipeline" ? "0 4px 16px rgba(99, 102, 241, 0.3)" : "none",
-              borderRadius: "8px",
-              padding: "0.48rem 1.05rem",
-              fontSize: "0.85rem",
+              "--pill-hover-fill": "#111827",
+              background: "transparent",
+              color: subPage === "pipeline" ? "#111827" : "var(--ra-text-muted)",
+              border: "1px solid transparent",
+              padding: "0.48rem 1rem",
+              fontSize: "0.84rem",
               fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 240ms ease",
             }}
           >
             Candidate Review
           </button>
           <button
             type="button"
+            className={`ra-status-pill ${subPage === "compare" ? "active" : ""}`}
             onClick={() => setSubPage("compare")}
             style={{
-              background:
-                subPage === "compare"
-                  ? "linear-gradient(135deg, #06b6d4, #6366f1)"
-                  : "transparent",
-              color: subPage === "compare" ? "#f8fafc" : "var(--ra-text-muted)",
-              border: subPage === "compare" ? "1px solid rgba(56, 189, 248, 0.55)" : "1px solid transparent",
-              boxShadow: subPage === "compare" ? "0 4px 16px rgba(6, 182, 212, 0.28)" : "none",
-              borderRadius: "8px",
-              padding: "0.48rem 1.05rem",
-              fontSize: "0.85rem",
+              "--pill-hover-fill": "#111827",
+              background: "transparent",
+              color: subPage === "compare" ? "#111827" : "var(--ra-text-muted)",
+              border: "1px solid transparent",
+              padding: "0.48rem 1rem",
+              fontSize: "0.84rem",
               fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 240ms ease",
             }}
           >
             Compare Candidates
           </button>
         </div>
 
-        {jobId && (
-          <a className="ra-btn ra-btn-secondary" href={api.jobPdfUrl(jobId)}>
-            Download Batch PDF ({jobId})
-          </a>
-        )}
+        <div style={{ justifySelf: "end" }}>
+          {jobId && (
+            <a className="ra-btn ra-btn-secondary" href={api.jobPdfUrl(jobId)}>
+              Download Batch PDF ({jobId})
+            </a>
+          )}
+        </div>
       </div>
 
       {subPage === "compare" ? (
@@ -764,9 +755,9 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
                   display: "inline-flex",
                   flexWrap: "wrap",
                   gap: "0.3rem",
-                  background: "rgba(11, 15, 23, 0.72)",
+                  background: "var(--ra-bg-elevated)",
                   padding: "0.28rem",
-                  borderRadius: "10px",
+                  borderRadius: "8px",
                   border: "1px solid var(--ra-border)",
                 }}
               >
@@ -776,29 +767,25 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
                     <button
                       key={tab.id}
                       type="button"
+                      className={`ra-filter-pill ${active ? "active" : ""}`}
                       onClick={() => selectQuickTab(tab)}
                       style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.42rem",
-                        background: active ? tab.activeBg : "transparent",
-                        color: active ? tab.activeColor : "var(--ra-text-muted)",
-                        border: active ? `1px solid ${tab.activeBorder}` : "1px solid transparent",
-                        borderRadius: "7px",
-                        padding: "0.4rem 0.85rem",
-                        fontSize: "0.81rem",
+                        "--pill-fill": tab.dot,
+                        background: "transparent",
+                        color: active ? "#ffffff" : "var(--ra-text-muted)",
+                        border: "1px solid transparent",
                         fontWeight: active ? 600 : 500,
-                        cursor: "pointer",
-                        transition: "all 240ms ease",
                       }}
                     >
                       <span
+                        className="ra-status-dot"
                         style={{
                           width: 7,
                           height: 7,
                           borderRadius: "50%",
                           backgroundColor: tab.dot,
-                          opacity: active ? 1 : 0.6,
+                          opacity: active ? 1 : 0.65,
+                          transition: "background-color 240ms ease",
                         }}
                       />
                       {tab.label}
@@ -1087,7 +1074,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
                       Boolean(savingDecisionId)
                     }
                     onClick={() => handleDecision(selected, "rejected")}
-                    style={{ borderColor: "rgba(251, 113, 133, 0.45)", color: "#fda4af" }}
+                    style={{ borderColor: "rgba(220, 38, 38, 0.4)", color: "#b91c1c" }}
                   >
                     {savingDecisionId === `${selected.candidate_id}:rejected` ? "Saving..." : "Reject"}
                   </button>
@@ -1105,7 +1092,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
               </div>
 
               {(selected.status === "RE_ENTRY" || selected.final_score === null) && (
-                <div style={{ fontSize: "0.8rem", color: "#fcd34d" }}>
+                <div style={{ fontSize: "0.8rem", color: "#b45309" }}>
                   Re-entry or unscored records must be re-screened before a recruiter decision can be recorded.
                 </div>
               )}
@@ -1118,7 +1105,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
                   gap: "1.2rem",
                   padding: "0.95rem 1.1rem",
                   borderRadius: "11px",
-                  background: "rgba(11, 15, 23, 0.55)",
+                  background: "var(--ra-bg-elevated)",
                   border: "1px solid var(--ra-border)",
                 }}
               >
@@ -1152,7 +1139,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
               <div className="ra-detail-grid">
                 <div
                   style={{
-                    background: "rgba(11, 15, 23, 0.55)",
+                    background: "var(--ra-bg-elevated)",
                     border: "1px solid var(--ra-border)",
                     borderRadius: "11px",
                     padding: "1.05rem 1.15rem",
@@ -1213,7 +1200,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
 
                 <div
                   style={{
-                    background: "rgba(11, 15, 23, 0.55)",
+                    background: "var(--ra-bg-elevated)",
                     border: "1px solid var(--ra-border)",
                     borderRadius: "11px",
                     padding: "1.05rem 1.15rem",
@@ -1258,7 +1245,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
 
                 <div
                   style={{
-                    background: "rgba(11, 15, 23, 0.55)",
+                    background: "var(--ra-bg-elevated)",
                     border: "1px solid var(--ra-border)",
                     borderRadius: "11px",
                     padding: "1.05rem 1.15rem",
@@ -1294,7 +1281,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
                             borderRadius: "999px",
                             fontSize: "0.74rem",
                             fontWeight: 600,
-                            background: "rgba(255, 255, 255, 0.05)",
+                            background: "#ffffff",
                             border: "1px solid var(--ra-border-strong)",
                           }}
                         >
@@ -1327,7 +1314,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
                             style={{
                               background: "rgba(251, 113, 133, 0.12)",
                               borderColor: "rgba(251, 113, 133, 0.35)",
-                              color: "#fda4af",
+                              color: "#b91c1c",
                             }}
                           >
                             {sk}
@@ -1370,7 +1357,7 @@ export function CandidatesView({ initialJobId = "", onClearJobFilter }) {
                       padding: "1rem 0.5rem",
                       borderBottom: idx < sortedCandidates.length - 1 ? "1px solid var(--ra-border)" : "none",
                       cursor: "pointer",
-                      background: isSelected ? "rgba(99, 102, 241, 0.08)" : "transparent",
+                      background: isSelected ? "rgba(9, 9, 11, 0.04)" : "transparent",
                       borderRadius: "8px",
                       transition: "background 220ms ease",
                     }}
