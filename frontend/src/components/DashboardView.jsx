@@ -176,6 +176,7 @@ export function DashboardView({ onNavigate }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshingTable, setRefreshingTable] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -189,11 +190,22 @@ export function DashboardView({ onNavigate }) {
     }
   };
 
+  const refreshTable = async () => {
+    setRefreshingTable(true);
+    try {
+      setData(await api.getDashboard());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRefreshingTable(false);
+    }
+  };
+
   useEffect(() => {
     load();
   }, []);
 
-  if (loading) {
+  if (loading && !data) {
     return <div className="ra-card">Loading analytics dashboard...</div>;
   }
   if (error) {
@@ -287,12 +299,12 @@ export function DashboardView({ onNavigate }) {
       <div className="ra-grid-2">
         <div className="ra-card ra-stagger-2">
           <h3 style={{ marginTop: 0, marginBottom: "1rem", fontSize: "1rem" }}>
-            Pipeline Funnel &amp; Human Decisions
+            Screening Outcomes &amp; Recruiter Review
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div style={{ fontSize: "0.76rem", color: "var(--ra-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                System Routing
+                Automated Screening
               </div>
               <FunnelMeterRow label="Shortlist" count={shortlistCount} total={total} color="#34d399" />
               <FunnelMeterRow label="Secondary Review" count={secondaryCount} total={total} color="#fbbf24" />
@@ -301,7 +313,7 @@ export function DashboardView({ onNavigate }) {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div style={{ fontSize: "0.76rem", color: "var(--ra-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Recruiter Confirmation
+                Recruiter Decisions
               </div>
               <FunnelMeterRow label="Shortlisted" count={humanShortlisted} total={total} color="#38bdf8" />
               <FunnelMeterRow label="Pending Review" count={pendingCount} total={total} color="#94a3b8" />
@@ -322,8 +334,18 @@ export function DashboardView({ onNavigate }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
           <h3 style={{ margin: 0, fontSize: "1rem" }}>Recent Screened Candidates</h3>
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button type="button" className="ra-btn ra-btn-secondary" onClick={load}>
-              Refresh
+            <button
+              type="button"
+              className="ra-btn ra-btn-secondary"
+              disabled={refreshingTable}
+              onClick={refreshTable}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              {refreshingTable ? "Refreshing..." : "Refresh"}
             </button>
             <button type="button" className="ra-btn" onClick={() => onNavigate("screen")}>
               + New Screening
