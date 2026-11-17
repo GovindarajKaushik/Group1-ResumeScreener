@@ -19,7 +19,43 @@ python -m venv .venv
 
 Enter `resume` when asked for the resume folder, then press Enter to continue.
 
-## Run with Docker
+## Run Web UI (FastAPI + React)
+
+### With Docker Compose (recommended)
+
+```powershell
+docker compose up --build --remove-orphans
+```
+
+- **Web UI (Vite live reload):** `http://localhost:5173`
+- **FastAPI Backend & API Docs:** `http://localhost:8000/docs`
+
+### With Docker (`Dockerfile` single production container)
+
+```powershell
+docker build -t resume-screener-ui .
+New-Item -ItemType Directory -Path data -Force | Out-Null
+docker run --rm -p 8000:8000 --env-file .env -v ${PWD}/data:/app/data resume-screener-ui
+```
+
+Open `http://localhost:8000` in your browser for the Web UI (the container prints `http://0.0.0.0:8000`) and `http://localhost:8000/docs` for Swagger API docs.
+
+### Locally without Docker
+
+Start the FastAPI backend in one terminal:
+
+```powershell
+.venv/Scripts/python.exe -m uvicorn OOP.api_server:app --reload --port 8000
+```
+
+Start the React frontend in a second terminal:
+
+```powershell
+npm --prefix frontend install
+npm --prefix frontend run dev
+```
+
+## Run with Docker (CLI)
 
 Start Docker Desktop with Linux containers enabled:
 

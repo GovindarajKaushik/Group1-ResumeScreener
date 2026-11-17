@@ -718,6 +718,7 @@ class CandidateRepository(CsvRepository):
     @staticmethod
     def _searchable_text(candidate: CandidateRecord) -> str:
         return " ".join([
+            candidate.candidate_id, candidate.job_title,
             candidate.file_name, candidate.summary, candidate.evidence,
             " ".join(candidate.skills_present), " ".join(candidate.skills_missing),
             " ".join(candidate.notes),
