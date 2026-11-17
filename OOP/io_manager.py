@@ -3,68 +3,10 @@ import os
 import re
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-
-@dataclass
-class ScreeningPreferences:
-    """Value object representing screening configuration thresholds."""
-
-    min_qualifying_score: float = 60.0
-
-    def validate(self) -> None:
-        """Validate that the qualifying score is a finite number between 0 and 100."""
-        if (
-            not isinstance(self.min_qualifying_score, (int, float))
-            or not math.isfinite(self.min_qualifying_score)
-            or not (0 <= float(self.min_qualifying_score) <= 100)
-        ):
-            raise ValueError("Minimum qualifying score must be between 0 and 100.")
-        self.min_qualifying_score = float(self.min_qualifying_score)
-
-    def __getitem__(self, key: str):
-        return getattr(self, key)
-
-    def get(self, key: str, default=None):
-        return getattr(self, key, default)
-
-
-@dataclass
-class Job:
-    """Entity representing a job description and its screening requirements."""
-
-    title: str
-    required_skills: list[str] = field(default_factory=list)
-    preferred: list[str] = field(default_factory=list)
-    min_experience: float = 0.0
-    education: str = ""
-    job_id: str | None = None
-    created_at: datetime | str | None = None
-    min_qualifying_score: float | None = None
-
-    def validate(self) -> None:
-        """Validate job fields according to domain rules."""
-        if not self.title or not self.title.strip():
-            raise ValueError("Job title cannot be empty.")
-        self.title = self.title.strip()
-
-        if (
-            not isinstance(self.min_experience, (int, float))
-            or not math.isfinite(self.min_experience)
-            or self.min_experience < 0
-        ):
-            raise ValueError(
-                "Minimum experience must be a finite, nonnegative number."
-            )
-        self.min_experience = float(self.min_experience)
-
-    def __getitem__(self, key: str):
-        return getattr(self, key)
-
-    def get(self, key: str, default=None):
-        return getattr(self, key, default)
+from OOP.logic_manager import Job, ScreeningPreferences
 
 
 class Resume:
@@ -236,8 +178,21 @@ class ConsoleUI:
                 break
             print("Job title cannot be empty. Please enter a job title.")
 
-        skills_input = input("Required skills (comma-separated): ")
-        skills = self._parse_skill_list(skills_input)
+        while True:
+            skills_input = input("Required skills (comma-separated): ")
+            skills = self._parse_skill_list(skills_input)
+
+            preferred_input = input("Preferred skills (comma-separated): ")
+            preferred_qualifications = self._parse_skill_list(preferred_input)
+            required_names = {skill.lower() for skill in skills}
+            preferred_qualifications = [
+                skill
+                for skill in preferred_qualifications
+                if skill.lower() not in required_names
+            ]
+            if skills or preferred_qualifications:
+                break
+            print("Enter at least one required or preferred skill.")
 
         while True:
             experience_input = input("Minimum years of experience: ")
@@ -251,15 +206,6 @@ class ConsoleUI:
             print("Invalid input. Enter a finite, nonnegative number.")
 
         education = input("Education requirements: ").strip()
-
-        preferred_input = input("Preferred skills (comma-separated): ")
-        preferred_qualifications = self._parse_skill_list(preferred_input)
-        required_names = {skill.lower() for skill in skills}
-        preferred_qualifications = [
-            skill
-            for skill in preferred_qualifications
-            if skill.lower() not in required_names
-        ]
 
         job = Job(
             title=title,
@@ -888,18 +834,116 @@ class ResumeImporter:
 
 class CandidateReport(ABC):
     """Abstract base class defining the contract for candidate report generators."""
+
     @abstractmethod
     def generate_individual(self, candidate, output_path: str | Path) -> Path:
         """Export a detailed report for a single candidate and return the output path."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def generate_batch(
+        self, candidates: list, output_path: str | Path, job: Job | dict | None = None
+    ) -> Path:
+        """Export a summary report for a batch of candidates and return the output path."""
+        raise NotImplementedError
+
+
+class PdfCandidateReport(CandidateReport):
+    """Concrete report generator that exports individual and batch reports to PDF."""
+
+    def to_markdown(self, candidate) -> str:
+        """Render a candidate record as a Markdown summary."""
         if candidate is None:
-           raise ValueError("Candidate cannot be None.")
-        from fpdf import FPDF
+            raise ValueError("Candidate cannot be None.")
+        cid = self._get_field(candidate, "candidate_id", "Not provided")
+        file_name = self._get_field(candidate, "file_name", "Not provided")
+        job_title = self._get_field(candidate, "job_title", "Unspecified") or "Unspecified"
+        final_score = self._get_field(candidate, "final_score", None)
+        status = self._get_field(candidate, "status", "Unavailable") or "Unavailable"
+        confidence = self._get_field(candidate, "confidence", "Unavailable") or "Unavailable"
+        decision = self._get_field(candidate, "recruiter_decision", "pending") or "pending"
+
+        lines = [
+            "# Resume Screening Report",
+            "",
+            f"- Candidate ID: {cid}",
+            f"- Resume: {file_name}",
+            f"- Job: {job_title}",
+            f"- Final score: {self._format_score(final_score)}",
+            f"- Screening status: {status}",
+            f"- AI confidence: {confidence}",
+            f"- Recruiter decision: {decision}",
+        ]
+
+        for field_name, heading in (
+            ("summary", "Summary"),
+            ("skills_present", "Skills found"),
+            ("skills_missing", "Skills missing"),
+            ("missing_must_haves", "Missing required skills"),
+            ("evidence", "Evidence from the resume"),
+            ("notes", "Screening notes"),
+        ):
+            value = self._get_field(candidate, field_name, None)
+            if isinstance(value, list):
+                value = "\n".join(f"- {item}" for item in value)
+            lines.extend(["", f"## {heading}", "", value or "None recorded."])
+
+        return "\n".join(lines) + "\n"
+
+    def to_pdf_bytes(self, candidate) -> bytes:
+        """Build an individual candidate PDF report and return its raw bytes."""
+        if candidate is None:
+            raise ValueError("Candidate cannot be None.")
+        return self._render_pdf_bytes(
+            "Candidate Screening Report",
+            self._build_individual_story(candidate),
+        )
+
+    def generate_individual(self, candidate, output_path: str | Path) -> Path:
+        """Export a detailed PDF report for a single candidate and return the output path."""
+        pdf_bytes = self.to_pdf_bytes(candidate)
         target = self._prepare_output_path(output_path)
-        pdf = self._create_pdf(FPDF, "Candidate Screening Report")
+        target.write_bytes(pdf_bytes)
+        return target
+
+    def generate_batch(
+        self, candidates: list, output_path: str | Path, job: Job | dict | None = None
+    ) -> Path:
+        """Export a summary PDF report for a list of candidates and return the output path."""
+        if not candidates:
+            raise ValueError("Candidates list cannot be empty.")
+
+        story: list[tuple[str, str]] = []
+        if job is not None:
+            job_title = self._get_field(job, "title", "Unspecified")
+            job_id = self._get_field(job, "job_id", "Not recorded") or "Not recorded"
+            story.append(("heading", "Job Role"))
+            story.append(("body", f"Job: {job_title} ({job_id})"))
+
+        story.append(("heading", f"Candidates ({len(candidates)})"))
+        for index, candidate in enumerate(candidates, start=1):
+            cid = self._get_field(candidate, "candidate_id", "-")
+            file_name = self._get_field(candidate, "file_name", "Unknown")
+            score = self._format_score(self._get_field(candidate, "final_score", None))
+            status = self._get_field(candidate, "status", "-")
+            decision = self._get_field(candidate, "recruiter_decision", "pending") or "pending"
+            fast_track = " [FAST-TRACK]" if self._get_field(candidate, "fast_track", False) else ""
+            story.append(
+                (
+                    "bullet",
+                    f"{index}. {cid} | {file_name} | Score: {score} | Status: {status}{fast_track} | Decision: {decision}",
+                )
+            )
+
+        target = self._prepare_output_path(output_path)
+        target.write_bytes(self._render_pdf_bytes("Batch Screening Summary Report", story))
+        return target
+
+    def _build_individual_story(self, candidate) -> list[tuple[str, str]]:
         cid = self._get_field(candidate, "candidate_id", "Not provided")
         file_name = self._get_field(candidate, "file_name", "Not provided")
         job_title = self._get_field(candidate, "job_title", "Not provided")
-        job_id = self._get_field(candidate, "job_id", "Not recorded")
+        job_id = self._get_field(candidate, "job_id", "Not recorded") or "Not recorded"
         final_score = self._get_field(candidate, "final_score", None)
         status = self._get_field(candidate, "status", "Not provided")
         fast_track = bool(self._get_field(candidate, "fast_track", False))
@@ -915,51 +959,66 @@ class CandidateReport(ABC):
         skills_missing = self._get_field(source, "skills_missing", []) or []
         evidence = self._get_field(source, "evidence", "") or "Not provided"
         summary = self._get_field(source, "summary", "") or "Not provided"
-        self._add_section_heading(pdf, "Candidate Overview")
-        self._add_key_value(pdf, "Candidate ID", cid)
-        self._add_key_value(pdf, "Resume File", file_name)
-        self._add_key_value(pdf, "Role", f"{job_title} ({job_id})")
-        self._add_key_value(pdf, "Final Score", self._format_score(final_score))
-        self._add_key_value(pdf, "Recommendation", status)
-        self._add_key_value(pdf, "Fast-Track", "Yes" if fast_track else "No")
-        self._add_key_value(pdf, "Recruiter Decision", decision)
-        self._add_key_value(pdf, "AI Confidence", confidence)
-        self._add_section_heading(pdf, "Criterion Scores")
-        self._add_key_value(pdf, "Skills", self._format_score(skills_score))
-        self._add_key_value(pdf, "Experience", self._format_score(exp_score))
-        self._add_key_value(pdf, "Education", self._format_score(edu_score))
-        self._add_section_heading(pdf, "Skills and Evidence")
-        self._add_key_value(
-            pdf, "Skills Present", ", ".join(skills_present) or "None reported"
-        )
-        self._add_key_value(
-            pdf, "Skills Missing", ", ".join(skills_missing) or "None reported"
-        )
-        self._add_paragraph(pdf, f"Evidence: {evidence}")
-        self._add_section_heading(pdf, "AI Summary")
-        self._add_paragraph(pdf, summary)
-        self._add_section_heading(pdf, "Scoring Notes")
+
+        story: list[tuple[str, str]] = [
+            ("heading", "Candidate Overview"),
+            ("body", f"Candidate ID: {cid}"),
+            ("body", f"Resume File: {file_name}"),
+            ("body", f"Role: {job_title} ({job_id})"),
+            ("body", f"Final Score: {self._format_score(final_score)}"),
+            ("body", f"Recommendation: {status}"),
+            ("body", f"Fast-Track: {'Yes' if fast_track else 'No'}"),
+            ("body", f"Recruiter Decision: {decision}"),
+            ("body", f"AI Confidence: {confidence}"),
+            ("heading", "Criterion Scores"),
+            ("body", f"Skills: {self._format_score(skills_score)}"),
+            ("body", f"Experience: {self._format_score(exp_score)}"),
+            ("body", f"Education: {self._format_score(edu_score)}"),
+            ("heading", "Skills and Evidence"),
+            ("body", f"Skills Present: {', '.join(skills_present) or 'None reported'}"),
+            ("body", f"Skills Missing: {', '.join(skills_missing) or 'None reported'}"),
+            ("body", f"Evidence: {evidence}"),
+            ("heading", "AI Summary"),
+            ("body", str(summary)),
+            ("heading", "Scoring Notes"),
+        ]
         if notes:
             for note in notes:
-                self._add_paragraph(pdf, f"- {note}")
+                story.append(("bullet", str(note)))
         else:
-            self._add_paragraph(pdf, "None recorded.")
-        pdf.output(str(target))
-        return target
+            story.append(("body", "None recorded."))
+        return story
 
-    @abstractmethod
-    def generate_batch(
-        self, candidates: list, output_path: str | Path, job: Job | dict | None = None
-        ) -> Path:
-        """Export a summary report for a batch of candidates and return the output path."""
-        raise NotImplementedError
+    @staticmethod
+    def _render_pdf_bytes(title: str, story_items: list[tuple[str, str]]) -> bytes:
+        from io import BytesIO
+        from xml.sax.saxutils import escape
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-class PdfCandidateReport(CandidateReport):
-    """Concrete report generator that exports individual and batch reports to PDF."""
-    def generate_individual(self, candidate, output_path: str | Path) -> Path:
-        raise NotImplementedError
-    def generate_batch(self, candidate, output_path: str | Path) -> Path:
-        raise NotImplementedError
+        buffer = BytesIO()
+        document = SimpleDocTemplate(buffer, title=title)
+        styles = getSampleStyleSheet()
+        timestamp = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC")
+
+        content = [
+            Paragraph(escape(title), styles["Title"]),
+            Paragraph(escape(f"Generated: {timestamp}"), styles["BodyText"]),
+            Spacer(1, 8),
+        ]
+        for kind, text in story_items:
+            safe = escape(str(text or ""))
+            if kind == "heading":
+                content.append(Spacer(1, 6))
+                content.append(Paragraph(safe, styles["Heading2"]))
+            elif kind == "bullet":
+                content.append(Paragraph(safe, styles["Bullet"], bulletText="-"))
+            else:
+                content.append(Paragraph(safe, styles["BodyText"]))
+
+        document.build(content)
+        return buffer.getvalue()
+
     @staticmethod
     def _prepare_output_path(output_path: str | Path) -> Path:
         target = Path(output_path)
@@ -967,39 +1026,24 @@ class PdfCandidateReport(CandidateReport):
             target = target.with_suffix(".pdf")
         target.parent.mkdir(parents=True, exist_ok=True)
         return target
-    def _create_pdf(self, fpdf_cls, title: str):
-        pdf = fpdf_cls()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_page()
-        pdf.set_font("Helvetica", "B", 16)
-        pdf.cell(0, 10, self._safe_text(title), ln=True)
-        pdf.set_font("Helvetica", "", 9)  
-        timestamp = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC")
-        pdf.cell(0, 6, f"Generated: {timestamp}", ln=True)
-        pdf.ln(4)
-        return pdf
-    def _add_section_heading(self, pdf, heading: str) -> None:
-        pdf.ln(3)
-        pdf.set_font("Helvetica", "B", 12)
-        pdf.cell(0, 10, self._safe_text(heading), ln=True)
-        pdf.set_font("Helvetica", "", 10)
-    def _add_key_value(self, pdf, label: str, value) -> None:
-        text = f"{label}: {value if value is not None else 'Not Porvided'}"
-        pdf.multi_cell(0, 6, self._safe_text(text))
-    def _add_paragraph(self, pdf, text: str) -> None:
-        pdf.multi_cell(0, 6, self._safe_text(text))
+
     @staticmethod
     def _get_field(obj, key: str, default=None):
         if isinstance(obj, dict):
             return obj.get(key, default)
         return getattr(obj, key, default)
+
     @staticmethod
     def _format_score(value) -> str:
         if value is None:
             return "Not scored"
         return f"{value:g} / 100"
+
+    @staticmethod
     def _safe_text(value) -> str:
         text = str(value or "")
         return text.encode("latin-1", "replace").decode("latin-1")
+
+
 if __name__ == "__main__":
     print("Start the application with: python main.py")

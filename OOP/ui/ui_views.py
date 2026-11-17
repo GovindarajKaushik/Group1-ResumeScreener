@@ -6,8 +6,8 @@ import math
 import os
 import streamlit as st
 
-from OOP.candidate_report import CandidateReport
 from OOP.data_manager import ScreeningStore, StorageError
+from OOP.io_manager import PdfCandidateReport
 
 
 # Shared dashboard/analytics card and SVG chart components
@@ -517,11 +517,11 @@ class CandidatesView(BasePageView):
             candidates,
             format_func=lambda row: f"{row['candidate_id']} | {row['file_name']}",
         )
-        report = CandidateReport(candidate)
-        st.markdown(report.to_markdown())
+        report = PdfCandidateReport()
+        st.markdown(report.to_markdown(candidate))
         st.download_button(
             label="Download candidate report (PDF)",
-            data=report.to_pdf(),
+            data=report.to_pdf_bytes(candidate),
             file_name=f"{candidate['candidate_id']}-screening-report.pdf",
             mime="application/pdf",
         )

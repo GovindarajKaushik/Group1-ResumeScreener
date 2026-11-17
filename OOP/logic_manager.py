@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import date, datetime, timezone
 import json
+import math
 
 DEFAULT_RULES = {
     "min_score": 60, "fast_track_score": 90, "fast_track_min_criterion": 80,
@@ -105,7 +106,7 @@ class ScoringRules(_MappingCompatMixin):
 
 class ScreeningPreferences(_MappingCompatMixin):
     def __init__(self, min_qualifying_score=60.0):
-        self._min_qualifying_score = float(min_qualifying_score)
+        self._min_qualifying_score = min_qualifying_score
 
     @property
     def min_qualifying_score(self):
@@ -113,11 +114,18 @@ class ScreeningPreferences(_MappingCompatMixin):
 
     @min_qualifying_score.setter
     def min_qualifying_score(self, value):
-        self._min_qualifying_score = float(value)
+        self._min_qualifying_score = value
 
     def validate(self):
-        if not (0.0 <= self._min_qualifying_score <= 100.0):
-            raise ValueError("min_qualifying_score must be between 0 and 100")
+        score = self._min_qualifying_score
+        if (
+            isinstance(score, bool)
+            or not isinstance(score, (int, float))
+            or not math.isfinite(score)
+            or not (0.0 <= float(score) <= 100.0)
+        ):
+            raise ValueError("Minimum qualifying score must be between 0 and 100.")
+        self._min_qualifying_score = float(score)
 
     @classmethod
     def from_any(cls, raw=None):
@@ -132,25 +140,43 @@ class ScreeningPreferences(_MappingCompatMixin):
 
 
 class Job(_MappingCompatMixin):
-    def __init__(self, title="", required_skills=None, preferred=None, min_experience=0.0, education="", job_id=None, created_at=None, preferences=None):
+    def __init__(self, title="", required_skills=None, preferred=None, min_experience=0.0, education="", job_id=None, created_at=None, preferences=None, min_qualifying_score=None):
         self.job_id = job_id
         self.title = str(title).strip()
         self.required_skills = list(required_skills or [])
         self.preferred = list(preferred or [])
-        self.min_experience = float(min_experience)
+        self.min_experience = min_experience
         self.education = str(education).strip()
         self.created_at = created_at
-        self._preferences = preferences or ScreeningPreferences()
+        if preferences is not None:
+            self._preferences = preferences
+        elif min_qualifying_score is not None:
+            self._preferences = ScreeningPreferences(min_qualifying_score)
+        else:
+            self._preferences = ScreeningPreferences()
 
     @property
     def preferences(self):
         return self._preferences
 
+    @property
+    def min_qualifying_score(self):
+        return self._preferences.min_qualifying_score
+
     def validate(self):
+        if not self.title or not self.title.strip():
+            raise ValueError("Job title cannot be empty.")
+        self.title = self.title.strip()
         if not self.required_skills and not self.preferred:
             raise ValueError("Job must specify at least one required or preferred skill")
-        if self.min_experience < 0:
-            raise ValueError("min_experience cannot be negative")
+        if (
+            isinstance(self.min_experience, bool)
+            or not isinstance(self.min_experience, (int, float))
+            or not math.isfinite(self.min_experience)
+            or self.min_experience < 0
+        ):
+            raise ValueError("Minimum experience must be a finite, nonnegative number.")
+        self.min_experience = float(self.min_experience)
         self._preferences.validate()
 
     @classmethod
@@ -158,7 +184,7 @@ class Job(_MappingCompatMixin):
         if isinstance(raw, cls):
             return raw
         get = raw.get if isinstance(raw, dict) else lambda k, d=None: getattr(raw, k, d)
-        return cls(get("title", ""), list(get("required_skills", [])), list(get("preferred", [])), float(get("min_experience", 0.0) or 0.0), get("education", ""), get("job_id"), get("created_at"))
+        return cls(get("title", ""), list(get("required_skills", [])), list(get("preferred", [])), float(get("min_experience", 0.0) or 0.0), get("education", ""), get("job_id"), get("created_at"), min_qualifying_score=get("min_qualifying_score"))
 
     def to_dict(self):
         return {"job_id": self.job_id, "title": self.title, "required_skills": list(self.required_skills), "preferred": list(self.preferred), "min_experience": self.min_experience, "education": self.education, "created_at": self.created_at}

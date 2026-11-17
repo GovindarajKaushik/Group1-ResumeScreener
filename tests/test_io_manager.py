@@ -10,9 +10,11 @@ from unittest.mock import patch
 from docx import Document
 
 from OOP.io_manager import (
+    CandidateReport,
     ConsoleUI,
     DocxTextExtractor,
     Job,
+    PdfCandidateReport,
     PdfTextExtractor,
     Resume,
     ResumeImporter,
@@ -39,16 +41,17 @@ class TestIOManagerModels(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     ScreeningPreferences(min_qualifying_score=bad_score).validate()
 
-        job = Job(title="  Backend Engineer  ", min_experience=2)
+        job = Job(title="  Backend Engineer  ", required_skills=["Python"], min_experience=2)
         job.validate()
         self.assertEqual(job.title, "Backend Engineer")
         self.assertEqual(job.min_experience, 2.0)
         self.assertEqual(job["title"], "Backend Engineer")
 
         for bad_job in (
-            Job(title="   ", min_experience=1.0),
-            Job(title="Dev", min_experience=-0.5),
-            Job(title="Dev", min_experience=float("inf")),
+            Job(title="   ", required_skills=["Python"], min_experience=1.0),
+            Job(title="Dev", required_skills=[], preferred=[], min_experience=1.0),
+            Job(title="Dev", required_skills=["Python"], min_experience=-0.5),
+            Job(title="Dev", required_skills=["Python"], min_experience=float("inf")),
         ):
             with self.subTest(bad_job=bad_job):
                 with self.assertRaises(ValueError):
@@ -193,6 +196,49 @@ class TestConsoleUIHelpers(unittest.TestCase):
 
         with patch("builtins.input", side_effect=["9", "2"]), patch("sys.stdout", new_callable=io.StringIO):
             self.assertEqual(ui.get_main_menu_choice(), "2")
+
+
+class TestPdfCandidateReport(unittest.TestCase):
+
+    def test_individual_and_batch_pdf_generation(self):
+        report: CandidateReport = PdfCandidateReport()
+        candidate = {
+            "candidate_id": "C001",
+            "file_name": "alice.pdf",
+            "job_title": "Backend Engineer",
+            "job_id": "J001",
+            "final_score": 88.5,
+            "status": "SHORTLIST",
+            "fast_track": False,
+            "recruiter_decision": "pending",
+            "skills_score": 90.0,
+            "experience_score": 85.0,
+            "education_score": 88.0,
+            "confidence": "high",
+            "skills_present": ["Python", "SQL"],
+            "skills_missing": ["Docker"],
+            "evidence": "Built Python services",
+            "summary": "Strong backend match.",
+            "notes": ["All required skills verified."],
+        }
+        with TemporaryDirectory() as tmp_dir:
+            indiv_path = report.generate_individual(candidate, Path(tmp_dir) / "alice_report")
+            self.assertTrue(indiv_path.is_file())
+            self.assertEqual(indiv_path.suffix, ".pdf")
+            self.assertGreater(indiv_path.stat().st_size, 0)
+
+            batch_path = report.generate_batch([candidate], Path(tmp_dir) / "batch.pdf", job={"title": "Backend Engineer", "job_id": "J001"})
+            self.assertTrue(batch_path.is_file())
+            self.assertGreater(batch_path.stat().st_size, 0)
+
+        pdf_bytes = PdfCandidateReport().to_pdf_bytes(candidate)
+        self.assertTrue(pdf_bytes.startswith(b"%PDF"))
+        self.assertIn("C001", PdfCandidateReport().to_markdown(candidate))
+
+        with self.assertRaises(ValueError):
+            report.generate_individual(None, "ignored.pdf")
+        with self.assertRaises(ValueError):
+            report.generate_batch([], "ignored.pdf")
 
 
 if __name__ == "__main__":
