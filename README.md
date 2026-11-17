@@ -26,7 +26,7 @@ Start Docker Desktop with Linux containers enabled:
 ```powershell
 docker build -t resume-screener .
 New-Item -ItemType Directory -Path data,resume -Force | Out-Null
-docker run --rm -it --init --env-file .env --mount "type=bind,source=$((Get-Location).Path)/data,target=/app/data" --mount "type=bind,source=$((Get-Location).Path)/resume,target=/app/resume,readonly" resume-screener
+docker run --rm -it --init --env-file .env --entrypoint python --mount "type=bind,source=$((Get-Location).Path)/data,target=/app/data" --mount "type=bind,source=$((Get-Location).Path)/resume,target=/app/resume,readonly" resume-screener main.py
 ```
 
 Enter `/app/resume` when asked for the resume folder, then press Enter to continue.
@@ -64,10 +64,10 @@ docker run --rm --network none --entrypoint python resume-screener-ui -B -m unit
 ## Continuous Integration
 
 GitHub Actions (`.github/workflows/ci.yml`) runs automatically on every push to
-any branch and on every pull request into `main`. It has two jobs:
+any branch and on every pull request into `main`. It has three jobs:
 
-1. **Unit tests**: installs `requirements.txt` on Python 3.12 and runs the test suite.
-2. **Docker build and tests**: builds the Docker image and runs the same tests
-   inside the container with networking disabled.
+1. **Unit tests**: installs `requirements.txt` on Python 3.12, checks syntax, and runs the test suite.
+2. **Frontend build check**: installs Node 22 dependencies in `frontend/` and verifies the React + Vite production build compiles cleanly.
+3. **Docker build and tests**: validates `docker-compose.yml`, builds the Docker image, and runs the unit test suite inside the container with networking disabled.
 
 Results appear in the repository's **Actions** tab and as checks on pull requests.

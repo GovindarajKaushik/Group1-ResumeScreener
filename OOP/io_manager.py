@@ -1196,4 +1196,4 @@ class PdfCandidateReport(CandidateReport):
 
 
 if __name__ == "__main__":
-    print("Start the application with: python OOP/main.py")
+    print("Start the application with: python main.py")

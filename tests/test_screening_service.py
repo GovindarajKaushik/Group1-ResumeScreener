@@ -12,7 +12,7 @@ from unittest.mock import patch
 from OOP.data_manager import ScreeningStore
 from OOP.io_manager import ConsoleUI, Resume
 from OOP.logic_manager import Job, ScreeningBatch, ScreeningPreferences, ScreeningRecord
-from OOP.main import CLIController, Main, ReviewSession
+from main import CLIController, Main, ReviewSession
 from OOP.screening_service import ScreeningService
 
 
